@@ -1,0 +1,6 @@
+[*.cs]
+
+file_header_template = Copyright (c) Nathan Ford. All rights reserved. {fileName}
+
+# CS8618: Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+dotnet_diagnostic.CS8618.severity = none

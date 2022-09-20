@@ -1,0 +1,14 @@
+﻿@model ToastViewModel
+@{
+    <div class="toast bg-@Model.Colour" role="alert" aria-live="assertive" aria-atomic="true" id="@Model.ClientId">
+        <div class="toast-header">
+          <i class="rounded me-2 bi bi-person-fill"></i>
+          <strong class="me-auto">@Model.Title</strong>
+          <small class="text-muted">now</small>
+          <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body">
+          @Model.Message
+        </div>
+    </div>
+}

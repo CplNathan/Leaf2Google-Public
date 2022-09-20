@@ -1,0 +1,69 @@
+﻿@model Leaf2Google.Models.Leaf.CarInfo
+
+@{
+    @if(Model != null)
+    {
+        <div class="row">
+            <div class="col col-md-4 col-12">
+                <label for="batteryStatus" class="form-label w-100 text-center">Battery</label>
+                <div id="batteryStatus" class="progress mb-3" style="height: 33.46px">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: @(Model.carlock.CapacityRemaining)%" aria-valuenow="@(Model.carlock.CapacityRemaining)" aria-valuemin="0" aria-valuemax="100">Remaining @(Model.carlock.CapacityRemaining)%</div>
+                    <div class="progress-bar bg-danger" role="progressbar" style="width: @(100 - Model.carlock.CapacityRemaining - new List<int>() { 100 - Model.carlock.CapacityRemaining, 20 }.Min())%" aria-valuenow="@(100 - Model.carlock.CapacityRemaining - new List<int>() { 100 - Model.carlock.CapacityRemaining, 20 }.Min())" aria-valuemin="0" aria-valuemax="100"></div>
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: @(new List<int>() { 100 - Model.carlock.CapacityRemaining, 20 }.Min())%" aria-valuenow="@(new List<int>() { 100 - Model.carlock.CapacityRemaining, 20 }.Min())" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <label for="vehicleControls" class="form-label w-100 text-center">Vehicle Controls</label>
+                <div id="vehicleControls" class="btn-group w-100 mb-3">
+                    <input type="number" min="5" max="15" value="5" placeholder="Duration" aria-label="Action Time">
+                    <button type="button" data-itemid="flash" class="btn btn-primary">Flash Lights</button>
+                    <button type="button" data-itemid="horn" class="btn btn-primary">Beep Horn</button>
+                </div>
+                <label for="climateRange" class="form-label w-100 text-center">@($"Climate Control - Current {Model.thermostat.LastTemperature}c")</label>
+                <input type="range" class="form-range mb-0" min="16" max="26" value="@($"{Model.thermostat.Target}")" oninput="this.nextElementSibling.value = this.value + 'c'" id="climateRange">
+                <output class="form-label w-100 text-center mb-3">@($"{Model.thermostat.Target}c")</output>
+                <div id="vehicleControls" class="btn-group w-100 mb-3">
+                    <button type="button" class="btn btn-primary">Activate</button>
+                </div>
+            </div>
+            <div class="col col-md-8 col-12 overflow-table">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Locked</th>
+                            <th scope="col">Minutes Until Full</th>
+                            <th scope="col">Killometers Remaining</th>
+                            <th scope="col">Plugged In</th>
+                            <th scope="col">Charging</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>@(Model.carlock.Locked ? "Yes" : "No")</td>
+                            <td>@(Model.carlock.MinutesTillFull)</td>
+                            <td>@(Model.carlock.KillometersRemaining)</td>
+                            <td>@(Model.carlock.IsPluggedIn ? "Yes" : "No")</td>
+                            <td>@(Model.carlock.IsCharging ? "Yes" : "No")</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Temperature</th>
+                            <th scope="col">Target</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>@(Model.thermostat.LastTemperature)</td>
+                            <td>@(Model.thermostat.Target)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        @Html.DisplayText("Please select a vehicle.")
+    }
+}

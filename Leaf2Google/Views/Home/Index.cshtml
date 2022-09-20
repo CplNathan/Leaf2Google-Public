@@ -1,0 +1,225 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+@model Leaf2Google.Models.Nissan.NissanConnectSession
+
+@{
+    if (ViewBag?.SessionId == null)
+    {
+        <form method="post" id="loginform" class="mx-auto" style="width:300px;">
+            @await Html.PartialAsync("Authentication/AuthenticationFormPartial", Model)
+            @Html.AntiForgeryToken()
+        </form>
+    }
+    else
+    {
+        <div id="carWrapper">
+            @await Component.InvokeAsync("CarInfo",
+                new { 
+                    sessionId = (Guid?)ViewBag?.SessionId,
+                    defaultVin = (string?)ViewBag?.SelectedVin//(string?)ViewBag?.SelectedVin // Model.PrimaryVin
+                }
+            )
+        </div>
+
+        <div id="sessionWrapper">
+            @await Component.InvokeAsync("SessionInfo",
+                new {
+                    sessionId = (Guid?)ViewBag?.SessionId
+                }
+            )
+        </div>
+    }
+}
+
+@section scripts
+    {
+    <script>
+        $(document).ready(function () {
+            function checkForInput(element) {
+                if ($(element).val().length > 0) {
+                    $(element).addClass('active');
+                } else {
+                    $(element).removeClass('active');
+                }
+            }
+
+            $('.form-control').each(function () {
+                checkForInput(this);
+            });
+
+            $('.form-control').on('change keyup', function () {
+                checkForInput(this);
+            });
+
+            $("#registerform").submit(function (event) {
+                event.preventDefault();
+                return false;
+            });
+
+            $("#registerform").validate({
+                rules: {
+                    NissanUsername: {
+                        required: true,
+                        email: true,
+                        /*
+                        remote: {
+                            url: "/Validation/UsernameUnique",
+                            type: "post",
+                            data: {
+                                Username: function () {
+                                    return $("#NissanUsername").val();
+                                }
+                            }
+                        }
+                        */
+                    },
+                    NissanPassword: {
+                        required: true
+                    }
+                },
+                messages: {
+                    NissanUsername: {
+                        remote: "Please enter a unique email address."
+                    },
+                    NissanPassword: {
+                        required: "Please enter a valid password."
+                    }
+                },
+                onfocusout: function (element) {
+                    this.element(element);
+                },
+                errorPlacement: function (error, element) {
+                    this.element(element);
+                    //$('#errors').append(error);
+                },
+                submitHandler: function (form) {
+                    form.submit();
+                }
+            });
+
+            $('#sessionWrapper').on('click', '#deleteAuth', function () {
+                $.ajax({
+                    url: "@(Url.Action("Delete", "Auth"))/?authId=" + $(this).attr('data-itemid'),
+                    type: "POST",
+                    data: JSON.stringify({ sessionId: $(this).attr('data-itemid') }),
+                    contentType: "application/json",
+                    cache: false,
+                    async: false,
+                    success: function (data) {
+                        $('#sessionWrapper').html(data);
+
+                        var clientId = Math.floor(Math.random() * 100);
+                        $.ajax({
+                            url: "@(Url.Action("Create", "Toast"))",
+                            type: "POST",
+                            data: JSON.stringify({
+                                "Title": "Google Authentication",
+                                "Message": "The selected authentication has been revoked from Google.",
+                                "ClientId": clientId,
+                                "Colour": "success"
+                            }),
+                            contentType: "application/json",
+                            cache: false,
+                            async: false,
+                            success: function (data) {
+                                $('#toaster').append(data);
+                                $('#' + clientId).toast('show');
+                            }
+                        });
+                    }
+                });
+            });
+
+            $('#vehicleControls button').on('click', function() {
+                var action = $(this).attr('data-itemid');
+                var duration = $('#vehicleControls input').val();
+
+                $.ajax({
+                    url: "@(Url.Action("Action", "Car"))/?action=" + action + "&duration=" + duration,
+                    type: "POST",
+                    data: JSON.stringify({ action: action }),
+                    contentType: "application/json",
+                    cache: false,
+                    async: false,
+                    success: function (data) {
+                        $('#sessionWrapper').html(data);
+
+                        var clientId = Math.floor(Math.random() * 100);
+                        $.ajax({
+                            url: "@(Url.Action("Create", "Toast"))",
+                            type: "POST",
+                            data: JSON.stringify({
+                                "Title": "Nissan Action",
+                                "Message": "The action '" + action + "' has been sent.",
+                                "ClientId": clientId,
+                                "Colour": "success"
+                            }),
+                            contentType: "application/json",
+                            cache: false,
+                            async: false,
+                            success: function (data) {
+                                $('#toaster').append(data);
+                                $('#' + clientId).toast('show');
+                            }
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+
+    @if (Model != null) {
+    <script>
+        $(document).ready(function () {
+            mapboxgl.accessToken = 'pk.eyJ1IjoiY3BsbmF0aGFuIiwiYSI6ImNsMjBkczdkZzB2YTIzbXFvbmx3cXAwOW4ifQ.p4DiOrkDjWHkdgOzzWoAZA';
+            const geojson = {
+                'type': 'FeatureCollection',
+                'features': [
+                    {
+                        'type': 'Feature',
+                        'properties': {
+                            'message': 'Leaf',
+                            'iconSize': [64, 64]
+                        },
+                        'geometry': {
+                            'type': 'Point',
+                                'coordinates': [@((await Model.VehicleLocation((string?)ViewBag?.SelectedVin/*(string?)ViewBag?.SelectedVin // Model.PrimaryVin*/)).Y), @((await Model.VehicleLocation((string?)ViewBag?.SelectedVin/*(string?)ViewBag?.SelectedVin // Model.PrimaryVin*/)).X)]
+                        }
+                    }
+                ]
+            };
+
+            const map = new mapboxgl.Map({
+                container: 'map',
+                // Choose from Mapbox's core styles, or make your own style with Mapbox Studio
+                style: 'mapbox://styles/mapbox/streets-v11',
+                    center: [@((await Model.VehicleLocation((string?)ViewBag?.SelectedVin/*(string?)ViewBag?.SelectedVin // Model.PrimaryVin*/)).Y), @((await Model.VehicleLocation((string?)ViewBag?.SelectedVin/*(string?)ViewBag?.SelectedVin // Model.PrimaryVin*/)).X)],
+                zoom: 10
+            });
+
+            // Add markers to the map.
+            for (const marker of geojson.features) {
+                // Create a DOM element for each marker.
+                const el = document.createElement('div');
+                const width = marker.properties.iconSize[0];
+                const height = marker.properties.iconSize[1];
+                el.className = 'marker';
+                el.style.backgroundImage = `url(img/leaf.png)`;
+                el.style.width = `${width}px`;
+                el.style.height = `${height}px`;
+                el.style.backgroundSize = '100%';
+
+                el.addEventListener('click', () => {
+                    window.alert(marker.properties.message);
+                });
+
+                // Add markers to the map.
+                new mapboxgl.Marker(el)
+                    .setLngLat(marker.geometry.coordinates)
+                    .addTo(map);
+            }
+        });
+    </script>
+    }
+}
