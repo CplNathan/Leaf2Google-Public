@@ -1,7 +1,7 @@
 using Leaf2Google.Contexts;
 using Leaf2Google.Controllers;
 using Leaf2Google.Dependency.Managers;
-using Leaf2Google.Models.Nissan;
+using Leaf2Google.Models.Car;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,11 +16,11 @@ builder.Services.AddControllersWithViews()
     .AddNewtonsoftJson();
 builder.Services.AddDbContext<LeafContext>(options => options
     .UseLazyLoadingProxies()
-    .UseSqlServer(builder.Configuration.GetSection("ConnectionStrings").GetValue<string>(builder.Environment.IsDevelopment() ? "Test" : "Live"))
+    .UseSqlServer(builder.Configuration[$"ConnectionStrings:{(builder.Environment.IsDevelopment() ? "Test" : "Live")}"])
 );
 builder.Services.AddHttpClient<BaseController>(c =>
 {
-    c.BaseAddress = new Uri(NissanConnectSessionConfiguration.Settings["EU"]["auth_base_url"]);
+    c.BaseAddress = new Uri(builder.Configuration["Nissan:EU:auth_base_url"]);
 });
 builder.Services.AddSingleton<LeafSessionManager>();
 builder.Services.AddSingleton<GoogleStateManager>();

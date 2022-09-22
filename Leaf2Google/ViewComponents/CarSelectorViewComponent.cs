@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. CarSelectorViewComponent.cs
 
 using Leaf2Google.Dependency.Managers;
-using Leaf2Google.Models.Leaf;
+using Leaf2Google.Models.Car;
 using Microsoft.AspNetCore.Mvc;
 using System.Dynamic;
 
@@ -25,7 +25,7 @@ namespace Leaf2Google.ViewComponents
 
         public IViewComponentResult Invoke(Guid? sessionId)
         {
-            var session = Sessions.LeafSessions.FirstOrDefault(session => session.SessionId == sessionId && sessionId != null);
+            var session = Sessions.VehicleSessions.FirstOrDefault(session => session.SessionId == sessionId && sessionId != null);
 
             if (session != null)
             {
@@ -33,7 +33,7 @@ namespace Leaf2Google.ViewComponents
             }
             else
             {
-                return View(null);
+                return View(new List<string?>());
             }
         }
     }

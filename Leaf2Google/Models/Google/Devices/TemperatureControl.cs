@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. Thermostat.cs
 
-using Leaf2Google.Models.Nissan;
+using Leaf2Google.Dependency.Managers;
+using Leaf2Google.Models.Car;
 using Newtonsoft.Json.Linq;
 
 namespace Leaf2Google.Models.Google.Devices
@@ -32,9 +33,9 @@ namespace Leaf2Google.Models.Google.Devices
             this.SupportedCommands = new List<string>() { "SetTemperature", "OnOff" };
         }
 
-        public override async Task<JObject> QueryAsync(NissanConnectSession session, string vin)
+        public override async Task<JObject> QueryAsync(LeafSessionManager sessionManager, VehicleSessionBase session, string? vin)
         {
-            var climateStatus = await session.VehicleClimate(vin, DateTime.UtcNow - LastUpdated > TimeSpan.FromSeconds(10));
+            var climateStatus = await sessionManager.VehicleClimate(session, vin, DateTime.UtcNow - LastUpdated > TimeSpan.FromSeconds(10));
             LastUpdated = DateTime.UtcNow;
 
             bool success = false;
@@ -56,12 +57,12 @@ namespace Leaf2Google.Models.Google.Devices
             };
         }
 
-        public override async Task<JObject> ExecuteAsync(NissanConnectSession session, string vin, JObject data)
+        public override async Task<JObject> ExecuteAsync(LeafSessionManager sessionManager, VehicleSessionBase session, string? vin, JObject data)
         {
             Target = data.ContainsKey("temperature") ? (decimal?)data["temperature"] ?? Target : Target;
             Active = data.ContainsKey("on") ? (bool?)data["on"] ?? Active : Active;
 
-            var climateStatus = await session.SetVehicleClimate(vin, Target, Active);
+            var climateStatus = await sessionManager.SetVehicleClimate(session, vin, Target, Active);
 
             bool success = false;
             if (climateStatus is not null && climateStatus.Success == true)
@@ -69,7 +70,7 @@ namespace Leaf2Google.Models.Google.Devices
                 success = climateStatus.Success;
             }
 
-            await QueryAsync(session, vin);
+            await QueryAsync(sessionManager, session, vin);
 
             if ((string?)data.Root["command"] == "action.devices.commands.OnOff")
             {

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. BaseDevice.cs
 
-using Leaf2Google.Models.Nissan;
+using Leaf2Google.Dependency.Managers;
+using Leaf2Google.Models.Car;
 using Newtonsoft.Json.Linq;
 
 namespace Leaf2Google.Models.Google.Devices
@@ -72,7 +73,7 @@ namespace Leaf2Google.Models.Google.Devices
             };
         }
 
-        private List<string> _supportedCommands { get; set; } = new List<string>();
+        private List<string> _supportedCommands { get; init; } = new List<string>();
 
         public List<string> SupportedCommands
         {
@@ -82,12 +83,13 @@ namespace Leaf2Google.Models.Google.Devices
             }
             set
             {
-                _supportedCommands = value;
+                _supportedCommands.Clear();
+                _supportedCommands.AddRange(value);
             }
         }
 
-        public abstract Task<JObject> QueryAsync(NissanConnectSession session, string vin);
+        public abstract Task<JObject> QueryAsync(LeafSessionManager sessionManager, VehicleSessionBase session, string? vin);
 
-        public abstract Task<JObject> ExecuteAsync(NissanConnectSession session, string vin, JObject data);
+        public abstract Task<JObject> ExecuteAsync(LeafSessionManager sessionManager, VehicleSessionBase session, string? vin, JObject data);
     }
 }

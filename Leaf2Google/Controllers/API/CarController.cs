@@ -24,15 +24,15 @@ namespace Leaf2Google.Controllers.API
         [HttpPost]
         public async Task<ViewComponentResult> Action([FromQuery] string? action, [FromQuery] int? duration)
         {
-            if (SessionId != null && action != null && duration != null && Sessions.LeafSessions.Any(session => session.SessionId == SessionId))
+            if (SessionId != null && action != null && duration != null && Sessions.VehicleSessions.Any(session => session.SessionId == SessionId))
             {
-                var session = Sessions.LeafSessions.First(session => session.SessionId == SessionId);
+                var session = Sessions.VehicleSessions.First(session => session.SessionId == SessionId);
                 var clampedDuration = duration.Value > 15 ? 15 : duration.Value < 5 ? 5 : duration.Value;
 
                 if (action == "flash")
-                    await session.FlashLights(SelectedVin, clampedDuration);
+                    await Sessions.FlashLights(session, SelectedVin, clampedDuration);
                 else if (action == "horn")
-                    await session.BeepHorn(SelectedVin, clampedDuration);
+                    await Sessions.BeepHorn(session, SelectedVin, clampedDuration);
             }
 
             return ViewComponent("SessionInfo", new

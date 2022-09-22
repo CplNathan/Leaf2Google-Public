@@ -1,4 +1,4 @@
-﻿using Leaf2Google.Models.Nissan;
+﻿using Leaf2Google.Models.Car;
 using Newtonsoft.Json;
 using System.Net.Http.Headers;
 

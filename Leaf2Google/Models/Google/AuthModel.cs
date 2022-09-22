@@ -9,7 +9,7 @@ namespace Leaf2Google.Models.Google
         public Uri? redirect_uri { get; set; }
         public string state { get; set; } = string.Empty;
 
-        public List<string> Errors { get; set; } = new List<string>();
+        public List<string> Errors { get; protected set; } = new List<string>();
     }
 
     public class AuthPostForm : AuthForm
@@ -29,7 +29,7 @@ namespace Leaf2Google.Models.Google
 
         public Guid AuthId { get; set; }
 
-        public virtual Leaf.Leaf? Owner { get; set; }
+        public virtual Car.CarModel? Owner { get; set; }
 
         public string AuthState { get; set; }
 

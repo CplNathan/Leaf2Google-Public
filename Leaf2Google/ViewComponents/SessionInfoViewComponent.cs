@@ -20,7 +20,7 @@ namespace Leaf2Google.ViewComponents
 
         public IViewComponentResult Invoke(Guid? sessionId)
         {
-            var auths = _googleContext.GoogleAuths.Where(auth => auth.Owner != null && auth.Owner.LeafId == sessionId && sessionId != null);
+            var auths = _googleContext.GoogleAuths.Where(auth => auth.Owner != null && auth.Owner.CarModelId == sessionId && sessionId != null);
 
             if (auths.Any())
             {

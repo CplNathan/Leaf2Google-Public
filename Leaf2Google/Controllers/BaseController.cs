@@ -3,6 +3,7 @@ using Leaf2Google.Dependency.Managers;
 using Leaf2Google.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using System.Text;
 
 namespace Leaf2Google.Controllers
 {
@@ -11,6 +12,8 @@ namespace Leaf2Google.Controllers
         private readonly ILogger<HomeController> _logger;
 
         private readonly LeafSessionManager _sessions;
+
+        private Dictionary<string, string> _componentScripts;
 
         protected LeafSessionManager Sessions { get => _sessions; }
 
@@ -44,12 +47,14 @@ namespace Leaf2Google.Controllers
         }
 
         public bool IsLoggedIn() =>
-            Sessions.LeafSessions.Any(session => session.SessionId == SessionId && SessionId.HasValue);
+            Sessions.VehicleSessions.Any(session => session.SessionId == SessionId && SessionId.HasValue);
 
         public BaseController(ILogger<HomeController> logger, LeafSessionManager sessions)
         {
             _logger = logger;
             _sessions = sessions;
+
+            _componentScripts = new Dictionary<string, StringBuilder>();
         }
 
         public override void OnActionExecuting(ActionExecutingContext filterContext)
@@ -70,6 +75,11 @@ namespace Leaf2Google.Controllers
         protected void AddToast(ToastViewModel toastView)
         {
             ((List<ToastViewModel>)ViewBag.Toasts).Add(toastView);
+        }
+
+        protected bool AddComponentScript(string componentName, string scriptPath)
+        {
+            eturn _componentScripts.TryAdd(componentName, scriptPath);
         }
     }
 }

@@ -4,24 +4,25 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
-namespace Leaf2Google.Models.Leaf
+namespace Leaf2Google.Models.Car
 {
     // Database Object
-    public class Leaf : BaseModel
+
+    // TODO: Generic Type Class
+    public class CarModel : BaseModel
     {
-        public Leaf()
+        public CarModel()
         {
-            LeafId = Guid.NewGuid();
+            CarModelId = Guid.NewGuid();
             NissanUsername = string.Empty;
             NissanPasswordBytes = Array.Empty<byte>();
             Key = Array.Empty<byte>();
             IV = Array.Empty<byte>();
-            PrimaryVin = string.Empty;
         }
 
-        public Leaf(string NissanUsername, string NissanPassword)
+        public CarModel(string NissanUsername, string NissanPassword)
         {
-            this.LeafId = Guid.NewGuid();
+            this.CarModelId = Guid.NewGuid();
 
             this.NissanUsername = NissanUsername;
 
@@ -30,10 +31,11 @@ namespace Leaf2Google.Models.Leaf
             this.IV = encryptedPassword.Item2;
             this.NissanPasswordBytes = encryptedPassword.Item3;
             this.IsEncrypted = true;
-            this.PrimaryVin = string.Empty;
+            // Todo MFA/2FA Security Key
         }
 
-        public Guid LeafId { get; set; }
+        [Key]
+        public Guid CarModelId { get; set; }
 
         [Required]
         [DataType(DataType.EmailAddress)]
@@ -63,8 +65,6 @@ namespace Leaf2Google.Models.Leaf
         }
 
         public bool IsEncrypted { get; set; }
-
-        public string PrimaryVin { get; set; }
 
         public DateTime? Deleted { get; set; }
     }

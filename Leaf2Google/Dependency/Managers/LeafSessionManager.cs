@@ -1,8 +1,12 @@
 ﻿using Leaf2Google.Contexts;
+using Leaf2Google.Helpers;
 using Leaf2Google.Models.Generic;
-using Leaf2Google.Models.Leaf;
-using Leaf2Google.Models.Nissan;
+using Leaf2Google.Models.Car;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
+using System.Drawing;
+using System;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Leaf2Google.Dependency.Managers
 {
@@ -10,211 +14,210 @@ namespace Leaf2Google.Dependency.Managers
     {
         Task StartAsync();
 
-        Task AddAsync(Leaf NewLeaf);
+        Task<bool> AddAsync(CarModel NewLeaf, AuthEventHandler onAuthentication);
     }
 
-    public class LeafSessionManager : ILeafSessionManager, IDisposable
+    public class LeafSessionManager : BaseSessionManager, ILeafSessionManager
     {
-        private readonly HttpClient _client;
-
-        protected HttpClient Client { get => _client; }
-
-        private readonly IServiceScopeFactory _serviceScopeFactory;
-
-        private List<NissanConnectSession> _leafSessions = new List<NissanConnectSession>();
-
-        public List<NissanConnectSession> LeafSessions { get => _leafSessions; }
-
-        private List<NissanConnectSession> _addSessionQueue = new List<NissanConnectSession>();
-
-        private Timer? _timer;
-
-        public LeafSessionManager(HttpClient client, IServiceScopeFactory serviceScopeFactory)
+        public LeafSessionManager(HttpClient client, GoogleStateManager googleState, IServiceScopeFactory serviceScopeFactory, IConfiguration configuration)
+            : base(client, googleState, serviceScopeFactory, configuration)
         {
-            _client = client;
-            _serviceScopeFactory = serviceScopeFactory;
         }
 
-        private async void LeafSessionRunAsync(object? state)
+        public async Task<PointF> VehicleLocation(VehicleSessionBase session, string? vin)
         {
-            _leafSessions = _leafSessions.Concat(_addSessionQueue).ToList();
-            _addSessionQueue.Clear();
-
-            using var scope = _serviceScopeFactory.CreateScope();
-            var _leafContext = scope.ServiceProvider.GetRequiredService<LeafContext>();
-            var _googleState = scope.ServiceProvider.GetRequiredService<GoogleStateManager>();
-
-            bool dbChanges = false;
-
-            // Load queued sessions into memory and authenticate.
-            foreach (var session in _leafSessions.Where(session => !session.Authenticated && !session.LastRequestSuccessful).ToList())
+            if (DateTime.UtcNow - session.LastLocation.Item1 > TimeSpan.FromMinutes(1))
             {
-                dbChanges = true;
+                var location = await GetStatus(session, vin, "location");
+                return session.LastLocation?.Item2 ?? new PointF((float)location.Data?.data.attributes.gpsLatitude, (float)location.Data?.data.attributes.gpsLongitude);
+            }
+            else
+            {
+                return session.LastLocation?.Item2 ?? new PointF(0f, 0f);
+            }
+        }
 
-                bool success = false;
-                string auditLog = string.Empty;
+        public async Task<Response?> VehicleClimate(VehicleSessionBase session, string? vin, bool forceUpdate = false)
+        {
+            if (forceUpdate)
+                await PerformAction(session, vin, "refresh-hvac-status", "RefreshHvacStatus", new JObject());
+
+            return await GetStatus(session, vin, "hvac-status");
+        }
+
+        public async Task<Response?> VehicleLock(VehicleSessionBase session, string? vin)
+        {
+            return await GetStatus(session, vin, "lock-status");
+        }
+
+        public async Task<Response?> VehicleBattery(VehicleSessionBase session, string? vin)
+        {
+            return await GetStatus(session, vin, "battery-status");
+        }
+
+        public async Task<Response?> SetVehicleClimate(VehicleSessionBase session, string? vin, decimal targetTemp, bool active)
+        {
+            if (!active)
+            {
+                await PerformAction(session, vin, "hvac-start", "HvacStart", new JObject {
+                    { "action", "cancel" },
+                    { "targetTemperature", targetTemp }
+                });
+            }
+
+            return await PerformAction(session, vin, "hvac-start", "HvacStart", new JObject {
+                { "action", active ? "start" : "stop" },
+                { "targetTemperature", targetTemp }
+            });
+        }
+
+        public async Task<Response?> SetVehicleLock(VehicleSessionBase session, string? vin, bool locked)
+        {
+            return await PerformAction(session, vin, "lock-unlock", "LockUnlock", new JObject {
+                { "action", locked ? "lock" : "unlock" },
+                { "target", "doors_hatch" }, // 'driver_s_door' : 'doors_hatch'
+                { "srp", "" /* Need to investigate SRP */ }
+            });
+        }
+
+        public async Task<Response?> FlashLights(VehicleSessionBase session, string? vin, int duration = 5)
+        {
+            return await PerformAction(session, vin, "horn-lights", "HornLights", new JObject {
+                { "action", "start" },
+                { "duration", duration },
+                { "target", "lights" }
+            });
+        }
+
+        public async Task<Response?> BeepHorn(VehicleSessionBase session, string? vin, int duration = 5)
+        {
+            return await PerformAction(session, vin, "horn-lights", "HornLights", new JObject {
+                { "action", "start" },
+                { "duration", duration },
+                { "target", "horn" }
+            });
+        }
+
+        public async Task StartAsync()
+        {
+            // Queue saved sessions into memory.
+            foreach (var leaf in _leafContext.NissanLeafs.Where(leaf => leaf.Deleted == null))
+            {
+                var session = new NissanConnectSession(leaf.NissanUsername, leaf.NissanPassword, leaf.CarModelId)
+                {
+                      
+                };
+                session.OnRequest += Session_OnRequest;
+                session.OnAuthenticationAttempt += Session_OnAuthenticationAttempt;
 
                 Console.WriteLine("Authenticating");
                 try
                 {
-                    success = await session.Login();
+                    await Login(session);
                 }
                 catch (Exception ex)
                 {
-                    auditLog = ex.ToString();
+                    Console.WriteLine(ex.ToString());
                 }
-                finally
-                {
-                    Console.WriteLine(auditLog);
-                }
+            }
+        }
 
-                if (!success)
+        private async void Session_OnAuthenticationAttempt(object sender, string authToken)
+        {
+            var session = sender as VehicleSessionBase;
+
+            if (session != null)
+            {
+                using var serviceScope = _serviceScopeFactory.CreateScope();
+                var leafContext = serviceScope.ServiceProvider.GetRequiredService<LeafContext>();
+                var googleState = serviceScope.ServiceProvider.GetRequiredService<GoogleStateManager>();
+
+                Func<CarModel, bool> authenticationPredicate = leaf =>
                 {
-                    Console.WriteLine($"{session.Username} - Authentication Failed {(string.IsNullOrEmpty(auditLog) ? "" : $" - {auditLog}")}");
-                    _leafContext.NissanAudits.Add(new Audit<Leaf>
+                    return leaf.CarModelId == session.SessionId;
+                };
+
+                if (!session.LoginGivenUp && !session.Authenticated)
+                    await Login(session);
+
+                if (!session.Authenticated && session.LoginGivenUp)
+                {
+                    VehicleSessions.Remove(session);
+
+                    var leaf = leafContext.NissanLeafs.FirstOrDefault(authenticationPredicate);
+                    if (leaf != null)
                     {
-                        Owner = _leafContext.NissanLeafs.FirstOrDefault(leaf => leaf.NissanUsername == session.Username),
+                        leaf.Deleted = DateTime.UtcNow;
+                        leafContext.Entry(leaf).State = EntityState.Modified;
+                    }
+
+                    leafContext.NissanAudits.Add(new Audit<CarModel>
+                    {
+                        Owner = leaf,
+                        Action = AuditAction.Delete,
+                        Context = AuditContext.Account,
+                        Data = $"{session.Username} - Deleting Stale Leaf",
+                    });
+
+                    Console.WriteLine($"{session.Username} - Authentication Failed");
+                    leafContext.NissanAudits.Add(new Audit<CarModel>
+                    {
+                        Owner = leafContext.NissanLeafs.FirstOrDefault(authenticationPredicate),
                         Action = AuditAction.Access,
                         Context = AuditContext.Account,
-                        Data = $"{session.Username} - Authentication Failed {(string.IsNullOrEmpty(auditLog) ? "" : $" - {auditLog}")}",
+                        Data = $"{session.Username} - Authentication Failed",
                     });
                 }
-                else
+                else if (session.Authenticated)
                 {
+                    googleState.GetOrCreateDevices(session.SessionId);
+
                     Console.WriteLine($"{session.Username} - Authentication Success");
-                    _leafContext.NissanAudits.Add(new Audit<Leaf>
+                    leafContext.NissanAudits.Add(new Audit<CarModel>
                     {
-                        Owner = _leafContext.NissanLeafs.FirstOrDefault(leaf => leaf.NissanUsername == session.Username),
+                        Owner = leafContext.NissanLeafs.FirstOrDefault(authenticationPredicate),
                         Action = AuditAction.Access,
                         Context = AuditContext.Account,
                         Data = $"{session.Username} - Authentication Success",
                     });
 
-                    _googleState.GetOrCreateDevices(session.SessionId);
+                    if (!leafContext.NissanLeafs.Any(authenticationPredicate))
+                    {
+                        leafContext.NissanLeafs.Add(new CarModel(session.Username, session.Password));
+                    }
                 }
 
-                if (success)
-                {
-                    _leafContext.NissanLeafs.First(leaf => leaf.LeafId == session.SessionId).PrimaryVin = string.IsNullOrEmpty(session.PrimaryVin) ? session.VINs.FirstOrDefault() ?? string.Empty : session.PrimaryVin;
-                }
+                await leafContext.SaveChangesAsync();
             }
-
-            // Delete stale sessions and leafs.
-            var failedSessions = _leafSessions.Where(session => !HasAuthenticated(session.SessionId) && HasGivenUp(session.SessionId)).ToList();
-            foreach (var failedSession in failedSessions)
-            {
-                dbChanges = true;
-
-                _leafSessions.Remove(failedSession);
-
-                var foundLeaf = _leafContext.NissanLeafs.FirstOrDefault(leaf => leaf.LeafId == failedSession.SessionId);
-                if (foundLeaf != null)
-                {
-                    foundLeaf.Deleted = DateTime.UtcNow;
-                    _leafContext.Entry(foundLeaf).State = EntityState.Modified;
-                }
-
-                _leafContext.NissanAudits.Add(new Audit<Leaf>
-                {
-                    Owner = foundLeaf,
-                    Action = AuditAction.Delete,
-                    Context = AuditContext.Account,
-                    Data = $"{failedSession.Username} - Deleting Stale Leaf",
-                });
-            }
-
-            if (dbChanges)
-                await _leafContext.SaveChangesAsync();
         }
 
-        public Task StartAsync()
+        private void Session_OnRequest(object sender, bool requestSuccess)
         {
-            using var scope = _serviceScopeFactory.CreateScope();
-            var _leafContext = scope.ServiceProvider.GetRequiredService<LeafContext>();
-
-            // Queue saved sessions into memory.
-            foreach (var leaf in _leafContext.NissanLeafs.Where(leaf => leaf.Deleted == null))
-            {
-                var session = new NissanConnectSession(Client, leaf.NissanUsername, leaf.NissanPassword, leaf.LeafId, leaf.PrimaryVin);
-                _addSessionQueue.Add(session);
-            }
-
-            _timer = new Timer(LeafSessionRunAsync, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
-
-            return Task.CompletedTask;
+            //throw new NotImplementedException();
         }
 
-        public async Task AddAsync(Leaf NewLeaf)
+        public async Task<bool> AddAsync(CarModel NewCar, AuthEventHandler onAuthentication)
         {
-            using var scope = _serviceScopeFactory.CreateScope();
-            var _leafContext = scope.ServiceProvider.GetRequiredService<LeafContext>();
+            var session = new NissanConnectSession(NewCar.NissanUsername, NewCar.NissanPassword, NewCar.CarModelId);
+            session.OnRequest += Session_OnRequest;
+            session.OnAuthenticationAttempt += Session_OnAuthenticationAttempt;
+            session.OnAuthenticationAttempt += onAuthentication;
+            session.tcs = new TaskCompletionSource<bool>();
 
-            var session = new NissanConnectSession(Client, NewLeaf.NissanUsername, NewLeaf.NissanPassword, NewLeaf.LeafId);
-            _addSessionQueue.Add(session);
-
-            _leafContext.NissanAudits.Add(new Audit<Leaf>
+            bool success = false;
+            Console.WriteLine("Authenticating");
+            try
             {
-                Owner = null,
-                Action = AuditAction.Create,
-                Context = AuditContext.Account,
-                Data = $"{session.Username} - Adding New Leaf",
-            });
-
-            var authenticated = false;
-            var givenUp = false;
-            while (!authenticated && !givenUp)
+                success = await Login(session);
+            }
+            catch (Exception ex)
             {
-                givenUp = HasGivenUp(NewLeaf.LeafId);
-                authenticated = HasAuthenticated(NewLeaf.LeafId);
-                if (authenticated)
-                {
-                    _leafContext.NissanLeafs.Add(NewLeaf);
-                }
-
-                await Task.Delay(250);
+                Console.WriteLine(ex.ToString());
             }
 
             await _leafContext.SaveChangesAsync();
-        }
 
-        public bool HasGivenUp(Guid sessionId)
-        {
-            var foundSession = _leafSessions.Concat(_addSessionQueue).FirstOrDefault(session => session.SessionId == sessionId);
-
-            if (foundSession != null)
-            {
-                if (foundSession.Authenticated)
-                    return false;
-
-                if (foundSession.LoginFailedCount >= 5)
-                    return true;
-
-                return false;
-            }
-            else
-            {
-                return true;
-            }
-        }
-
-        public bool HasAuthenticated(Guid sessionId)
-        {
-            var foundSession = _leafSessions.Concat(_addSessionQueue).FirstOrDefault(session => session.SessionId == sessionId);
-
-            if (foundSession != null)
-            {
-                return foundSession.Authenticated;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        public void Dispose()
-        {
-            _timer?.Dispose();
-            GC.SuppressFinalize(this);
+            return success;
         }
     }
 }

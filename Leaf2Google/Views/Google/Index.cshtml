@@ -1,5 +1,5 @@
 ﻿@page
-@model Leaf2Google.Models.Leaf.Leaf
+@model Leaf2Google.Models.Car.CarModel
 
 @{
     @if (((Leaf2Google.Models.Google.AuthForm)ViewBag.AuthForm).Errors.Count > 0)
@@ -16,7 +16,7 @@
     </div>
     }
     <form method="post" id="registerform" class="mx-auto" style="width:300px;">
-        @await Html.PartialAsync("Authentication/AuthenticationFormPartial", new Leaf2Google.Models.Leaf.Leaf())
+        @await Html.PartialAsync("Authentication/AuthenticationFormPartial", new Leaf2Google.Models.Car.CarModel())
 
         @Html.Hidden("client_id", ((Leaf2Google.Models.Google.AuthForm)ViewBag.AuthForm).client_id, new { @id = "client_id" })
         @Html.Hidden("redirect_uri", ((Leaf2Google.Models.Google.AuthForm)ViewBag.AuthForm).redirect_uri, new { @id = "redirect_uri" })

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. Thermostat.cs
 
-using Leaf2Google.Models.Nissan;
+using Leaf2Google.Dependency.Managers;
+using Leaf2Google.Models.Car;
 using Newtonsoft.Json.Linq;
 
 namespace Leaf2Google.Models.Google.Devices
@@ -36,9 +37,9 @@ namespace Leaf2Google.Models.Google.Devices
             this.SupportedCommands = new List<string>() { "ThermostatTemperatureSetpoint", "ThermostatSetMode" };
         }
 
-        public override async Task<JObject> QueryAsync(NissanConnectSession session, string vin)
+        public override async Task<JObject> QueryAsync(LeafSessionManager sessionManager, VehicleSessionBase session, string? vin)
         {
-            var climateStatus = await session.VehicleClimate(vin, DateTime.UtcNow - LastUpdated > TimeSpan.FromSeconds(10));
+            var climateStatus = await sessionManager.VehicleClimate(session, vin, DateTime.UtcNow - LastUpdated > TimeSpan.FromSeconds(10));
 
             bool success = false;
             if (climateStatus is not null && climateStatus.Success == true)
@@ -59,12 +60,12 @@ namespace Leaf2Google.Models.Google.Devices
             };
         }
 
-        public override async Task<JObject> ExecuteAsync(NissanConnectSession session, string vin, JObject data)
+        public override async Task<JObject> ExecuteAsync(LeafSessionManager sessionManager, VehicleSessionBase session, string? vin, JObject data)
         {
             Target = data.ContainsKey("thermostatTemperatureSetpoint") ? (decimal)data["thermostatTemperatureSetpoint"]! : Target;
             Active = data.ContainsKey("thermostatMode") ? ((string)data["thermostatMode"]! == "heatcool") : data.ContainsKey("thermostatTemperatureSetpoint") ? true : Active;
 
-            var climateStatus = await session.SetVehicleClimate(vin, Target, Active);
+            var climateStatus = await sessionManager.SetVehicleClimate(session, vin, Target, Active);
 
             bool success = false;
             if (climateStatus is not null && climateStatus.Success == true)
@@ -72,7 +73,7 @@ namespace Leaf2Google.Models.Google.Devices
                 success = climateStatus.Success;
             }
 
-            await QueryAsync(session, vin);
+            await QueryAsync(sessionManager, session, vin);
 
             return new JObject()
             {

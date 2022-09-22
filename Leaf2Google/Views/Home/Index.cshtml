@@ -1,13 +1,13 @@
 ﻿@{
     ViewData["Title"] = "Home Page";
 }
-@model Leaf2Google.Models.Nissan.NissanConnectSession
+@model Leaf2Google.Models.Car.CarInfoModel
 
 @{
     if (ViewBag?.SessionId == null)
     {
         <form method="post" id="loginform" class="mx-auto" style="width:300px;">
-            @await Html.PartialAsync("Authentication/AuthenticationFormPartial", Model)
+            @await Html.PartialAsync("Authentication/AuthenticationFormPartial", Model.car)
             @Html.AntiForgeryToken()
         </form>
     }
@@ -17,7 +17,7 @@
             @await Component.InvokeAsync("CarInfo",
                 new { 
                     sessionId = (Guid?)ViewBag?.SessionId,
-                    defaultVin = (string?)ViewBag?.SelectedVin//(string?)ViewBag?.SelectedVin // Model.PrimaryVin
+                    defaultVin = (string?)ViewBag?.SelectedVin
                 }
             )
         </div>
@@ -184,7 +184,7 @@
                         },
                         'geometry': {
                             'type': 'Point',
-                                'coordinates': [@((await Model.VehicleLocation((string?)ViewBag?.SelectedVin/*(string?)ViewBag?.SelectedVin // Model.PrimaryVin*/)).Y), @((await Model.VehicleLocation((string?)ViewBag?.SelectedVin/*(string?)ViewBag?.SelectedVin // Model.PrimaryVin*/)).X)]
+                                'coordinates': [@((Model.location.Value.Y)), @((Model.location.Value.X))]
                         }
                     }
                 ]
@@ -194,7 +194,7 @@
                 container: 'map',
                 // Choose from Mapbox's core styles, or make your own style with Mapbox Studio
                 style: 'mapbox://styles/mapbox/streets-v11',
-                    center: [@((await Model.VehicleLocation((string?)ViewBag?.SelectedVin/*(string?)ViewBag?.SelectedVin // Model.PrimaryVin*/)).Y), @((await Model.VehicleLocation((string?)ViewBag?.SelectedVin/*(string?)ViewBag?.SelectedVin // Model.PrimaryVin*/)).X)],
+                    center: [@((Model.location.Value.Y)), @((Model.location.Value.X))],
                 zoom: 10
             });
 

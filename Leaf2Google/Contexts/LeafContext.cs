@@ -1,6 +1,6 @@
 ﻿using Leaf2Google.Models.Generic;
 using Leaf2Google.Models.Google;
-using Leaf2Google.Models.Leaf;
+using Leaf2Google.Models.Car;
 using Microsoft.EntityFrameworkCore;
 
 namespace Leaf2Google.Contexts
@@ -12,9 +12,9 @@ namespace Leaf2Google.Contexts
         {
         }
 
-        public DbSet<Leaf> NissanLeafs { get; set; }
+        public DbSet<CarModel> NissanLeafs { get; set; }
 
-        public DbSet<Audit<Leaf>> NissanAudits { get; set; }
+        public DbSet<Audit<CarModel>> NissanAudits { get; set; }
 
         public DbSet<Auth> GoogleAuths { get; set; }
 
@@ -34,11 +34,11 @@ namespace Leaf2Google.Contexts
             */
 
             modelBuilder
-                .Entity<Leaf>()
+                .Entity<CarModel>()
                 .ToTable("t_leafs_leaf");
 
             modelBuilder
-                .Entity<Audit<Leaf>>()
+                .Entity<Audit<CarModel>>()
                 .ToTable("t_leafs_audit")
                 .HasOne(i => i.Owner);
 
