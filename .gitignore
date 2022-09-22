@@ -10,6 +10,10 @@
 *.userosscache
 *.sln.docstates
 
+# Don't track appsettings
+appsettings.json
+appsettings.*.json
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
