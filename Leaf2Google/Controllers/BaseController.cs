@@ -13,7 +13,7 @@ namespace Leaf2Google.Controllers
 
         private readonly LeafSessionManager _sessions;
 
-        private Dictionary<string, string> _componentScripts;
+        private readonly IConfiguration _configuration;
 
         protected LeafSessionManager Sessions { get => _sessions; }
 
@@ -42,19 +42,18 @@ namespace Leaf2Google.Controllers
             }
             set
             {
-                HttpContext.Session.SetString("SelectedVin", !value.IsNullOrEmpty() ? value! : null!);
+                HttpContext.Session.SetString("SelectedVin", value ?? "");
             }
         }
 
         public bool IsLoggedIn() =>
             Sessions.VehicleSessions.Any(session => session.SessionId == SessionId && SessionId.HasValue);
 
-        public BaseController(ILogger<HomeController> logger, LeafSessionManager sessions)
+        public BaseController(ILogger<HomeController> logger, LeafSessionManager sessions, IConfiguration configuration)
         {
             _logger = logger;
             _sessions = sessions;
-
-            _componentScripts = new Dictionary<string, StringBuilder>();
+            _configuration = configuration;
         }
 
         public override void OnActionExecuting(ActionExecutingContext filterContext)
@@ -67,6 +66,7 @@ namespace Leaf2Google.Controllers
         {
             ViewBag.SessionId = SessionId;
             ViewBag.SelectedVin = SelectedVin;
+            ViewBag.MapBoxKey = _configuration["MapBox:api_key"];
 
             if (resetToasts)
                 ViewBag.Toasts = new List<ToastViewModel>();
@@ -75,11 +75,6 @@ namespace Leaf2Google.Controllers
         protected void AddToast(ToastViewModel toastView)
         {
             ((List<ToastViewModel>)ViewBag.Toasts).Add(toastView);
-        }
-
-        protected bool AddComponentScript(string componentName, string scriptPath)
-        {
-            eturn _componentScripts.TryAdd(componentName, scriptPath);
         }
     }
 }

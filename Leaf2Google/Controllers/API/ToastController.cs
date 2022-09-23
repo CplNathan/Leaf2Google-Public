@@ -11,8 +11,8 @@ namespace Leaf2Google.Controllers.API
     [ApiController]
     public class ToastController : BaseController
     {
-        public ToastController(ILogger<HomeController> logger, LeafSessionManager sessions)
-        : base(logger, sessions)
+        public ToastController(ILogger<HomeController> logger, LeafSessionManager sessions, IConfiguration configuration)
+        : base(logger, sessions, configuration)
         {
         }
 

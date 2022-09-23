@@ -7,9 +7,9 @@ using Leaf2Google.Models.Car;
 using Microsoft.AspNetCore.Mvc;
 using Lock = Leaf2Google.Models.Google.Devices.Lock;
 
-namespace Leaf2Google.ViewComponents
+namespace Leaf2Google.ViewComponents.Car
 {
-    public class CarInfoViewComponent : ViewComponent
+    public class CarInfoViewComponent : BaseViewComponent
     {
         private readonly LeafSessionManager _sessions;
 
@@ -27,6 +27,8 @@ namespace Leaf2Google.ViewComponents
 
         public async Task<IViewComponentResult> InvokeAsync(Guid? sessionId, string? defaultVin)
         {
+            RegisterViewComponentScript("/js/Components/CarInfo.js");
+
             var session = Sessions.VehicleSessions.FirstOrDefault(session => session.SessionId == sessionId && sessionId != null);
 
             if (session != null && defaultVin != null)

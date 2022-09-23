@@ -15,8 +15,8 @@ namespace Leaf2Google.Controllers.API
     {
         private readonly LeafContext _googleContext;
 
-        public AuthController(ILogger<HomeController> logger, LeafSessionManager sessions, LeafContext googleContext)
-        : base(logger, sessions)
+        public AuthController(ILogger<HomeController> logger, LeafSessionManager sessions, LeafContext googleContext, IConfiguration configuration)
+        : base(logger, sessions, configuration)
         {
             _googleContext = googleContext;
         }

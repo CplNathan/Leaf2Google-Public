@@ -35,7 +35,7 @@ namespace Leaf2Google.Models.Google.Devices
 
         public override async Task<JObject> QueryAsync(LeafSessionManager sessionManager, VehicleSessionBase session, string? vin)
         {
-            var climateStatus = await sessionManager.VehicleClimate(session, vin, DateTime.UtcNow - LastUpdated > TimeSpan.FromSeconds(10));
+            var climateStatus = await sessionManager.VehicleClimate(session.SessionId, vin, DateTime.UtcNow - LastUpdated > TimeSpan.FromSeconds(10));
             LastUpdated = DateTime.UtcNow;
 
             bool success = false;
@@ -62,7 +62,7 @@ namespace Leaf2Google.Models.Google.Devices
             Target = data.ContainsKey("temperature") ? (decimal?)data["temperature"] ?? Target : Target;
             Active = data.ContainsKey("on") ? (bool?)data["on"] ?? Active : Active;
 
-            var climateStatus = await sessionManager.SetVehicleClimate(session, vin, Target, Active);
+            var climateStatus = await sessionManager.SetVehicleClimate(session.SessionId, vin, Target, Active);
 
             bool success = false;
             if (climateStatus is not null && climateStatus.Success == true)

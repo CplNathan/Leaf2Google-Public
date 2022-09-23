@@ -15,8 +15,8 @@ namespace Leaf2Google.Controllers.API
     {
         private readonly LeafContext _googleContext;
 
-        public CarController(ILogger<HomeController> logger, LeafSessionManager sessions, LeafContext googleContext)
-        : base(logger, sessions)
+        public CarController(ILogger<HomeController> logger, LeafSessionManager sessions, LeafContext googleContext, IConfiguration configuration)
+            : base(logger, sessions, configuration)
         {
             _googleContext = googleContext;
         }
@@ -30,9 +30,9 @@ namespace Leaf2Google.Controllers.API
                 var clampedDuration = duration.Value > 15 ? 15 : duration.Value < 5 ? 5 : duration.Value;
 
                 if (action == "flash")
-                    await Sessions.FlashLights(session, SelectedVin, clampedDuration);
+                    await Sessions.FlashLights(session.SessionId, SelectedVin, clampedDuration);
                 else if (action == "horn")
-                    await Sessions.BeepHorn(session, SelectedVin, clampedDuration);
+                    await Sessions.BeepHorn(session.SessionId, SelectedVin, clampedDuration);
             }
 
             return ViewComponent("SessionInfo", new

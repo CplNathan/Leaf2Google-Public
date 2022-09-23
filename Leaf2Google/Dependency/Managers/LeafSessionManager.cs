@@ -24,11 +24,13 @@ namespace Leaf2Google.Dependency.Managers
         {
         }
 
-        public async Task<PointF> VehicleLocation(VehicleSessionBase session, string? vin)
+        public async Task<PointF> VehicleLocation(Guid sessionId, string? vin)
         {
+            var session = VehicleSessions.FirstOrDefault(session => session.SessionId == sessionId);
+
             if (DateTime.UtcNow - session.LastLocation.Item1 > TimeSpan.FromMinutes(1))
             {
-                var location = await GetStatus(session, vin, "location");
+                var location = await GetStatus(session.SessionId, vin, "location");
                 return session.LastLocation?.Item2 ?? new PointF((float)location.Data?.data.attributes.gpsLatitude, (float)location.Data?.data.attributes.gpsLongitude);
             }
             else
@@ -37,61 +39,63 @@ namespace Leaf2Google.Dependency.Managers
             }
         }
 
-        public async Task<Response?> VehicleClimate(VehicleSessionBase session, string? vin, bool forceUpdate = false)
+        public async Task<Response?> VehicleClimate(Guid sessionId, string? vin, bool forceUpdate = false)
         {
+            var session = VehicleSessions.FirstOrDefault(session => session.SessionId == sessionId);
+
             if (forceUpdate)
-                await PerformAction(session, vin, "refresh-hvac-status", "RefreshHvacStatus", new JObject());
+                await PerformAction(sessionId, vin, "refresh-hvac-status", "RefreshHvacStatus", new JObject());
 
-            return await GetStatus(session, vin, "hvac-status");
+            return await GetStatus(sessionId, vin, "hvac-status");
         }
 
-        public async Task<Response?> VehicleLock(VehicleSessionBase session, string? vin)
+        public async Task<Response?> VehicleLock(Guid sessionId, string? vin)
         {
-            return await GetStatus(session, vin, "lock-status");
+            return await GetStatus(sessionId, vin, "lock-status");
         }
 
-        public async Task<Response?> VehicleBattery(VehicleSessionBase session, string? vin)
+        public async Task<Response?> VehicleBattery(Guid sessionId, string? vin)
         {
-            return await GetStatus(session, vin, "battery-status");
+            return await GetStatus(sessionId, vin, "battery-status");
         }
 
-        public async Task<Response?> SetVehicleClimate(VehicleSessionBase session, string? vin, decimal targetTemp, bool active)
+        public async Task<Response?> SetVehicleClimate(Guid sessionId, string? vin, decimal targetTemp, bool active)
         {
             if (!active)
             {
-                await PerformAction(session, vin, "hvac-start", "HvacStart", new JObject {
+                await PerformAction(sessionId, vin, "hvac-start", "HvacStart", new JObject {
                     { "action", "cancel" },
                     { "targetTemperature", targetTemp }
                 });
             }
 
-            return await PerformAction(session, vin, "hvac-start", "HvacStart", new JObject {
+            return await PerformAction(sessionId, vin, "hvac-start", "HvacStart", new JObject {
                 { "action", active ? "start" : "stop" },
                 { "targetTemperature", targetTemp }
             });
         }
 
-        public async Task<Response?> SetVehicleLock(VehicleSessionBase session, string? vin, bool locked)
+        public async Task<Response?> SetVehicleLock(Guid sessionId, string? vin, bool locked)
         {
-            return await PerformAction(session, vin, "lock-unlock", "LockUnlock", new JObject {
+            return await PerformAction(sessionId, vin, "lock-unlock", "LockUnlock", new JObject {
                 { "action", locked ? "lock" : "unlock" },
                 { "target", "doors_hatch" }, // 'driver_s_door' : 'doors_hatch'
                 { "srp", "" /* Need to investigate SRP */ }
             });
         }
 
-        public async Task<Response?> FlashLights(VehicleSessionBase session, string? vin, int duration = 5)
+        public async Task<Response?> FlashLights(Guid sessionId, string? vin, int duration = 5)
         {
-            return await PerformAction(session, vin, "horn-lights", "HornLights", new JObject {
+            return await PerformAction(sessionId, vin, "horn-lights", "HornLights", new JObject {
                 { "action", "start" },
                 { "duration", duration },
                 { "target", "lights" }
             });
         }
 
-        public async Task<Response?> BeepHorn(VehicleSessionBase session, string? vin, int duration = 5)
+        public async Task<Response?> BeepHorn(Guid sessionId, string? vin, int duration = 5)
         {
-            return await PerformAction(session, vin, "horn-lights", "HornLights", new JObject {
+            return await PerformAction(sessionId, vin, "horn-lights", "HornLights", new JObject {
                 { "action", "start" },
                 { "duration", duration },
                 { "target", "horn" }
@@ -138,7 +142,7 @@ namespace Leaf2Google.Dependency.Managers
                 };
 
                 if (!session.LoginGivenUp && !session.Authenticated)
-                    await Login(session);
+                    session = await Login(session);
 
                 if (!session.Authenticated && session.LoginGivenUp)
                 {
@@ -171,6 +175,7 @@ namespace Leaf2Google.Dependency.Managers
                 else if (session.Authenticated)
                 {
                     googleState.GetOrCreateDevices(session.SessionId);
+                    VehicleSessions.Add(session);
 
                     Console.WriteLine($"{session.Username} - Authentication Success");
                     leafContext.NissanAudits.Add(new Audit<CarModel>
@@ -208,7 +213,7 @@ namespace Leaf2Google.Dependency.Managers
             Console.WriteLine("Authenticating");
             try
             {
-                success = await Login(session);
+                success = await Login(session) != null;
             }
             catch (Exception ex)
             {

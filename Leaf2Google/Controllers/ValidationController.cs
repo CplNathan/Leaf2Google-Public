@@ -8,8 +8,8 @@ namespace Leaf2Google.Controllers
     {
         private readonly LeafContext _leafContext;
 
-        public ValidationController(ILogger<HomeController> logger, LeafSessionManager sessions, LeafContext leafContext)
-            : base(logger, sessions)
+        public ValidationController(ILogger<HomeController> logger, LeafSessionManager sessions, LeafContext leafContext, IConfiguration configuration)
+            : base(logger, sessions, configuration)
         {
             _leafContext = leafContext;
         }

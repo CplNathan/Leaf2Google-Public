@@ -4,32 +4,10 @@
 @model Leaf2Google.Models.Car.CarInfoModel
 
 @{
-    if (ViewBag?.SessionId == null)
-    {
-        <form method="post" id="loginform" class="mx-auto" style="width:300px;">
-            @await Html.PartialAsync("Authentication/AuthenticationFormPartial", Model.car)
-            @Html.AntiForgeryToken()
-        </form>
-    }
-    else
-    {
-        <div id="carWrapper">
-            @await Component.InvokeAsync("CarInfo",
-                new { 
-                    sessionId = (Guid?)ViewBag?.SessionId,
-                    defaultVin = (string?)ViewBag?.SelectedVin
-                }
-            )
-        </div>
-
-        <div id="sessionWrapper">
-            @await Component.InvokeAsync("SessionInfo",
-                new {
-                    sessionId = (Guid?)ViewBag?.SessionId
-                }
-            )
-        </div>
-    }
+    <form method="post" id="loginform" class="mx-auto" style="width:300px;">
+        @await Html.PartialAsync("Authentication/AuthenticationFormPartial", Model.car)
+        @Html.AntiForgeryToken()
+    </form>
 }
 
 @section scripts
@@ -97,129 +75,6 @@
                     form.submit();
                 }
             });
-
-            $('#sessionWrapper').on('click', '#deleteAuth', function () {
-                $.ajax({
-                    url: "@(Url.Action("Delete", "Auth"))/?authId=" + $(this).attr('data-itemid'),
-                    type: "POST",
-                    data: JSON.stringify({ sessionId: $(this).attr('data-itemid') }),
-                    contentType: "application/json",
-                    cache: false,
-                    async: false,
-                    success: function (data) {
-                        $('#sessionWrapper').html(data);
-
-                        var clientId = Math.floor(Math.random() * 100);
-                        $.ajax({
-                            url: "@(Url.Action("Create", "Toast"))",
-                            type: "POST",
-                            data: JSON.stringify({
-                                "Title": "Google Authentication",
-                                "Message": "The selected authentication has been revoked from Google.",
-                                "ClientId": clientId,
-                                "Colour": "success"
-                            }),
-                            contentType: "application/json",
-                            cache: false,
-                            async: false,
-                            success: function (data) {
-                                $('#toaster').append(data);
-                                $('#' + clientId).toast('show');
-                            }
-                        });
-                    }
-                });
-            });
-
-            $('#vehicleControls button').on('click', function() {
-                var action = $(this).attr('data-itemid');
-                var duration = $('#vehicleControls input').val();
-
-                $.ajax({
-                    url: "@(Url.Action("Action", "Car"))/?action=" + action + "&duration=" + duration,
-                    type: "POST",
-                    data: JSON.stringify({ action: action }),
-                    contentType: "application/json",
-                    cache: false,
-                    async: false,
-                    success: function (data) {
-                        $('#sessionWrapper').html(data);
-
-                        var clientId = Math.floor(Math.random() * 100);
-                        $.ajax({
-                            url: "@(Url.Action("Create", "Toast"))",
-                            type: "POST",
-                            data: JSON.stringify({
-                                "Title": "Nissan Action",
-                                "Message": "The action '" + action + "' has been sent.",
-                                "ClientId": clientId,
-                                "Colour": "success"
-                            }),
-                            contentType: "application/json",
-                            cache: false,
-                            async: false,
-                            success: function (data) {
-                                $('#toaster').append(data);
-                                $('#' + clientId).toast('show');
-                            }
-                        });
-                    }
-                });
-            });
         });
     </script>
-
-    @if (Model != null) {
-    <script>
-        $(document).ready(function () {
-            mapboxgl.accessToken = 'pk.eyJ1IjoiY3BsbmF0aGFuIiwiYSI6ImNsMjBkczdkZzB2YTIzbXFvbmx3cXAwOW4ifQ.p4DiOrkDjWHkdgOzzWoAZA';
-            const geojson = {
-                'type': 'FeatureCollection',
-                'features': [
-                    {
-                        'type': 'Feature',
-                        'properties': {
-                            'message': 'Leaf',
-                            'iconSize': [64, 64]
-                        },
-                        'geometry': {
-                            'type': 'Point',
-                                'coordinates': [@((Model.location.Value.Y)), @((Model.location.Value.X))]
-                        }
-                    }
-                ]
-            };
-
-            const map = new mapboxgl.Map({
-                container: 'map',
-                // Choose from Mapbox's core styles, or make your own style with Mapbox Studio
-                style: 'mapbox://styles/mapbox/streets-v11',
-                    center: [@((Model.location.Value.Y)), @((Model.location.Value.X))],
-                zoom: 10
-            });
-
-            // Add markers to the map.
-            for (const marker of geojson.features) {
-                // Create a DOM element for each marker.
-                const el = document.createElement('div');
-                const width = marker.properties.iconSize[0];
-                const height = marker.properties.iconSize[1];
-                el.className = 'marker';
-                el.style.backgroundImage = `url(img/leaf.png)`;
-                el.style.width = `${width}px`;
-                el.style.height = `${height}px`;
-                el.style.backgroundSize = '100%';
-
-                el.addEventListener('click', () => {
-                    window.alert(marker.properties.message);
-                });
-
-                // Add markers to the map.
-                new mapboxgl.Marker(el)
-                    .setLngLat(marker.geometry.coordinates)
-                    .addTo(map);
-            }
-        });
-    </script>
-    }
 }

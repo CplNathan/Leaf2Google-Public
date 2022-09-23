@@ -19,8 +19,8 @@ namespace Leaf2Google.Controllers
 
         public GoogleStateManager Google { get => _google; }
 
-        public HomeController(ILogger<HomeController> logger, LeafSessionManager sessions, LeafContext leafContext, GoogleStateManager google)
-            : base(logger, sessions)
+        public HomeController(ILogger<HomeController> logger, LeafSessionManager sessions, LeafContext leafContext, GoogleStateManager google, IConfiguration configuration)
+            : base(logger, sessions, configuration)
         {
             _leafContext = leafContext;
             _google = google;
@@ -43,9 +43,9 @@ namespace Leaf2Google.Controllers
             {
                 Thermostat? thermostat = (Thermostat?)Google.Devices[session.SessionId].FirstOrDefault(device => device is Thermostat);
                 Lock? carlock = (Lock?)Google.Devices[session.SessionId].FirstOrDefault(device => device is Lock);
-                PointF? location = await Sessions.VehicleLocation(session, session.PrimaryVin);
+                PointF? location = await Sessions.VehicleLocation(session.SessionId, session.PrimaryVin);
 
-                return View(new CarInfoModel()
+                return View("IndexUser", new CarInfoModel()
                 {
                     car = _leafContext.NissanLeafs.FirstOrDefault(car => car.CarModelId == SessionId),
                     carlock = carlock,
@@ -57,7 +57,7 @@ namespace Leaf2Google.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Index([FromForm] AuthPostForm authForm)
+        public async Task<IActionResult> Index([FromForm] AuthPostForm authForm)
         {
             Func<VehicleSessionBase, bool> authenticationPredicate = session =>
             {
@@ -80,7 +80,7 @@ namespace Leaf2Google.Controllers
             }
 
             ReloadViewBag();
-            return View(Sessions.VehicleSessions.FirstOrDefault(authenticationPredicate));
+            return await Index();
         }
 
         public IActionResult Privacy()

@@ -21,7 +21,7 @@ namespace Leaf2Google.Controllers
         private readonly IConfiguration _configuration;
 
         public GoogleController(ILogger<HomeController> logger, LeafSessionManager sessions, GoogleStateManager googleState, LeafContext googleContext, IConfiguration configuration)
-            : base(logger, sessions)
+            : base(logger, sessions, configuration)
         {
             _logger = logger;
             _googleState = googleState;

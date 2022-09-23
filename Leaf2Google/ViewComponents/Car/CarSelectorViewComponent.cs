@@ -5,7 +5,7 @@ using Leaf2Google.Models.Car;
 using Microsoft.AspNetCore.Mvc;
 using System.Dynamic;
 
-namespace Leaf2Google.ViewComponents
+namespace Leaf2Google.ViewComponents.Car
 {
     public class CarSelectorViewComponent : ViewComponent
     {

@@ -51,9 +51,9 @@ namespace Leaf2Google.Models.Google.Devices
 
         public override async Task<JObject> QueryAsync(LeafSessionManager sessionManager, VehicleSessionBase session, string? vin) // Pass in what to query?
         {
-            var lockStatus = await sessionManager.VehicleLock(session, vin);
+            var lockStatus = await sessionManager.VehicleLock(session.SessionId, vin);
 
-            var batteryStatus = await sessionManager.VehicleBattery(session, vin);
+            var batteryStatus = await sessionManager.VehicleBattery(session.SessionId, vin);
 
             bool success = false;
             if (lockStatus is not null && lockStatus.Success == true && batteryStatus is not null && batteryStatus.Success == true)
@@ -135,13 +135,13 @@ namespace Leaf2Google.Models.Google.Devices
         {
             if ((string?)data.Root["command"] == "action.devices.commands.Locate" && ((bool?)data["silence"] ?? false) == false)
             {
-                var flashStatus = await sessionManager.FlashLights(session, vin, 5);
+                var flashStatus = await sessionManager.FlashLights(session.SessionId, vin, 5);
             }
             else if ((string?)data.Root["command"] == "action.devices.commands.LockUnlock")
             {
                 Locked = data.ContainsKey("lock") ? (bool?)data["lock"] ?? Locked : Locked;
 
-                var lockStatus = await sessionManager.SetVehicleLock(session, vin, Locked);
+                var lockStatus = await sessionManager.SetVehicleLock(session.SessionId, vin, Locked);
 
                 bool success = false;
                 if (lockStatus is not null && lockStatus.Success)

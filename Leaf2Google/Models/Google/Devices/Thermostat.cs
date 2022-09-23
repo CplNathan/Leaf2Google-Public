@@ -39,7 +39,7 @@ namespace Leaf2Google.Models.Google.Devices
 
         public override async Task<JObject> QueryAsync(LeafSessionManager sessionManager, VehicleSessionBase session, string? vin)
         {
-            var climateStatus = await sessionManager.VehicleClimate(session, vin, DateTime.UtcNow - LastUpdated > TimeSpan.FromSeconds(10));
+            var climateStatus = await sessionManager.VehicleClimate(session.SessionId, vin, DateTime.UtcNow - LastUpdated > TimeSpan.FromSeconds(10));
 
             bool success = false;
             if (climateStatus is not null && climateStatus.Success == true)
@@ -65,7 +65,7 @@ namespace Leaf2Google.Models.Google.Devices
             Target = data.ContainsKey("thermostatTemperatureSetpoint") ? (decimal)data["thermostatTemperatureSetpoint"]! : Target;
             Active = data.ContainsKey("thermostatMode") ? ((string)data["thermostatMode"]! == "heatcool") : data.ContainsKey("thermostatTemperatureSetpoint") ? true : Active;
 
-            var climateStatus = await sessionManager.SetVehicleClimate(session, vin, Target, Active);
+            var climateStatus = await sessionManager.SetVehicleClimate(session.SessionId, vin, Target, Active);
 
             bool success = false;
             if (climateStatus is not null && climateStatus.Success == true)

@@ -28,7 +28,11 @@ namespace Leaf2Google.Dependency.Managers
 
         private List<VehicleSessionBase> _vehicleSessions = new List<VehicleSessionBase>();
 
+        private List<VehicleSessionBase> _pendingSessions = new List<VehicleSessionBase>();
+
         public List<VehicleSessionBase> VehicleSessions { get => _vehicleSessions; }
+
+        public IEnumerable<VehicleSessionBase> AllSessions { get => _vehicleSessions.Concat(_pendingSessions); }
 
         protected Timer? _timer;
 
@@ -41,8 +45,10 @@ namespace Leaf2Google.Dependency.Managers
             _leafContext = _serviceScope.ServiceProvider.GetRequiredService<LeafContext>();
         }
 
-        private async Task<Response?> MakeRequest(VehicleSessionBase session, HttpRequestMessage httpRequestMessage, string baseUri = "")
+        private async Task<Response?> MakeRequest(Guid sessionId, HttpRequestMessage httpRequestMessage, string baseUri = "")
         {
+            var session = AllSessions.FirstOrDefault(session => session.SessionId == sessionId);
+
             bool success = true;
             Response? result = null;
 
@@ -65,7 +71,7 @@ namespace Leaf2Google.Dependency.Managers
             return result;
         }
 
-        private async Task<Response?> Authenticate(VehicleSessionBase session)
+        private async Task<Response?> Authenticate(Guid sessionId)
         {
             var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, $"json/realms/root/realms/{_configuration["Nissan:EU:realm"]}/authenticate")
             {
@@ -78,10 +84,10 @@ namespace Leaf2Google.Dependency.Managers
                 }
             };
 
-            return await MakeRequest(session, httpRequestMessage);
+            return await MakeRequest(sessionId, httpRequestMessage);
         }
 
-        private async Task<Response?> Authenticate(VehicleSessionBase session, string username, string password, Response? authenticateResult)
+        private async Task<Response?> Authenticate(Guid sessionId, string username, string password, Response? authenticateResult)
         {
             if (authenticateResult?.Success != true)
                 return null;
@@ -140,12 +146,12 @@ namespace Leaf2Google.Dependency.Managers
                 Content = new StringContent(JsonConvert.SerializeObject(httpRequestData), UnicodeEncoding.UTF8, "application/json")
             };
 
-            var response = await MakeRequest(session, httpRequestMessage);
+            var response = await MakeRequest(sessionId, httpRequestMessage);
 
             return response;
         }
 
-        private async Task<Response?> Authorize(VehicleSessionBase session, Response? authenticateResult)
+        private async Task<Response?> Authorize(Guid sessionId, Response? authenticateResult)
         {
             if (authenticateResult?.Success != true)
                 return null;
@@ -158,7 +164,7 @@ namespace Leaf2Google.Dependency.Managers
                 }
             };
 
-            var response = await MakeRequest(session, httpRequestMessage);
+            var response = await MakeRequest(sessionId, httpRequestMessage);
 
             if (response != null)
                 response.Data = authenticateResult!.Data;
@@ -166,7 +172,7 @@ namespace Leaf2Google.Dependency.Managers
             return response;
         }
 
-        private async Task<Response?> AccessToken(VehicleSessionBase session, Response? authenticateResult)
+        private async Task<Response?> AccessToken(Guid sessionId, Response? authenticateResult)
         {
             if (authenticateResult?.Code != 302)
                 return null;
@@ -183,13 +189,15 @@ namespace Leaf2Google.Dependency.Managers
                 Content = new StringContent(String.Empty, UnicodeEncoding.UTF8, "application/x-www-form-urlencoded")
             };
 
-            var response = await MakeRequest(session, httpRequestMessage);
+            var response = await MakeRequest(sessionId, httpRequestMessage);
 
             return response;
         }
 
-        private async Task<Response?> UsersResult(VehicleSessionBase session)
+        private async Task<Response?> UsersResult(Guid sessionId)
         {
+            var session = AllSessions.FirstOrDefault(session => session.SessionId == sessionId);
+
             var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, $"v1/users/current")
             {
                 Headers =
@@ -198,13 +206,15 @@ namespace Leaf2Google.Dependency.Managers
                 }
             };
 
-            var response = await MakeRequest(session, httpRequestMessage, _configuration["Nissan:EU:user_adapter_base_url"]);
+            var response = await MakeRequest(sessionId, httpRequestMessage, _configuration["Nissan:EU:user_adapter_base_url"]);
 
             return response;
         }
 
-        private async Task<Response?> VehiclesResult(VehicleSessionBase session, string userId)
+        private async Task<Response?> VehiclesResult(Guid sessionId, string userId)
         {
+            var session = AllSessions.FirstOrDefault(session => session.SessionId == sessionId);
+
             var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, $"v4/users/{userId}/cars")
             {
                 Headers =
@@ -213,36 +223,41 @@ namespace Leaf2Google.Dependency.Managers
                 }
             };
 
-            var response = await MakeRequest(session, httpRequestMessage, _configuration["Nissan:EU:user_base_url"]);
+            var response = await MakeRequest(sessionId, httpRequestMessage, _configuration["Nissan:EU:user_base_url"]);
 
             return response;
         }
 
-        protected async Task<bool> Login(VehicleSessionBase session)
+        protected async Task<VehicleSessionBase> Login(VehicleSessionBase session)
         {
-            var authenticateResult = await Authenticate(session);
+            _pendingSessions.Add(session);
+            var authenticateResult = await Authenticate(session.SessionId);
             Response? authenticationResult = null;
 
-            authenticationResult = await Authenticate(session, session.Username, session.Password, authenticateResult);
-            var authorizeResult = await Authorize(session, authenticationResult);
-            var accessTokenResult = await AccessToken(session, authorizeResult);
+            authenticationResult = await Authenticate(session.SessionId, session.Username, session.Password, authenticateResult);
+            var authorizeResult = await Authorize(session.SessionId, authenticationResult);
+            var accessTokenResult = await AccessToken(session.SessionId, authorizeResult);
 
-            session.AuthenticatedAccessToken = (string?)accessTokenResult?.Data?.access_token;
             if (accessTokenResult?.Success == true)
             {
-                // TODO add dropdown select on register
-                var usersResult = await UsersResult(session);
+                session.AuthenticatedAccessToken = (string?)accessTokenResult?.Data?.access_token;
 
-                var vehiclesResult = await VehiclesResult(session, (string)usersResult!.Data.userId);
+                // TODO add dropdown select on register
+                var usersResult = await UsersResult(session.SessionId);
+
+                var vehiclesResult = await VehiclesResult(session.SessionId, (string)usersResult!.Data.userId);
 
                 session.VINs.AddRange(((JArray)vehiclesResult!.Data.data).Select(vehicle => (string?)((JObject)vehicle)["vin"]).Where(vehicle => !string.IsNullOrEmpty(vehicle)));
             }
 
-            return session.Authenticated;
+            _pendingSessions.Remove(session);
+            return session;
         }
 
-        protected async Task<Response?> PerformAction(VehicleSessionBase session, string? vin, string action, string type, JObject attributes)
+        protected async Task<Response?> PerformAction(Guid sessionId, string? vin, string action, string type, JObject attributes)
         {
+            var session = AllSessions.FirstOrDefault(session => session.SessionId == sessionId);
+
             dynamic httpRequestData = new JObject {
                 { "data", new JObject {
                     { "type", $"{type}" },
@@ -260,13 +275,15 @@ namespace Leaf2Google.Dependency.Managers
                 Content = new StringContent(JsonConvert.SerializeObject(httpRequestData), UnicodeEncoding.UTF8, "application/vnd.api+json")
             };
 
-            var response = await MakeRequest(session, httpRequestMessage, _configuration["Nissan:EU:car_adapter_base_url"]);
+            var response = await MakeRequest(session.SessionId, httpRequestMessage, _configuration["Nissan:EU:car_adapter_base_url"]);
 
             return response;
         }
 
-        protected async Task<Response?> GetStatus(VehicleSessionBase session, string? vin, string action)
+        protected async Task<Response?> GetStatus(Guid sessionId, string? vin, string action)
         {
+            var session = AllSessions.FirstOrDefault(session => session.SessionId == sessionId);
+
             var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, $"v1/cars/{vin}/{action}")
             {
                 Headers =
@@ -275,7 +292,7 @@ namespace Leaf2Google.Dependency.Managers
                 }
             };
 
-            var response = await MakeRequest(session, httpRequestMessage, _configuration["Nissan:EU:car_adapter_base_url"]);
+            var response = await MakeRequest(sessionId, httpRequestMessage, _configuration["Nissan:EU:car_adapter_base_url"]);
 
             return response;
         }

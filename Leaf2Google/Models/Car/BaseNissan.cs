@@ -17,19 +17,21 @@ namespace Leaf2Google.Models.Car
 
         private string _authenticatedAccessToken = string.Empty;
 
-        public string AuthenticatedAccessToken {
+        public string? AuthenticatedAccessToken {
             get
             {
                 return _authenticatedAccessToken;
             }
             set
             {
-                OnAuthenticationAttempt.Invoke(this, value);
+                if (_authenticatedAccessToken != value)
+                    OnAuthenticationAttempt.Invoke(this, value);
+
                 _authenticatedAccessToken = value;
             }
         }
 
-        public bool Authenticated { get => _authenticatedAccessToken != string.Empty; }
+        public bool Authenticated { get => !string.IsNullOrEmpty(_authenticatedAccessToken); }
 
         public string Username { get; init; }
         public string Password { get; init; }

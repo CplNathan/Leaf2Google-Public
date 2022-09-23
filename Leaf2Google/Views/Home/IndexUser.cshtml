@@ -1,0 +1,27 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+@model Leaf2Google.Models.Car.CarInfoModel
+
+@{
+        <div id="carWrapper">
+            @await Component.InvokeAsync("CarInfo",
+                new {
+                sessionId = (Guid?)ViewBag?.SessionId,
+                defaultVin = (string?)ViewBag?.SelectedVin
+            })
+        </div>
+
+        <div id="sessionWrapper">
+            @await Component.InvokeAsync("SessionInfo",
+                new {
+                sessionId = (Guid?)ViewBag?.SessionId
+            })
+        </div>
+}
+
+@section scripts {
+    <script>
+        const mbcoords = [@((Model.location.Value.Y)), @((Model.location.Value.X))]
+    </script>
+}
