@@ -31,7 +31,7 @@ namespace Leaf2Google.Dependency.Managers
             if (DateTime.UtcNow - session.LastLocation.Item1 > TimeSpan.FromMinutes(1))
             {
                 var location = await GetStatus(session.SessionId, vin, "location");
-                return session.LastLocation?.Item2 ?? new PointF((float)location.Data?.data.attributes.gpsLatitude, (float)location.Data?.data.attributes.gpsLongitude);
+                return session.LastLocation?.Item2 ?? new PointF((float?)location?.Data?.data?.attributes.gpsLatitude ?? 0, (float?)location?.Data?.data?.attributes.gpsLongitude ?? 0);
             }
             else
             {
