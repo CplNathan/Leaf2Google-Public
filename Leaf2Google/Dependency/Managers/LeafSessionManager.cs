@@ -31,12 +31,14 @@ namespace Leaf2Google.Dependency.Managers
             if (DateTime.UtcNow - session.LastLocation.Item1 > TimeSpan.FromMinutes(1))
             {
                 var location = await GetStatus(session.SessionId, vin, "location");
-                return session.LastLocation?.Item2 ?? new PointF((float?)location?.Data?.data?.attributes.gpsLatitude ?? 0, (float?)location?.Data?.data?.attributes.gpsLongitude ?? 0);
+
+                if (location != null)
+                {
+                    return session.LastLocation?.Item2 ?? new PointF((float?)location?.Data?.data?.attributes.gpsLatitude ?? 0, (float?)location?.Data?.data?.attributes.gpsLongitude ?? 0);
+                }
             }
-            else
-            {
-                return session.LastLocation?.Item2 ?? new PointF(0f, 0f);
-            }
+
+            return session.LastLocation?.Item2 ?? new PointF(0f, 0f);
         }
 
         public async Task<Response?> VehicleClimate(Guid sessionId, string? vin, bool forceUpdate = false)

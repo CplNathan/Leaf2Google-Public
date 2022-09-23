@@ -58,11 +58,14 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.js"></script>
+    <script async defer id="mapbox" src="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.js"></script>
+    <script async defer id="captcha" src="https://www.google.com/recaptcha/api.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     <script>
-        mapboxgl.accessToken = '@(ViewBag.MapBoxKey)';
+        $('#mapbox').on('load', function () {
+            mapboxgl.accessToken = '@(ViewBag.MapBoxKey)';
+        });
         const api = {
             'toaster': '@(Url.Action("Create", "Toast"))',
             'car': {
@@ -78,6 +81,6 @@
 
     @* TODO: Bundle *@
     @Html.Raw(string.Join("\n", (Html.ViewContext.HttpContext.Items["ComponentScripts"] as HashSet<string> ?? new HashSet<string>())
-        .Select(script => $"<script src=\"{script}\"></script>")))
+        .Select(script => $"<script async src=\"{script}\"></script>")))
 </body>
 </html>

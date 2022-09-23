@@ -272,3 +272,9 @@ INPUT:not(:-webkit-autofill), SELECT:not(:-webkit-autofill), TEXTAREA:not(:-webk
 .map-height {
     min-height: 300px;
 }
+
+#loginform, #registerform {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+}

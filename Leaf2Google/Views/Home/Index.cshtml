@@ -30,12 +30,7 @@
                 checkForInput(this);
             });
 
-            $("#registerform").submit(function (event) {
-                event.preventDefault();
-                return false;
-            });
-
-            $("#registerform").validate({
+            $("form").validate({
                 rules: {
                     NissanUsername: {
                         required: true,
@@ -67,12 +62,9 @@
                 onfocusout: function (element) {
                     this.element(element);
                 },
-                errorPlacement: function (error, element) {
-                    this.element(element);
-                    //$('#errors').append(error);
-                },
+                errorPlacement: $.noop,
                 submitHandler: function (form) {
-                    form.submit();
+                    grecaptcha.execute();
                 }
             });
         });

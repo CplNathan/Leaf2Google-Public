@@ -64,6 +64,10 @@ namespace Leaf2Google.Models.Car
             }
         }
 
+        [NotMapped]
+        [Required]
+        public string Captcha { get; set; }
+
         public bool IsEncrypted { get; set; }
 
         public DateTime? Deleted { get; set; }

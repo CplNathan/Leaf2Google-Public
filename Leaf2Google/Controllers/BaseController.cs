@@ -56,6 +56,26 @@ namespace Leaf2Google.Controllers
             _configuration = configuration;
         }
 
+        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        public async Task<IActionResult> Error()
+        {
+            AddToast(new ToastViewModel() { Title = "System Error", Message = $"There was an error with your last request, please try again ({HttpContext.TraceIdentifier}).", Colour = "warning" });
+
+            ReloadViewBag();
+            return await RedirectToAction("Index", "Home", ViewBag);
+        }
+
+        public bool RegisterViewComponentScript(string scriptPath)
+        {
+            var scripts = (HttpContext.Items["ComponentScripts"] is HashSet<string>) ? (HttpContext.Items["ComponentScripts"] as HashSet<string>) : new HashSet<string>();
+
+            var success = scripts.Add(scriptPath);
+
+            HttpContext.Items["ComponentScripts"] = scripts;
+
+            return success;
+        }
+
         public override void OnActionExecuting(ActionExecutingContext filterContext)
         {
             ReloadViewBag(true);
@@ -67,6 +87,7 @@ namespace Leaf2Google.Controllers
             ViewBag.SessionId = SessionId;
             ViewBag.SelectedVin = SelectedVin;
             ViewBag.MapBoxKey = _configuration["MapBox:api_key"];
+            ViewBag.CaptchaKey = _configuration["Google:Captcha:site_key"];
 
             if (resetToasts)
                 ViewBag.Toasts = new List<ToastViewModel>();
