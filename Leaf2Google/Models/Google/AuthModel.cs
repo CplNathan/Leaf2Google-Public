@@ -16,6 +16,7 @@ namespace Leaf2Google.Models.Google
     {
         public string NissanUsername { get; set; } = string.Empty;
         public string NissanPassword { get; set; } = string.Empty;
+        public string Captcha { get; set; } = string.Empty;
     }
 
     // Database Object

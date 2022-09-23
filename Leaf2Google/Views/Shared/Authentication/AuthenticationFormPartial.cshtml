@@ -38,10 +38,12 @@
 <div id="loginHelp" class="form-text mb-3">Currently we only support a single vehicle, support for multi vehicles is coming soon. Your first vehicle will be selected as default.</div>
 
 <div class="g-recaptcha"
-        data-sitekey="@(ViewBag.CaptchaKey)"
-        data-callback="onSubmit"
-        data-size="invisible"
-        data-badge="inline">
+    data-sitekey="@(ViewBag.CaptchaKey)"
+    data-callback="onSubmit"
+    data-expired-callback="onExpire"
+    data-error-callback="onError"
+    data-size="invisible"
+    data-badge="inline">
 </div>
 
 }

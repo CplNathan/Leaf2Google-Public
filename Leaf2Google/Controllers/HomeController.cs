@@ -8,6 +8,7 @@ using System.Linq;
 using Leaf2Google.Models.Google.Devices;
 using System.Drawing;
 using Leaf2Google.Contexts;
+using Leaf2Google.Dependency.Helpers;
 
 namespace Leaf2Google.Controllers
 {
@@ -17,13 +18,16 @@ namespace Leaf2Google.Controllers
 
         private readonly GoogleStateManager _google;
 
+        private readonly Captcha _captcha;
+
         public GoogleStateManager Google { get => _google; }
 
-        public HomeController(ILogger<HomeController> logger, LeafSessionManager sessions, LeafContext leafContext, GoogleStateManager google, IConfiguration configuration)
+        public HomeController(ILogger<HomeController> logger, LeafSessionManager sessions, LeafContext leafContext, GoogleStateManager google, Captcha captcha, IConfiguration configuration)
             : base(logger, sessions, configuration)
         {
             _leafContext = leafContext;
             _google = google;
+            _captcha = captcha;
         }
 
         public async Task<IActionResult> Index()
@@ -66,7 +70,9 @@ namespace Leaf2Google.Controllers
                 return session.Username == authForm.NissanUsername && session.Password == authForm.NissanPassword;
             };
 
-            if (Sessions.VehicleSessions.Any(authenticationPredicate))
+            var captchaStatus = await _captcha.VerifyCaptcha(authForm.Captcha, HttpContext.Request.Host.Host);
+
+            if (Sessions.VehicleSessions.Any(authenticationPredicate) && captchaStatus)
             {
                 var session = Sessions.VehicleSessions.First(authenticationPredicate);
                 SessionId = session.SessionId;
@@ -78,7 +84,10 @@ namespace Leaf2Google.Controllers
             }
             else
             {
-                AddToast(new ToastViewModel() { Title = "Authentication", Message = "Authentication failed with the given credentials.", Colour = "warning" });
+                if (captchaStatus)
+                    AddToast(new ToastViewModel() { Title = "Authentication", Message = "Authentication failed with the given credentials.", Colour = "warning" });
+                else
+                    AddToast(new ToastViewModel() { Title = "Authentication", Message = "Failed to verify reCaptcha response.", Colour = "warning" });
             }
 
             ReloadViewBag();

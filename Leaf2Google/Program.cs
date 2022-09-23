@@ -1,5 +1,6 @@
 using Leaf2Google.Contexts;
 using Leaf2Google.Controllers;
+using Leaf2Google.Dependency.Helpers;
 using Leaf2Google.Dependency.Managers;
 using Leaf2Google.Models.Car;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -24,6 +25,7 @@ builder.Services.AddHttpClient<BaseController>(c =>
 });
 builder.Services.AddSingleton<LeafSessionManager>();
 builder.Services.AddSingleton<GoogleStateManager>();
+builder.Services.AddScoped<Captcha>();
 
 builder.Services.AddDistributedMemoryCache();
 
