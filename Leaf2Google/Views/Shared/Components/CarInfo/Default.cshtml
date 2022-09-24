@@ -20,8 +20,7 @@
                 @* I really wamt to use Angular... some dynamic binding to values and inline tags are so familiar and easy to work with... not to mention custom HTML elements!? TODO: Probably do that *@
                 @* This looks awesome https://steele.blue/custom-elements-angularjs/ talk about re-usability... dang why did I not know about this from the start :( *@
                 <i class="bi bi-thermometer-half"><label for="climateRange" class="form-label w-100">@($"Climate Control - Current {Model.thermostat.LastTemperature}c")</label></i>
-                <input type="range" class="form-range mb-0" min="16" max="26" value="@($"{Model.thermostat.Target}")" oninput="$('#climateButton').html(`<i class='` + $('#climateButton').attr('data-icon') + `'>Set to ` + this.value + `c</i>`)" id="climateRange">
-                <output class="form-label w-100 text-center mb-3">@($"{Model.thermostat.Target}c")</output>
+                <input type="range" class="form-range mb-0" min="16" max="26" value="@($"{Model.thermostat.Target}")" oninput="$('#climateButton').html(`<i class='` + $('#climateButton').attr('data-icon') + `'></i> Set to ` + this.value + `c`)" id="climateRange">
                 <div id="vehicleControls" class="btn-group w-100 mb-3">
                     <button type="button" class="btn btn-primary" data-icon="bi bi-fan" id="climateButton">@($"Set to {Model.thermostat.Target}c")</button>
                 </div>
