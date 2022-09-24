@@ -5,8 +5,8 @@
     {
         <div class="row">
 
-            <div class="col col-12 col-lg-6 overflow-table">
-                <table class="table">
+            <div class="col col-12 col-lg-6 table-responsive-lg">
+                <table class="table table-striped">
                     <thead>
                         <tr>
                             <th scope="col">#</th>
@@ -24,10 +24,12 @@
                                 <td>@(auth.LastExecute)</td>
                                 <td>@(auth.LastQuery)</td>
                                 <td>@(auth.Deleted.HasValue ? "Yes" : "No")</td>
+                                <td>
                                 @if (!auth.Deleted.HasValue)
                                 {
-                                    <td><button data-itemid="@(auth.AuthId)" type="button" class="btn btn-danger" id="deleteAuth"><i class="bi bi-trash-fill"></i></button></td>
+                                    <button data-itemid="@(auth.AuthId)" type="button" class="btn btn-danger" id="deleteAuth"><i class="bi bi-trash-fill"></i></button>
                                 }
+                                </td>
                             </tr>
                         }
                     </tbody>
