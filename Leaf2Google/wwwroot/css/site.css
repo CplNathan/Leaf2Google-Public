@@ -279,7 +279,11 @@ INPUT:not(:-webkit-autofill), SELECT:not(:-webkit-autofill), TEXTAREA:not(:-webk
     align-items: center;
 }
 
-label, .carWrapper i.bi {
+label, #carWrapper i.bi {
     display: inline;
+    padding-right: 5px;
+}
+
+label {
     padding-left: 5px;
 }

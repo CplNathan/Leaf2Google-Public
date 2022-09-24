@@ -17,11 +17,13 @@
                     <button type="button" data-itemid="flash" class="btn btn-primary"><i class="bi bi-lamp-fill"></i>Flash Lights</button>
                     <button type="button" data-itemid="horn" class="btn btn-primary"><i class="bi bi-megaphone-fill"></i>Beep Horn</button>
                 </div>
+                @* I really wamt to use Angular... some dynamic binding to values and inline tags are so familiar and easy to work with... not to mention custom HTML elements!? TODO: Probably do that *@
+                @* This looks awesome https://steele.blue/custom-elements-angularjs/ talk about re-usability... dang why did I not know about this from the start :( *@
                 <i class="bi bi-thermometer-half"><label for="climateRange" class="form-label w-100">@($"Climate Control - Current {Model.thermostat.LastTemperature}c")</label></i>
-                <input type="range" class="form-range mb-0" min="16" max="26" value="@($"{Model.thermostat.Target}")" oninput="this.nextElementSibling.value = this.value + 'c'" id="climateRange">
+                <input type="range" class="form-range mb-0" min="16" max="26" value="@($"{Model.thermostat.Target}")" oninput="$('#climateButton').html(`<i class='` + $('#climateButton').attr('data-icon') + `'>Set to ` + this.value + `c</i>`)" id="climateRange">
                 <output class="form-label w-100 text-center mb-3">@($"{Model.thermostat.Target}c")</output>
                 <div id="vehicleControls" class="btn-group w-100 mb-3">
-                    <button type="button" class="btn btn-primary">Activate</button>
+                    <button type="button" class="btn btn-primary" data-icon="bi bi-fan" id="climateButton">@($"Set to {Model.thermostat.Target}c")</button>
                 </div>
             </div>
             <div class="col col-md-8 col-12 table-responsive-lg">
