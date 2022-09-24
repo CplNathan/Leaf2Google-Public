@@ -70,6 +70,9 @@ namespace Leaf2Google.Controllers
                 return session.Username == authForm.NissanUsername && session.Password == authForm.NissanPassword;
             };
 
+            if (IsLoggedIn())
+                return RedirectToAction("Index", "Home");
+
             var captchaStatus = await _captcha.VerifyCaptcha(authForm.Captcha, HttpContext.Request.Host.Host);
 
             if (Sessions.VehicleSessions.Any(authenticationPredicate) && captchaStatus)
