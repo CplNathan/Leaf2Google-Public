@@ -6,11 +6,7 @@
         <div class="row">
             <div class="col col-md-4 col-12">
                 <i class="bi bi-battery-half"><label for="batteryStatus" class="form-label w-100">Battery</label></i>
-                <div id="batteryStatus" class="progress mb-3" style="height: 33.46px">
-                    <div class="progress-bar bg-success" role="progressbar" style="width: @(Model.carlock.CapacityRemaining)%" aria-valuenow="@(Model.carlock.CapacityRemaining)" aria-valuemin="0" aria-valuemax="100">Remaining @(Model.carlock.CapacityRemaining)%</div>
-                    <div class="progress-bar bg-danger" role="progressbar" style="width: @(100 - Model.carlock.CapacityRemaining - new List<int>() { 100 - Model.carlock.CapacityRemaining, 20 }.Min())%" aria-valuenow="@(100 - Model.carlock.CapacityRemaining - new List<int>() { 100 - Model.carlock.CapacityRemaining, 20 }.Min())" aria-valuemin="0" aria-valuemax="100"></div>
-                    <div class="progress-bar bg-warning" role="progressbar" style="width: @(new List<int>() { 100 - Model.carlock.CapacityRemaining, 20 }.Min())%" aria-valuenow="@(new List<int>() { 100 - Model.carlock.CapacityRemaining, 20 }.Min())" aria-valuemin="0" aria-valuemax="100"></div>
-                </div>
+                <l2g-chargestatus percentage="@(Model.carlock?.CapacityRemaining ?? 100)"></l2g-chargestatus>
                 <i class="bi bi-controller"><label for="vehicleControls" class="form-label w-100">Vehicle Controls</label></i>
                 <div id="vehicleControls" class="btn-group w-100 mb-3">
                     <input type="number" min="5" max="15" value="5" placeholder="Duration" aria-label="Action Time">

@@ -79,7 +79,7 @@
     @await RenderSectionAsync("Scripts", required: false)
 
     @* TODO: Bundle *@
-    @foreach (var script in (Html.ViewContext.HttpContext.Items["ComponentScripts"] as HashSet<string> ?? new HashSet<string>()))
+    @foreach (var script in (Html.ViewContext.HttpContext.Items["ComponentScripts"] as HashSet<string> ?? new HashSet<string>()).Distinct())
     {
     <script async defer src="@script" asp-append-version="true"></script>
     }

@@ -28,6 +28,7 @@ namespace Leaf2Google.ViewComponents.Car
         public async Task<IViewComponentResult> InvokeAsync(Guid? sessionId, string? defaultVin)
         {
             RegisterViewComponentScript("/js/Components/CarInfo.js");
+            RegisterViewComponentScript("/js/Components/CustomWeb/Car/ChargeStatus.js");
 
             var session = Sessions.VehicleSessions.FirstOrDefault(session => session.SessionId == sessionId && sessionId != null);
 
