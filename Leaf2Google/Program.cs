@@ -27,7 +27,17 @@ builder.Services.AddSingleton<LeafSessionManager>();
 builder.Services.AddSingleton<GoogleStateManager>();
 builder.Services.AddScoped<Captcha>();
 
-builder.Services.AddDistributedMemoryCache();
+builder.Services.AddWebOptimizer(pipeline =>
+{
+    pipeline.MinifyCssFiles("css/**/*.css");
+    pipeline.MinifyJsFiles("js/**/*.js");
+    pipeline.AddCssBundle("/css/bundle.css", "lib/bootstrap/dist/css/bootstrap.min.css", "lib/bootstrap-icons/dist/css/bootstrap-icons.css", "css/**/*.css")
+    .MinifyCss();
+    pipeline.AddJavaScriptBundle("/js/bundle.js", "lib/jquery/dist/jquery.min.js", "lib/jquery-validation/dist/jquery.validate.min.js", "lib/bootstrap/dist/js/bootstrap.min.js", "js/Components/**/*.js", "js/Partials/**/*.js")
+    .MinifyJavaScript();
+    pipeline.AddJavaScriptBundle("/js/components-bundle.js", "js/WebComponents/**/*.js")
+    .MinifyJavaScript();
+});
 
 builder.Services.AddSession(options =>
 {
@@ -46,6 +56,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
     app.UseHttpsRedirection();
 }
+
+app.UseWebOptimizer();
 
 using (var scope = app.Services.CreateScope())
 {

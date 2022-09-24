@@ -20,8 +20,8 @@ namespace Leaf2Google.ViewComponents.Google
 
         public IViewComponentResult Invoke(Guid? sessionId)
         {
-            RegisterViewComponentScript("/js/Components/SessionInfo.js");
-            RegisterViewComponentScript("/js/Components/CarMap.js");
+            //RegisterViewComponentScript("/js/Components/SessionInfo.js");
+            //RegisterViewComponentScript("/js/Components/CarMap.js");
 
             var auths = _googleContext.GoogleAuths.Where(auth => auth.Owner != null && auth.Owner.CarModelId == sessionId && sessionId != null);
 

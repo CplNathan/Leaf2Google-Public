@@ -4,11 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Leaf2Google</title>
-    <link async defer rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link async defer rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.9.1/font/bootstrap-icons.min.css" integrity="sha512-5PV92qsds/16vyYIJo3T/As4m2d8b6oWYfoqV+vtizRB6KhF1F9kYzWzQmsO6T3z3QG2Xdhrx7FQ+5R1LiQdUA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link async rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.css" />
-    <link rel="stylesheet" href="~/Leaf2Google.styles.css" asp-append-version="true" />
-    <link async defer rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link async defer rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.css" />
+    <link async rel="stylesheet" href="~/css/bundle.css" />
 </head>
 <body>
     <header>
@@ -54,17 +51,12 @@
             &copy; 2022 - Leaf2Google - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
-    <script async defer src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script async id="mapbox" src="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.js"></script>
-    <script async id="captcha" src="https://www.google.com/recaptcha/api.js"></script>
-    <script async defer src="~/js/site.js" asp-append-version="true"></script>
+    <script async src="~/js/bundle.js"></script>
+    <script src="~/js/components-bundle.js"></script>
+    <script async defer id="mapbox" src="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.js"></script>
+    <script async defer id="captcha" src="https://www.google.com/recaptcha/api.js"></script>
 
     <script>
-        $('#mapbox').on('load', function () {
-            mapboxgl.accessToken = '@(ViewBag?.MapBoxKey)';
-        });
         const api = {
             'toaster': '@(Url.Action("Create", "Toast"))',
             'car': {
@@ -78,10 +70,11 @@
 
     @await RenderSectionAsync("Scripts", required: false)
 
-    @* TODO: Bundle *@
+    @*
     @foreach (var script in (Html.ViewContext.HttpContext.Items["ComponentScripts"] as HashSet<string> ?? new HashSet<string>()).Distinct())
     {
     <script async defer src="@script" asp-append-version="true"></script>
     }
+    *@
 </body>
 </html>

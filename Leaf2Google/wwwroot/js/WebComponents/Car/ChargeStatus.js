@@ -11,12 +11,7 @@
 
         const linkBootstrap = $('<link>', {
             rel: 'stylesheet',
-            href: '/lib/bootstrap/dist/css/bootstrap.min.css'
-        }).appendTo(shadow);
-
-        const linkBootstrapIcons = $('<link>', {
-            rel: 'stylesheet',
-            href: 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.9.1/font/bootstrap-icons.min.css'
+            href: '/css/bundle.css'
         }).appendTo(shadow);
 
         const container = $('<div>', {

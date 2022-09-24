@@ -38,9 +38,9 @@ namespace Leaf2Google.Controllers
 
             if (session == null)
             {
-                RegisterViewComponentScript("/js/Partials/AuthenticationForm.js");
+                //RegisterViewComponentScript("/js/Partials/AuthenticationForm.js");
 
-                return View(new CarInfoModel()
+                return View("Index", new CarInfoModel()
                 {
                     car = _leafContext.NissanLeafs.FirstOrDefault(car => car.CarModelId == SessionId) ?? new CarModel()
                 });
@@ -133,5 +133,14 @@ namespace Leaf2Google.Controllers
             return View("Index");
         }
         */
+
+        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        public Task<IActionResult> Error()
+        {
+            AddToast(new ToastViewModel() { Title = "System Error", Message = $"There was an error with your last request, please try again ({HttpContext.TraceIdentifier}).", Colour = "error" });
+
+            ReloadViewBag();
+            return Index();
+        }
     }
 }
