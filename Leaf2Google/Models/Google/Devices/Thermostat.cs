@@ -10,7 +10,6 @@ namespace Leaf2Google.Models.Google.Devices
     {
         public decimal Target { get; set; } = 21;
         public decimal LastTemperature { get; set; } = 21;
-        public DateTime LastUpdated { get; set; } = DateTime.MinValue;
         public bool Active { get; set; }
 
         public Thermostat(string Id, string Name)
@@ -37,18 +36,32 @@ namespace Leaf2Google.Models.Google.Devices
             this.SupportedCommands = new List<string>() { "ThermostatTemperatureSetpoint", "ThermostatSetMode" };
         }
 
+        public override async Task<bool> Fetch(LeafSessionManager sessionManager, VehicleSessionBase session, string? vin, bool forceFetch = false)
+        {
+            bool success = false;
+
+            if (WillFetch || forceFetch)
+            {
+                var climateStatus = await sessionManager.VehicleClimate(session.SessionId, vin, DateTime.UtcNow - LastUpdated > TimeSpan.FromSeconds(10));
+
+                if (climateStatus is not null && climateStatus.Success == true)
+                {
+                    success = climateStatus.Success;
+                    LastTemperature = climateStatus.Data?.data.attributes.internalTemperature ?? LastTemperature;
+                    Active = climateStatus.Data?.data.attributes.hvacStatus != "off";
+                    LastUpdated = DateTime.UtcNow; //climateStatus.Data?.data.attributes.lastUpdateTime;
+                }
+            } else
+            {
+                success = true;
+            }
+
+            return success;
+        }
+
         public override async Task<JObject> QueryAsync(LeafSessionManager sessionManager, VehicleSessionBase session, string? vin)
         {
-            var climateStatus = await sessionManager.VehicleClimate(session.SessionId, vin, DateTime.UtcNow - LastUpdated > TimeSpan.FromSeconds(10));
-
-            bool success = false;
-            if (climateStatus is not null && climateStatus.Success == true)
-            {
-                success = climateStatus.Success;
-                LastTemperature = climateStatus.Data?.data.attributes.internalTemperature ?? LastTemperature;
-                Active = climateStatus.Data?.data.attributes.hvacStatus != "off";
-                LastUpdated = climateStatus.Data?.data.attributes.lastUpdateTime;
-            }
+            bool success = await Fetch(sessionManager, session, vin); ;
 
             return new JObject()
             {

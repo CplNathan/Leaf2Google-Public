@@ -2,23 +2,29 @@
 
 using Leaf2Google.Contexts;
 using Leaf2Google.Dependency.Managers;
+using Leaf2Google.Models.Google.Devices;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
+using System;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace Leaf2Google.Controllers.API
 {
     [Route("api/[controller]/[action]/{id?}")]
     [ApiController]
-    public class CarController : BaseController
+    public class CarController : BaseAPIController
     {
-        private readonly LeafContext _googleContext;
+        private readonly LeafContext _leafContext;
 
-        public CarController(ILogger<HomeController> logger, LeafSessionManager sessions, LeafContext googleContext, IConfiguration configuration)
+        private readonly GoogleStateManager _google;
+
+        public CarController(ILogger<HomeController> logger, LeafSessionManager sessions, LeafContext leafContext, GoogleStateManager google, IConfiguration configuration)
             : base(logger, sessions, configuration)
         {
-            _googleContext = googleContext;
+            _leafContext = leafContext;
+            _google = google;
         }
 
         [HttpPost]
@@ -39,6 +45,32 @@ namespace Leaf2Google.Controllers.API
             {
                 sessionId = ViewBag?.SessionId ?? null
             });
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> Status([FromBody] JObject body)
+        {
+            if (SessionId != null && body["query"] != null && Sessions.VehicleSessions.Any(session => session.SessionId == SessionId))
+            {
+                var session = Sessions.VehicleSessions.First(session => session.SessionId == SessionId);
+                string? vin = body["vin"]?.ToString() ?? session.PrimaryVin;
+
+                if (body["query"]?.ToString() == "battery")
+                {
+                    Lock? carlock = (Lock?)_google.Devices[session.SessionId].FirstOrDefault(device => device is Lock);
+                    if (carlock != null)
+                    {
+                        await carlock.QueryAsync(Sessions, session, vin);
+                        return Json(new
+                        {
+                            percentage = carlock.CapacityRemaining,
+                            charging = carlock.IsCharging
+                        });
+                    }
+                }
+            };
+
+            return BadRequest();
         }
     }
 }

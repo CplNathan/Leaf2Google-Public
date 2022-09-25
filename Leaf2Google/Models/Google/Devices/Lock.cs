@@ -49,24 +49,39 @@ namespace Leaf2Google.Models.Google.Devices
               "lastUpdateTime": "2022-08-31T02:16:25...
         */
 
+        public override async Task<bool> Fetch(LeafSessionManager sessionManager, VehicleSessionBase session, string? vin, bool forceFetch = false)
+        {
+            bool success = false;
+
+            if (WillFetch || forceFetch)
+            {
+                var lockStatus = await sessionManager.VehicleLock(session.SessionId, vin);
+
+                var batteryStatus = await sessionManager.VehicleBattery(session.SessionId, vin);
+
+                if (lockStatus is not null && lockStatus.Success == true && batteryStatus is not null && batteryStatus.Success == true)
+                {
+                    success = lockStatus.Success && batteryStatus.Success;
+                    Locked = (string?)lockStatus.Data?.data.attributes.lockStatus == "locked";
+                    CapacityRemaining = (int?)batteryStatus.Data?.data.attributes.batteryLevel ?? CapacityRemaining;
+                    KillometersRemaining = (int?)batteryStatus.Data?.data.attributes.rangeHvacOff ?? KillometersRemaining;
+                    KillowatCapacity = (int?)batteryStatus.Data?.data.attributes.batteryCapacity / 1000 ?? KillowatCapacity;
+                    MinutesTillFull = (int?)batteryStatus.Data?.data.attributes.timeRequiredToFullFast ?? MinutesTillFull;
+                    IsCharging = (bool?)batteryStatus.Data?.data.attributes.chargeStatus ?? false;
+                    IsPluggedIn = (bool?)batteryStatus.Data?.data.attributes.plugStatus ?? false;
+                    LastUpdated = DateTime.UtcNow;
+                }
+            } else
+            {
+                success = true;
+            }
+
+            return success;
+        }
+
         public override async Task<JObject> QueryAsync(LeafSessionManager sessionManager, VehicleSessionBase session, string? vin) // Pass in what to query?
         {
-            var lockStatus = await sessionManager.VehicleLock(session.SessionId, vin);
-
-            var batteryStatus = await sessionManager.VehicleBattery(session.SessionId, vin);
-
-            bool success = false;
-            if (lockStatus is not null && lockStatus.Success == true && batteryStatus is not null && batteryStatus.Success == true)
-            {
-                success = lockStatus.Success && batteryStatus.Success;
-                Locked = (string?)lockStatus.Data?.data.attributes.lockStatus == "locked";
-                CapacityRemaining = (int?)batteryStatus.Data?.data.attributes.batteryLevel ?? CapacityRemaining;
-                KillometersRemaining = (int?)batteryStatus.Data?.data.attributes.rangeHvacOff ?? KillometersRemaining;
-                KillowatCapacity = (int?)batteryStatus.Data?.data.attributes.batteryCapacity / 1000 ?? KillowatCapacity;
-                MinutesTillFull = (int?)batteryStatus.Data?.data.attributes.timeRequiredToFullFast ?? MinutesTillFull;
-                IsCharging = (bool?)batteryStatus.Data?.data.attributes.chargeStatus ?? false;
-                IsPluggedIn = (bool?)batteryStatus.Data?.data.attributes.plugStatus ?? false;
-            }
+            bool success = await Fetch(sessionManager, session, vin); ;
 
             var descriptiveCapacity = "FULL";
 

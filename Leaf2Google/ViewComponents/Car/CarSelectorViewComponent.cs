@@ -1,9 +1,7 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. CarSelectorViewComponent.cs
 
 using Leaf2Google.Dependency.Managers;
-using Leaf2Google.Models.Car;
 using Microsoft.AspNetCore.Mvc;
-using System.Dynamic;
 
 namespace Leaf2Google.ViewComponents.Car
 {

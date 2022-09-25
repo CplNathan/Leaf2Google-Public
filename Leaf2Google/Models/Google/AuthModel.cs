@@ -8,8 +8,6 @@ namespace Leaf2Google.Models.Google
         public string client_id { get; set; } = string.Empty;
         public Uri? redirect_uri { get; set; }
         public string state { get; set; } = string.Empty;
-
-        public List<string> Errors { get; protected set; } = new List<string>();
     }
 
     public class AuthPostForm : AuthForm

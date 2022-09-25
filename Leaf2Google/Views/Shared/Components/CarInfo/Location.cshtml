@@ -1,10 +1,4 @@
 ﻿@model Leaf2Google.Models.Car.CarInfoModel
+@inject IConfiguration Configuration
 
-@{
-    @if (Model != null)
-    {
-        <div class="col col-12 col-md-4 position-relative">
-            <div id="map" class="rounded"></div>
-        </div>
-    }
-}
+<l2g-locationmap lat="@(Model.location?.X ?? 0)" long="@(Model.location?.Y ?? 0)" key="@(Configuration["MapBox:api_key"])"></l2g-locationmap>

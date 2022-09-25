@@ -1,13 +1,10 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. SessionInfoViewModel.cs
 
-using Leaf2Google.Dependency.Managers;
-using Leaf2Google.Models.Google.Devices;
+using Leaf2Google.Contexts;
 using Leaf2Google.Models.Google;
 using Microsoft.AspNetCore.Mvc;
-using Leaf2Google.Contexts;
-using Leaf2Google.Controllers;
 
-namespace Leaf2Google.ViewComponents.Google
+namespace Leaf2Google.ViewComponents
 {
     public class SessionInfoViewComponent : BaseViewComponent
     {
@@ -18,7 +15,7 @@ namespace Leaf2Google.ViewComponents.Google
             _googleContext = googleContext;
         }
 
-        public IViewComponentResult Invoke(Guid? sessionId)
+        public IViewComponentResult Invoke(string viewName, Guid? sessionId)
         {
             //RegisterViewComponentScript("/js/Components/SessionInfo.js");
             //RegisterViewComponentScript("/js/Components/CarMap.js");
@@ -32,7 +29,7 @@ namespace Leaf2Google.ViewComponents.Google
                     auths = auths.ToList()
                 };
 
-                return View(sessionInfo);
+                return View(viewName, sessionInfo);
             }
             else
             {

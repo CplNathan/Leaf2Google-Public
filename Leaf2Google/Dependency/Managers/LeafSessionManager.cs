@@ -34,7 +34,8 @@ namespace Leaf2Google.Dependency.Managers
 
                 if (location != null)
                 {
-                    return session.LastLocation?.Item2 ?? new PointF((float?)location?.Data?.data?.attributes.gpsLatitude ?? 0, (float?)location?.Data?.data?.attributes.gpsLongitude ?? 0);
+                    session.LastLocation = Tuple.Create(DateTime.UtcNow, (PointF?)new PointF((float?)location?.Data?.data?.attributes.gpsLatitude ?? 0, (float?)location?.Data?.data?.attributes.gpsLongitude ?? 0));
+                    return session.LastLocation?.Item2 ?? new PointF(0f, 0f);
                 }
             }
 
@@ -198,9 +199,14 @@ namespace Leaf2Google.Dependency.Managers
             }
         }
 
-        private void Session_OnRequest(object sender, bool requestSuccess)
+        private async void Session_OnRequest(object sender, bool requestSuccess)
         {
-            //throw new NotImplementedException();
+            var session = sender as VehicleSessionBase;
+
+            if (session != null && !requestSuccess)
+            {
+                await Login(session);
+            }
         }
 
         public async Task<bool> AddAsync(CarModel NewCar, AuthEventHandler onAuthentication)

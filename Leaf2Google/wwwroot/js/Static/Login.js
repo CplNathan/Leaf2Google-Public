@@ -1,4 +1,42 @@
-﻿function onSubmit(token) {
+﻿$("form").validate({
+    rules: {
+        NissanUsername: {
+            required: true,
+            email: true,
+            /*
+            remote: {
+                url: "/Validation/UsernameUnique",
+                type: "post",
+                data: {
+                    Username: function () {
+                        return $("#NissanUsername").val();
+                    }
+                }
+            }
+            */
+        },
+        NissanPassword: {
+            required: true
+        }
+    },
+    messages: {
+        NissanUsername: {
+            remote: "Please enter a unique email address."
+        },
+        NissanPassword: {
+            required: "Please enter a valid password."
+        }
+    },
+    onfocusout: function (element) {
+        this.element(element);
+    },
+    errorPlacement: $.noop,
+    submitHandler: function (form) {
+        grecaptcha.execute();
+    }
+});
+
+function onSubmit(token) {
     $('#Captcha').val(token);
     $('form')[0].submit();
 }
@@ -10,7 +48,7 @@ function onExpire() {
         type: "POST",
         data: JSON.stringify({
             "Title": "Google reCaptcha",
-            "Message": "The reCaptcha form timed out, please try again.",
+            "Message": "The reCAPTCHA form timed out, please try again.",
             "ClientId": clientId,
             "Colour": "warning"
         }),
@@ -31,7 +69,7 @@ function onError() {
         type: "POST",
         data: JSON.stringify({
             "Title": "Google reCaptcha",
-            "Message": "There was an error verifying the reCaptcha.",
+            "Message": "There was an error verifying the reCAPTCHA.",
             "ClientId": clientId,
             "Colour": "error"
         }),

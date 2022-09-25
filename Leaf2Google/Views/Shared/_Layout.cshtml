@@ -2,12 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
+    <meta name="description" content="A utility to link your Nissan Connect vehicle to Google Home and more!">
+    <meta name="keywords" content="leaf, nissan, leaf2google, link, smart home, smart, home, google, app">
+    <meta name="author" content="Nathan Ford">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Leaf2Google</title>
-    <link async defer rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.css" />
-    <link async rel="stylesheet" href="~/css/bundle.css" />
+    <link defer rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.css" />
+    <link defer rel="stylesheet" href="~/css/bundle.css" />
 </head>
-<body>
+<body class="d-flex flex-column">
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
@@ -16,6 +19,9 @@
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Settings" asp-action="Index">Settings</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
@@ -36,36 +42,22 @@
             </div>
         </nav>
     </header>
-    <div class="container-fluid">
-        <main role="main" class="d-flex">
-            <div class="m-auto w-100">
-                <div class="mx-auto">
-                    @RenderBody()
-                </div>
-            </div>
-        </main>
-    </div>
+    <main role="main" class="container-fluid h-100">
+        @RenderBody()
+    </main>
 
     <footer class="shadow-lg footer text-muted">
         <div class="container">
             &copy; 2022 - Leaf2Google - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
-    <script async src="~/js/bundle.js"></script>
-    <script src="~/js/components-bundle.js"></script>
-    <script async defer id="mapbox" src="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.js"></script>
-    <script async defer id="captcha" src="https://www.google.com/recaptcha/api.js"></script>
+    <script defer id="mapbox" src="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.js"></script>
+    <script defer src="~/js/bundle.js"></script>
+    <script defer src="~/js/components-bundle.js"></script>
+    <script async id="captcha" src="https://www.google.com/recaptcha/api.js"></script>
 
     <script>
-        const api = {
-            'toaster': '@(Url.Action("Create", "Toast"))',
-            'car': {
-                'action': '@(Url.Action("Action", "Car"))'
-            },
-            'auth': {
-                'delete': '@(Url.Action("Delete", "Auth"))'
-            }
-        };
+        const api = @Html.Raw(ViewBag.API)
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)

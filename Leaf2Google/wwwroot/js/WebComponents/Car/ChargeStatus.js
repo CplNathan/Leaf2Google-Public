@@ -16,35 +16,34 @@
 
         const container = $('<div>', {
             id: 'batteryStatus',
-            class: 'progress mb-3',
-            height: '33.46px'
+            class: 'progress w-100 h-100 shadow',
         });
 
         const remainingBar = $('<div>', {
             id: 'remainingBar',
             class: 'progress-bar bg-success',
-            role: 'progressbar'
+            role: 'progressbar',
+            title: 'Vehicle Charge'
         }).appendTo(container);
 
         const remainingBarIcon = $('<i>', {
             id: 'remainingBarIcon',
-            class: 'bi bi-plugin'
-        }).appendTo(remainingBar)
-
-        const remainingBarText = $('<span>', {
-            id: 'remainingBarText'
+            class: 'bi bi-plugin',
+            title: 'Charge Remaining'
         }).appendTo(remainingBar)
 
         const usageBar = $('<div>', {
             id: 'usageBar',
             class: 'progress-bar bg-danger',
-            role: 'progressbar'
+            role: 'progressbar',
+            title: 'Charge Used'
         }).appendTo(container);
 
         const optimalBar = $('<div>', {
             id: 'optimalBar',
             class: 'progress-bar bg-warning',
-            role: 'progressbar'
+            role: 'progressbar',
+            title: 'Optimal Charge'
         }).appendTo(container);
 
         container.appendTo(shadow)
@@ -75,10 +74,10 @@ function updateStyle(elem) {
     $(shadow).find('#usageBar').width(100 - percentage - Math.min(100 - percentage, 20) + "%");
     $(shadow).find('#optimalBar').width(Math.min(100 - percentage, 20) + "%");
 
-    $(shadow).find('#remainingBar span').text(percentage + "%");
+    $(shadow).find('#remainingBarIcon').text(" " + percentage + "%");
 
     var charging = $(elem).attr('charging');
-    if (charging)
+    if (charging == "true")
         $(shadow).find('#remainingBar').addClass('progress-bar-striped progress-bar-animated');
     else
         $(shadow).find('#remainingBar').removeClass('progress-bar-striped progress-bar-animated');

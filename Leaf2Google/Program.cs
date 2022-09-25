@@ -2,7 +2,6 @@ using Leaf2Google.Contexts;
 using Leaf2Google.Controllers;
 using Leaf2Google.Dependency.Helpers;
 using Leaf2Google.Dependency.Managers;
-using Leaf2Google.Models.Car;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 
@@ -33,10 +32,8 @@ builder.Services.AddWebOptimizer(pipeline =>
     pipeline.MinifyJsFiles("js/**/*.js");
     pipeline.AddCssBundle("/css/bundle.css", "lib/bootstrap/dist/css/bootstrap.min.css", "lib/bootstrap-icons/dist/css/bootstrap-icons.css", "css/**/*.css")
     .MinifyCss();
-    pipeline.AddJavaScriptBundle("/js/bundle.js", "lib/jquery/dist/jquery.min.js", "lib/jquery-validation/dist/jquery.validate.min.js", "lib/bootstrap/dist/js/bootstrap.min.js", "js/Components/**/*.js", "js/Partials/**/*.js")
-    .MinifyJavaScript();
-    pipeline.AddJavaScriptBundle("/js/components-bundle.js", "js/WebComponents/**/*.js")
-    .MinifyJavaScript();
+    pipeline.AddJavaScriptBundle("/js/bundle.js", "lib/jquery/dist/jquery.min.js", "lib/jquery-validation/dist/jquery.validate.min.js", "lib/bootstrap/dist/js/bootstrap.min.js", "js/Components/**/*.js", "js/Partials/**/*.js", "js/site.js");
+    pipeline.AddJavaScriptBundle("/js/components-bundle.js", "js/WebComponents/**/*.js");
 });
 
 builder.Services.AddSession(options =>

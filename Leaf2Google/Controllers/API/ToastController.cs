@@ -9,7 +9,7 @@ namespace Leaf2Google.Controllers.API
 {
     [Route("api/[controller]/[action]/{id?}")]
     [ApiController]
-    public class ToastController : BaseController
+    public class ToastController : BaseAPIController
     {
         public ToastController(ILogger<HomeController> logger, LeafSessionManager sessions, IConfiguration configuration)
         : base(logger, sessions, configuration)

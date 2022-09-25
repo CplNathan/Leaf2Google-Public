@@ -1,21 +1,38 @@
 ﻿@{
     ViewData["Title"] = "Home Page";
 }
+@{
+    ViewData["Title"] = "Home Page";
+}
 @model Leaf2Google.Models.Car.CarInfoModel
 
 @{
-        <div id="carWrapper">
-            @await Component.InvokeAsync("CarInfo",
-                new {
-                sessionId = (Guid?)ViewBag?.SessionId,
-                defaultVin = (string?)ViewBag?.SelectedVin
-            })
+    <div class="row h-100">
+        <div class="d-flex justify-content-center align-items-end col col-12 col-md-8 position-relative pe-0 shadow-sm">
+            <div class="w-100 h-100">
+                @await Component.InvokeAsync("CarInfo",
+                    new {
+                        viewName = "Location",
+                        sessionId = (Guid?)ViewBag?.SessionId,
+                        defaultVin = (string?)ViewBag?.SelectedVin
+                    })
+            </div>
+            <div class="charge mb-5 position-absolute">
+                @await Component.InvokeAsync("CarInfo",
+                    new {
+                        viewName = "Charge",
+                        sessionId = (Guid?)ViewBag?.SessionId,
+                        defaultVin = (string?)ViewBag?.SelectedVin
+                    })
+            </div>
         </div>
-
-        <div id="sessionWrapper">
-            @await Component.InvokeAsync("SessionInfo",
-                new {
-                sessionId = (Guid?)ViewBag?.SessionId
-            })
+        <div class="col col-12 col-md-4 shadow-lg" style="z-index: 3;">
+                @await Component.InvokeAsync("CarInfo",
+                    new {
+                        viewName = "Default",
+                        sessionId = (Guid?)ViewBag?.SessionId,
+                        defaultVin = (string?)ViewBag?.SelectedVin
+                    })
         </div>
+    </div>
 }

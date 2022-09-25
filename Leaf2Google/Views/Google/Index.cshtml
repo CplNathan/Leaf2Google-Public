@@ -1,96 +1,22 @@
-﻿@page
-@model Leaf2Google.Models.Car.CarModel
+﻿@{
+    ViewData["Title"] = "Registration";
+}
+@model Leaf2Google.Models.Google.AuthForm
 
 @{
-    @if (((Leaf2Google.Models.Google.AuthForm)ViewBag.AuthForm).Errors.Count > 0)
-    {
-    <div class="alert alert-danger" role="alert">
-            <ul class="mb-0" id="errors">
-                @foreach (var error in ((Leaf2Google.Models.Google.AuthForm)ViewBag.AuthForm).Errors)
-            {
-                <li>
-                      @error
-                </li>
-            }
-            </ul>
+    <div class="d-flex align-items-center justify-content-center">
+        <form method="post" id="registerForm" class="container rounded bg-light p-3 shadow">
+            @await Html.PartialAsync("Authentication/AuthenticationFormPartial", new Leaf2Google.Models.Car.CarModel())
+
+            @Html.Hidden("client_id", Model.client_id, new { @id = "client_id" })
+            @Html.Hidden("redirect_uri", Model.redirect_uri, new { @id = "redirect_uri" })
+            @Html.Hidden("state", Model.state, new { @id = "state" })
+
+            @Html.AntiForgeryToken()
+        </form>
     </div>
-    }
-    <form method="post" id="registerform" class="mx-auto" style="width:300px;">
-        @await Html.PartialAsync("Authentication/AuthenticationFormPartial", new Leaf2Google.Models.Car.CarModel())
-
-        @Html.Hidden("client_id", ((Leaf2Google.Models.Google.AuthForm)ViewBag.AuthForm).client_id, new { @id = "client_id" })
-        @Html.Hidden("redirect_uri", ((Leaf2Google.Models.Google.AuthForm)ViewBag.AuthForm).redirect_uri, new { @id = "redirect_uri" })
-        @Html.Hidden("state", ((Leaf2Google.Models.Google.AuthForm)ViewBag.AuthForm).state, new { @id = "state" })
-
-        @Html.AntiForgeryToken()
-    </form>
 }
 
-@section scripts
-    {
-    <script>
-        $(document).ready(function () {
-            function checkForInput(element) {
-                if ($(element).val().length > 0) {
-                    $(element).addClass('active');
-                } else {
-                    $(element).removeClass('active');
-                }
-            }
-
-            $('.form-control').each(function () {
-                checkForInput(this);
-            });
-
-            $('.form-control').on('change keyup', function () {
-                checkForInput(this);
-            });
-
-            $("#registerform").submit(function (event) {
-                event.preventDefault();
-                return false;
-            });
-
-            $("#registerform").validate({
-                rules: {
-                    NissanUsername: {
-                        required: true,
-                        email: true,
-                        /*
-                        remote: {
-                            url: "/Validation/UsernameUnique",
-                            type: "post",
-                            data: {
-                                Username: function () {
-                                    return $("#NissanUsername").val();
-                                }
-                            }
-                        }
-                        */
-                    },
-                    NissanPassword: {
-                        required: true
-                    }
-                },
-                messages: {
-                    NissanUsername: {
-                        remote: "Please enter a unique email address."
-                    },
-                    NissanPassword: {
-                        required: "Please enter a valid password."
-                    }
-                },
-                onfocusout: function (element) {
-                    this.element(element);
-                },
-                errorPlacement: function (error, element) {
-                    this.element(element);
-                    //$('#errors').append(error);
-                },
-                submitHandler: function (form) {
-                    form.submit();
-                }
-            });
-        });
-    </script>
+@section scripts {
+    <script defer src="~/js/Static/Register.js"></script>
 }

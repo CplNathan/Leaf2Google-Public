@@ -16,6 +16,8 @@ namespace Leaf2Google.Models.Car
             CarModelId = Guid.NewGuid();
             NissanUsername = string.Empty;
             NissanPasswordBytes = Array.Empty<byte>();
+            NissanPassword = string.Empty;
+            IsEncrypted = false;
             Key = Array.Empty<byte>();
             IV = Array.Empty<byte>();
         }

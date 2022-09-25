@@ -1,8 +1,10 @@
-﻿using Castle.Core.Internal;
+﻿using Leaf2Google.Controllers.API;
 using Leaf2Google.Dependency.Managers;
 using Leaf2Google.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Newtonsoft.Json.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace Leaf2Google.Controllers
@@ -77,8 +79,31 @@ namespace Leaf2Google.Controllers
         {
             ViewBag.SessionId = SessionId;
             ViewBag.SelectedVin = SelectedVin;
-            ViewBag.MapBoxKey = _configuration["MapBox:api_key"];
-            ViewBag.CaptchaKey = _configuration["Google:Captcha:site_key"];
+
+            Assembly asm = Assembly.GetExecutingAssembly();
+
+            var res = asm.GetTypes()
+                .Where(type => typeof(Controller).IsAssignableFrom(type)) //filter controllers
+                .SelectMany(type => type.GetMethods())
+                .Where(method => method.IsPublic && !method.IsDefined(typeof(NonActionAttribute)) && method.IsDefined(typeof(HttpPostAttribute)) && method.DeclaringType.IsSubclassOf(typeof(BaseAPIController)))
+                .Select(method => Tuple.Create(method.DeclaringType.Name.Replace("Controller", ""), method.Name))
+                .GroupBy(method => method.Item1);
+
+            JObject endpoints = new JObject();
+
+            foreach (var group in res)
+            {
+                var endpoint = new JObject();
+
+                foreach (var item in group)
+                {
+                    endpoint.Add(item.Item2, Url.ActionLink(item.Item2, item.Item1));
+                }
+
+                endpoints.Add(group.Key, endpoint);
+            }
+
+            ViewBag.API = endpoints.ToString();
 
             if (resetToasts)
                 ViewBag.Toasts = new List<ToastViewModel>();

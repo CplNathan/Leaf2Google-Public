@@ -1,13 +1,12 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. CarInfoViewComponent.cs
 
-using Castle.Core.Internal;
 using Leaf2Google.Dependency.Managers;
-using Leaf2Google.Models.Google.Devices;
 using Leaf2Google.Models.Car;
+using Leaf2Google.Models.Google.Devices;
 using Microsoft.AspNetCore.Mvc;
 using Lock = Leaf2Google.Models.Google.Devices.Lock;
 
-namespace Leaf2Google.ViewComponents.Car
+namespace Leaf2Google.ViewComponents
 {
     public class CarInfoViewComponent : BaseViewComponent
     {
@@ -25,11 +24,8 @@ namespace Leaf2Google.ViewComponents.Car
             _google = google;
         }
 
-        public async Task<IViewComponentResult> InvokeAsync(Guid? sessionId, string? defaultVin)
+        public async Task<IViewComponentResult> InvokeAsync(string viewName, Guid? sessionId, string? defaultVin)
         {
-            //RegisterViewComponentScript("/js/Components/CarInfo.js");
-            //RegisterViewComponentScript("/js/Components/CustomWeb/Car/ChargeStatus.js");
-
             var session = Sessions.VehicleSessions.FirstOrDefault(session => session.SessionId == sessionId && sessionId != null);
 
             if (session != null && defaultVin != null)
@@ -37,23 +33,28 @@ namespace Leaf2Google.ViewComponents.Car
                 Thermostat? thermostat = (Thermostat?)Google.Devices[session.SessionId].FirstOrDefault(device => device is Thermostat);
                 Lock? carlock = (Lock?)Google.Devices[session.SessionId].FirstOrDefault(device => device is Lock);
 
+                if (thermostat != null)
+                {
+                    await thermostat.Fetch(Sessions, session, defaultVin);
+                }
+
+                if (carlock != null)
+                {
+                    await carlock.Fetch(Sessions, session, defaultVin);
+                }
+
                 CarInfoModel carInfo = new CarInfoModel()
                 {
                     thermostat = thermostat, //new Models.Google.Devices.Thermostat("1-leaf-ac", "Air Conditioner"),
-                    carlock = carlock //new Models.Google.Devices.Charger("1-leaf-lock", "Leaf")
+                    carlock = carlock, //new Models.Google.Devices.Charger("1-leaf-lock", "Leaf"),
+                    location = await Sessions.VehicleLocation(session.SessionId, defaultVin)
                 };
 
-                if (carInfo?.thermostat != null)
-                    await carInfo.thermostat.QueryAsync(Sessions, session, defaultVin);
-
-                if (carInfo?.carlock != null)
-                    await carInfo.carlock.QueryAsync(Sessions, session, defaultVin);
-
-                return View(carInfo);
+                return View(viewName, carInfo);
             }
             else
             {
-                return View(null);
+                return View(viewName);
             }
         }
     }

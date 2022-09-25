@@ -11,7 +11,7 @@ namespace Leaf2Google.Controllers.API
 {
     [Route("api/[controller]/[action]/{id?}")]
     [ApiController]
-    public class AuthController : BaseController
+    public class AuthController : BaseAPIController
     {
         private readonly LeafContext _googleContext;
 

@@ -1,10 +1,37 @@
-﻿$(document).ready(function () {
-    $('.toast').toast('show');
-});
-$('#mapbox').on('load', function () {
-    mapboxgl.accessToken = '@(ViewBag?.MapBoxKey)';
-});
+﻿function updatePanels() {
+    $('l2g-chargestatus').each(function (index) {
+        var control = $(this);
+        var vin = control.attr('vin') ?? null;
+
+        $.ajax({
+            url: api.Car.Status,
+            type: "POST",
+            data: JSON.stringify({
+                "query": "battery",
+                "vin": vin
+            }),
+            contentType: "application/json",
+            cache: false,
+            async: false,
+            success: function (data) {
+                control.attr('percentage', data.percentage);
+                control.attr('charging', data.charging);
+            }
+        });
+    })
+}
+
+function checkForInput(element) {
+    if ($(element).val().length > 0) {
+        $(element).addClass('active');
+    } else {
+        $(element).removeClass('active');
+    }
+}
+
 $(document).ready(function () {
+    $('.toast').toast('show');
+
     function checkForInput(element) {
         if ($(element).val().length > 0) {
             $(element).addClass('active');
@@ -21,41 +48,5 @@ $(document).ready(function () {
         checkForInput(this);
     });
 
-    $("form").validate({
-        rules: {
-            NissanUsername: {
-                required: true,
-                email: true,
-                /*
-                remote: {
-                    url: "/Validation/UsernameUnique",
-                    type: "post",
-                    data: {
-                        Username: function () {
-                            return $("#NissanUsername").val();
-                        }
-                    }
-                }
-                */
-            },
-            NissanPassword: {
-                required: true
-            }
-        },
-        messages: {
-            NissanUsername: {
-                remote: "Please enter a unique email address."
-            },
-            NissanPassword: {
-                required: "Please enter a valid password."
-            }
-        },
-        onfocusout: function (element) {
-            this.element(element);
-        },
-        errorPlacement: $.noop,
-        submitHandler: function (form) {
-            grecaptcha.execute();
-        }
-    });
+    setInterval(updatePanels, 5000);
 });

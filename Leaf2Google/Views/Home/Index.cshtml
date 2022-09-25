@@ -1,11 +1,17 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Login";
 }
 @model Leaf2Google.Models.Car.CarInfoModel
 
 @{
-    <form method="post" id="loginform" class="mx-auto" style="width:300px;">
-        @await Html.PartialAsync("Authentication/AuthenticationFormPartial", Model.car)
-        @Html.AntiForgeryToken()
-    </form>
+    <div class="d-flex align-items-center justify-content-center">
+        <form method="post" id="loginform" class="container rounded bg-light p-3 shadow">
+            @await Html.PartialAsync("Authentication/AuthenticationFormPartial", Model.car)
+            @Html.AntiForgeryToken()
+        </form>
+    </div>
+}
+
+@section scripts {
+    <script defer src="~/js/Static/Login.js"></script>
 }

@@ -2,9 +2,9 @@
 using Leaf2Google.Dependency.Managers;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Leaf2Google.Controllers
+namespace Leaf2Google.Controllers.API
 {
-    public class ValidationController : BaseController
+    public class ValidationController : BaseAPIController
     {
         private readonly LeafContext _leafContext;
 

@@ -1,0 +1,15 @@
+﻿@{
+    ViewData["Title"] = "Settings";
+}
+
+@{
+    <div class="d-flex align-items-center justify-content-center">
+        <div class="container rounded bg-light p-3 shadow">
+            @await Component.InvokeAsync("SessionInfo",
+            new {
+            viewName = "Auths",
+            sessionId = (Guid?)ViewBag?.SessionId
+            })
+        </div>
+    </div>
+}

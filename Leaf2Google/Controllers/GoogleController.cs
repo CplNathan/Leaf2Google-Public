@@ -1,8 +1,8 @@
 ﻿using Leaf2Google.Contexts;
 using Leaf2Google.Dependency.Managers;
 using Leaf2Google.Models;
-using Leaf2Google.Models.Google;
 using Leaf2Google.Models.Car;
+using Leaf2Google.Models.Google;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
@@ -27,14 +27,6 @@ namespace Leaf2Google.Controllers
             _googleState = googleState;
             _leafContext = googleContext;
             _configuration = configuration;
-        }
-
-        [HttpGet]
-        public IActionResult Index(AuthForm form)
-        {
-            ViewBag.AuthForm = form;
-
-            return View();
         }
 
         // Welcome to hell
@@ -261,9 +253,15 @@ namespace Leaf2Google.Controllers
             }
         }
 
+        [HttpGet]
+        public IActionResult Index([FromRoute] AuthForm form)
+        {
+            return View("Index", new AuthForm() { client_id = form.client_id, redirect_uri = form.redirect_uri, state = form.state} );
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Index([FromForm] AuthPostForm form)
+        public async Task<IActionResult> Index([FromForm] AuthPostForm form)
         {
             if (!ModelState.IsValid)
                 return View();
@@ -319,12 +317,20 @@ namespace Leaf2Google.Controllers
                     Message = "Unable to authenticate to Nissan Services using the supplied credentials."
                 });
 
-                return RedirectToAction("Index", "Google", form);
+                var model = new AuthForm()
+                {
+                    client_id = form.client_id,
+                    redirect_uri = form.redirect_uri,
+                    state = form.state
+                };
+
+                ReloadViewBag();
+                return RedirectToAction("Index", model);
             }
         }
 
         [HttpGet]
-        public async Task<ActionResult> Auth([FromQuery] AuthForm form)
+        public async Task<IActionResult> Auth([FromQuery] AuthForm form)
         {
             if (form.client_id != _configuration["Google:client_id"])
                 return BadRequest();
@@ -347,12 +353,10 @@ namespace Leaf2Google.Controllers
                 AuthState = form.state
             };
 
-            ViewBag.AuthForm = form;
-
             _leafContext.GoogleAuths.Add(auth);
             await _leafContext.SaveChangesAsync();
 
-            return RedirectToAction("Index", "Google", form);
+            return RedirectToAction("Index", form);
         }
     }
 }

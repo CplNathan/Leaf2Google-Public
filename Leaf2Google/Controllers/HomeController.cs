@@ -1,14 +1,12 @@
-﻿using Leaf2Google.Dependency.Managers;
-using Leaf2Google.Models;
-using Leaf2Google.Models.Google;
-using Leaf2Google.Models.Car;
-using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics;
-using System.Linq;
-using Leaf2Google.Models.Google.Devices;
-using System.Drawing;
-using Leaf2Google.Contexts;
+﻿using Leaf2Google.Contexts;
 using Leaf2Google.Dependency.Helpers;
+using Leaf2Google.Dependency.Managers;
+using Leaf2Google.Models;
+using Leaf2Google.Models.Car;
+using Leaf2Google.Models.Google;
+using Leaf2Google.Models.Google.Devices;
+using Microsoft.AspNetCore.Mvc;
+using System.Drawing;
 
 namespace Leaf2Google.Controllers
 {

@@ -88,8 +88,14 @@ namespace Leaf2Google.Models.Google.Devices
             }
         }
 
+        public DateTime LastUpdated { get; set; } = DateTime.MinValue;
+
+        public bool WillFetch { get => DateTime.UtcNow - LastUpdated > TimeSpan.FromMinutes(1); }
+
         public abstract Task<JObject> QueryAsync(LeafSessionManager sessionManager, VehicleSessionBase session, string? vin);
 
         public abstract Task<JObject> ExecuteAsync(LeafSessionManager sessionManager, VehicleSessionBase session, string? vin, JObject data);
+
+        public abstract Task<bool> Fetch(LeafSessionManager sessionManager, VehicleSessionBase session, string? vin, bool forceFetch = false);
     }
 }
