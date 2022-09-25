@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
+using NUglify.Helpers;
 using System;
 using static System.Net.Mime.MediaTypeNames;
 
@@ -53,14 +54,14 @@ namespace Leaf2Google.Controllers.API
             if (SessionId != null && body["query"] != null && Sessions.VehicleSessions.Any(session => session.SessionId == SessionId))
             {
                 var session = Sessions.VehicleSessions.First(session => session.SessionId == SessionId);
-                string? vin = body["vin"]?.ToString() ?? session.PrimaryVin;
+                string? vin = body["vin"]?.ToString().IsNullOrWhiteSpace() ?? true ? session.PrimaryVin : body["vin"]?.ToString();
 
                 if (body["query"]?.ToString() == "battery")
                 {
                     Lock? carlock = (Lock?)_google.Devices[session.SessionId].FirstOrDefault(device => device is Lock);
                     if (carlock != null)
                     {
-                        await carlock.QueryAsync(Sessions, session, vin);
+                        await carlock.Fetch(Sessions, session, vin);
                         return Json(new
                         {
                             percentage = carlock.CapacityRemaining,
