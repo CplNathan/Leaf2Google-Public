@@ -35,7 +35,8 @@
             container: $(shadow).find('#map')[0],
             style: 'mapbox://styles/mapbox/streets-v11',
             center: [$(elem).attr('long') ?? 0, $(elem).attr('lat') ?? 0],
-            zoom: 10
+            zoom: 10,
+            trackResize: true
         });
 
         map.on('idle', function () {
