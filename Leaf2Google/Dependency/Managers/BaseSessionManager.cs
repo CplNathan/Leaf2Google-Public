@@ -6,6 +6,7 @@ using Leaf2Google.Models.Car;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using NUglify.Helpers;
 using System.Drawing;
 using System.Net;
 using System.Text;
@@ -26,13 +27,23 @@ namespace Leaf2Google.Dependency.Managers
 
         protected readonly IConfiguration _configuration;
 
-        private List<VehicleSessionBase> _vehicleSessions = new List<VehicleSessionBase>();
+        private Dictionary<Guid, VehicleSessionBase> _vehicleSessions = new Dictionary<Guid, VehicleSessionBase>();
 
-        private List<VehicleSessionBase> _pendingSessions = new List<VehicleSessionBase>();
+        private Dictionary<Guid, VehicleSessionBase> _pendingSessions = new Dictionary<Guid, VehicleSessionBase>();
 
-        public List<VehicleSessionBase> VehicleSessions { get => _vehicleSessions; }
+        public Dictionary<Guid, VehicleSessionBase> VehicleSessions { get => _vehicleSessions; }
 
-        public IEnumerable<VehicleSessionBase> AllSessions { get => _vehicleSessions.Concat(_pendingSessions); }
+        public IReadOnlyDictionary<Guid, VehicleSessionBase> AllSessions {
+            get
+            {
+                var allSessions = new Dictionary<Guid, VehicleSessionBase>();
+
+                _vehicleSessions.ForEach(x => allSessions[x.Key] = x.Value);
+                _pendingSessions.ForEach(x => allSessions[x.Key] = x.Value);
+
+                return allSessions;
+            }
+        }
 
         protected Timer? _timer;
 
@@ -40,6 +51,7 @@ namespace Leaf2Google.Dependency.Managers
         {
             _client = client;
             _configuration = configuration;
+            _googleState = googleState;
             _serviceScopeFactory = serviceScopeFactory;
             _serviceScope = _serviceScopeFactory.CreateScope();
             _leafContext = _serviceScope.ServiceProvider.GetRequiredService<LeafContext>();
@@ -47,8 +59,6 @@ namespace Leaf2Google.Dependency.Managers
 
         private async Task<Response?> MakeRequest(Guid sessionId, HttpRequestMessage httpRequestMessage, string baseUri = "")
         {
-            var session = AllSessions.FirstOrDefault(session => session.SessionId == sessionId);
-
             bool success = true;
             Response? result = null;
 
@@ -67,7 +77,7 @@ namespace Leaf2Google.Dependency.Managers
                     success = false;
             }
 
-            session.Invoke_OnRequest(success);
+            AllSessions[sessionId]?.Invoke_OnRequest(success);
             return result;
         }
 
@@ -196,7 +206,7 @@ namespace Leaf2Google.Dependency.Managers
 
         private async Task<Response?> UsersResult(Guid sessionId)
         {
-            var session = AllSessions.FirstOrDefault(session => session.SessionId == sessionId);
+            var session = AllSessions[sessionId];
 
             var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, $"v1/users/current")
             {
@@ -213,7 +223,7 @@ namespace Leaf2Google.Dependency.Managers
 
         private async Task<Response?> VehiclesResult(Guid sessionId, string userId)
         {
-            var session = AllSessions.FirstOrDefault(session => session.SessionId == sessionId);
+            var session = AllSessions[sessionId];
 
             var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, $"v4/users/{userId}/cars")
             {
@@ -228,9 +238,9 @@ namespace Leaf2Google.Dependency.Managers
             return response;
         }
 
-        protected async Task<VehicleSessionBase> Login(VehicleSessionBase session)
+        protected async Task<VehicleSessionBase> Login(VehicleSessionBase session) // make abstract/interface
         {
-            _pendingSessions.Add(session);
+            _pendingSessions[session.SessionId] = session;
             var authenticateResult = await Authenticate(session.SessionId);
             Response? authenticationResult = null;
 
@@ -250,13 +260,21 @@ namespace Leaf2Google.Dependency.Managers
                 session.VINs.AddRange(((JArray)vehiclesResult!.Data.data).Select(vehicle => (string?)((JObject)vehicle)["vin"]).Where(vehicle => !string.IsNullOrEmpty(vehicle)));
             }
 
-            _pendingSessions.Remove(session);
+            _vehicleSessions[session.SessionId] = session;
+            _googleState.GetOrCreateDevices(session.SessionId);
+
+            if (!session.Authenticated)
+            {
+                _vehicleSessions.Remove(session.SessionId);
+            }
+
+            _pendingSessions.Remove(session.SessionId);
             return session;
         }
 
         protected async Task<Response?> PerformAction(Guid sessionId, string? vin, string action, string type, JObject attributes)
         {
-            var session = AllSessions.FirstOrDefault(session => session.SessionId == sessionId);
+            var session = AllSessions[sessionId];
 
             dynamic httpRequestData = new JObject {
                 { "data", new JObject {
@@ -282,7 +300,7 @@ namespace Leaf2Google.Dependency.Managers
 
         protected async Task<Response?> GetStatus(Guid sessionId, string? vin, string action)
         {
-            var session = AllSessions.FirstOrDefault(session => session.SessionId == sessionId);
+            var session = AllSessions[sessionId];
 
             var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, $"v1/cars/{vin}/{action}")
             {

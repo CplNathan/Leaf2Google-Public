@@ -12,8 +12,8 @@
 </head>
 <body class="d-flex flex-column">
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow">
+            <div class="container">
                 <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Leaf2Google</a>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
@@ -46,7 +46,7 @@
         @RenderBody()
     </main>
 
-    <footer class="shadow-lg footer text-muted">
+    <footer class="shadow-lg footer text-muted fixed-bottom">
         <div class="container">
             &copy; 2022 - Leaf2Google - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
@@ -61,12 +61,5 @@
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)
-
-    @*
-    @foreach (var script in (Html.ViewContext.HttpContext.Items["ComponentScripts"] as HashSet<string> ?? new HashSet<string>()).Distinct())
-    {
-    <script async defer src="@script" asp-append-version="true"></script>
-    }
-    *@
 </body>
 </html>

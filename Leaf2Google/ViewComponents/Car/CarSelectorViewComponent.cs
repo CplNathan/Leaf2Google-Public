@@ -23,7 +23,7 @@ namespace Leaf2Google.ViewComponents.Car
 
         public IViewComponentResult Invoke(Guid? sessionId)
         {
-            var session = Sessions.VehicleSessions.FirstOrDefault(session => session.SessionId == sessionId && sessionId != null);
+            var session = Sessions.VehicleSessions.GetValueOrDefault(sessionId ?? Guid.Empty);
 
             if (session != null)
             {

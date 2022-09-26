@@ -26,25 +26,23 @@ namespace Leaf2Google.Dependency.Managers
 
         public async Task<PointF> VehicleLocation(Guid sessionId, string? vin)
         {
-            var session = VehicleSessions.FirstOrDefault(session => session.SessionId == sessionId);
-
-            if (DateTime.UtcNow - session.LastLocation.Item1 > TimeSpan.FromMinutes(1))
+            if (DateTime.UtcNow - VehicleSessions[sessionId].LastLocation.Item1 > TimeSpan.FromMinutes(1))
             {
-                var location = await GetStatus(session.SessionId, vin, "location");
+                var location = await GetStatus(sessionId, vin, "location");
 
                 if (location != null)
                 {
-                    session.LastLocation = Tuple.Create(DateTime.UtcNow, (PointF?)new PointF((float?)location?.Data?.data?.attributes.gpsLatitude ?? 0, (float?)location?.Data?.data?.attributes.gpsLongitude ?? 0));
-                    return session.LastLocation?.Item2 ?? new PointF(0f, 0f);
+                    VehicleSessions[sessionId].LastLocation = Tuple.Create(DateTime.UtcNow, (PointF?)new PointF((float?)location?.Data?.data?.attributes.gpsLatitude ?? 0, (float?)location?.Data?.data?.attributes.gpsLongitude ?? 0));
+                    return VehicleSessions[sessionId].LastLocation?.Item2 ?? new PointF(0f, 0f);
                 }
             }
 
-            return session.LastLocation?.Item2 ?? new PointF(0f, 0f);
+            return VehicleSessions[sessionId].LastLocation?.Item2 ?? new PointF(0f, 0f);
         }
 
         public async Task<Response?> VehicleClimate(Guid sessionId, string? vin, bool forceUpdate = false)
         {
-            var session = VehicleSessions.FirstOrDefault(session => session.SessionId == sessionId);
+            var session = VehicleSessions[sessionId];
 
             if (forceUpdate)
                 await PerformAction(sessionId, vin, "refresh-hvac-status", "RefreshHvacStatus", new JObject());
@@ -137,7 +135,6 @@ namespace Leaf2Google.Dependency.Managers
             {
                 using var serviceScope = _serviceScopeFactory.CreateScope();
                 var leafContext = serviceScope.ServiceProvider.GetRequiredService<LeafContext>();
-                var googleState = serviceScope.ServiceProvider.GetRequiredService<GoogleStateManager>();
 
                 Func<CarModel, bool> authenticationPredicate = leaf =>
                 {
@@ -149,8 +146,6 @@ namespace Leaf2Google.Dependency.Managers
 
                 if (!session.Authenticated && session.LoginGivenUp)
                 {
-                    VehicleSessions.Remove(session);
-
                     var leaf = leafContext.NissanLeafs.FirstOrDefault(authenticationPredicate);
                     if (leaf != null)
                     {
@@ -177,9 +172,6 @@ namespace Leaf2Google.Dependency.Managers
                 }
                 else if (session.Authenticated)
                 {
-                    googleState.GetOrCreateDevices(session.SessionId);
-                    VehicleSessions.Add(session);
-
                     Console.WriteLine($"{session.Username} - Authentication Success");
                     leafContext.NissanAudits.Add(new Audit<CarModel>
                     {

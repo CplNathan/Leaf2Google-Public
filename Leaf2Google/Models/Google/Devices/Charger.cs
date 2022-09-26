@@ -6,6 +6,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Leaf2Google.Models.Google.Devices
 {
+    /*
     public class Charger : BaseDevice
     {
         public bool Locked { get; set; } = true;
@@ -31,21 +32,10 @@ namespace Leaf2Google.Models.Google.Devices
             this.Attributes = new JObject()
             {
                 { "isRechargeable", true },
-                { "queryOnlyEnergyStorage", false /* TODO: implement */ },
+                { "queryOnlyEnergyStorage", false },
                 { "energyStorageDistanceUnitForUX", "MILES" }
             };
         }
-
-        /*
-         Last = {"attributes": {
-              "lockStatus": "locked",
-              "doorStatusFrontLeft": "closed",
-              "doorStatusFrontRight": "closed",
-              "doorStatusRearLeft": "closed",
-              "doorStatusRearRight": "closed",
-              "hatchStatus": "closed",
-              "lastUpdateTime": "2022-08-31T02:16:25...
-        */
 
         public override async Task<bool> Fetch(LeafSessionManager sessionManager, VehicleSessionBase session, string? vin, bool forceFetch = false)
         {
@@ -181,9 +171,8 @@ namespace Leaf2Google.Models.Google.Devices
                 {
                     { "online", success },
                     { "isLocked", Locked },
-                    { "isJammed", true /* Need to investigate Secure Remote Protocol (SRP) */ },
+                    { "isJammed", true },
 
-                    /* Custom Syntax, also need to implement */
                     { "errors", new JObject()
                     {
                         { "status", "FAILURE" },
@@ -200,4 +189,5 @@ namespace Leaf2Google.Models.Google.Devices
             return new JObject();
         }
     }
+*/
 }

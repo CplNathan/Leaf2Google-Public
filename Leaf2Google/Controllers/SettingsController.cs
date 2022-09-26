@@ -32,7 +32,7 @@ namespace Leaf2Google.Controllers
         {
             ReloadViewBag();
 
-            var session = Sessions.VehicleSessions.FirstOrDefault(session => session.SessionId == SessionId);
+            var session = Sessions.VehicleSessions[SessionId ?? Guid.Empty];
 
             if (session == null)
             {

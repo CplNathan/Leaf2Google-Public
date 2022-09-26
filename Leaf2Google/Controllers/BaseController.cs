@@ -49,7 +49,7 @@ namespace Leaf2Google.Controllers
         }
 
         public bool IsLoggedIn() =>
-            Sessions.VehicleSessions.Any(session => session.SessionId == SessionId && SessionId.HasValue);
+            Sessions.VehicleSessions.GetValueOrDefault(SessionId ?? Guid.Empty) != null;
 
         public BaseController(ILogger<HomeController> logger, LeafSessionManager sessions, IConfiguration configuration)
         {

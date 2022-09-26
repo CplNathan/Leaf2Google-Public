@@ -32,12 +32,10 @@ namespace Leaf2Google.Controllers
         {
             ReloadViewBag();
 
-            var session = Sessions.VehicleSessions.FirstOrDefault(session => session.SessionId == SessionId);
+            var session = Sessions.VehicleSessions.GetValueOrDefault(SessionId ?? Guid.Empty);
 
             if (session == null)
             {
-                //RegisterViewComponentScript("/js/Partials/AuthenticationForm.js");
-
                 return View("Index", new CarInfoModel()
                 {
                     car = _leafContext.NissanLeafs.FirstOrDefault(car => car.CarModelId == SessionId) ?? new CarModel()
@@ -63,9 +61,9 @@ namespace Leaf2Google.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Index([FromForm] AuthPostForm authForm)
         {
-            Func<VehicleSessionBase, bool> authenticationPredicate = session =>
+            Func<KeyValuePair<Guid, VehicleSessionBase>, bool> authenticationPredicate = session =>
             {
-                return session.Username == authForm.NissanUsername && session.Password == authForm.NissanPassword;
+                return session.Value.Username == authForm.NissanUsername && session.Value.Password == authForm.NissanPassword;
             };
 
             if (IsLoggedIn())
@@ -76,9 +74,9 @@ namespace Leaf2Google.Controllers
             if (Sessions.VehicleSessions.Any(authenticationPredicate) && captchaStatus)
             {
                 var session = Sessions.VehicleSessions.First(authenticationPredicate);
-                SessionId = session.SessionId;
+                SessionId = session.Key;
                 ViewBag.SessionId = SessionId;
-                SelectedVin = session.PrimaryVin;
+                SelectedVin = session.Value.PrimaryVin;
                 ViewBag.SelectedVin = SelectedVin;
 
                 AddToast(new ToastViewModel() { Title = "Authentication", Message = "Authentication success." });

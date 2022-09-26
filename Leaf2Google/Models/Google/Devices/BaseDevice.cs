@@ -92,10 +92,13 @@ namespace Leaf2Google.Models.Google.Devices
 
         public bool WillFetch { get => DateTime.UtcNow - LastUpdated > TimeSpan.FromMinutes(1); }
 
-        public abstract Task<JObject> QueryAsync(LeafSessionManager sessionManager, VehicleSessionBase session, string? vin);
+        public JObject Query(in LeafSessionManager sessionManager, Guid sessionId, string? vin) => QueryAsync(sessionManager, sessionId, vin).Result;
+        public abstract Task<JObject> QueryAsync(LeafSessionManager sessionManager, Guid sessionId, string? vin);
 
-        public abstract Task<JObject> ExecuteAsync(LeafSessionManager sessionManager, VehicleSessionBase session, string? vin, JObject data);
+        public JObject Execute(in LeafSessionManager sessionManager, Guid sessionId, string? vin, JObject data) => ExecuteAsync(sessionManager, sessionId, vin, data).Result;
+        public abstract Task<JObject> ExecuteAsync(LeafSessionManager sessionManager, Guid sessionId, string? vin, JObject data);
 
-        public abstract Task<bool> Fetch(LeafSessionManager sessionManager, VehicleSessionBase session, string? vin, bool forceFetch = false);
+        public bool Fetch(in LeafSessionManager sessionManager, Guid sessionId, string? vin, bool forceFetch = false) => FetchAsync(sessionManager, sessionId, vin, forceFetch).Result;
+        public abstract Task<bool> FetchAsync(LeafSessionManager sessionManager, Guid sessionId, string? vin, bool forceFetch = false);
     }
 }

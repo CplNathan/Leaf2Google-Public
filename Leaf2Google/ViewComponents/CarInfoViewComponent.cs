@@ -26,7 +26,7 @@ namespace Leaf2Google.ViewComponents
 
         public async Task<IViewComponentResult> InvokeAsync(string viewName, Guid? sessionId, string? defaultVin)
         {
-            var session = Sessions.VehicleSessions.FirstOrDefault(session => session.SessionId == sessionId && sessionId != null);
+            var session = Sessions.VehicleSessions[sessionId ?? Guid.Empty];
 
             if (session != null && defaultVin != null)
             {
@@ -35,12 +35,12 @@ namespace Leaf2Google.ViewComponents
 
                 if (thermostat != null)
                 {
-                    await thermostat.Fetch(Sessions, session, defaultVin);
+                    await thermostat.FetchAsync(Sessions, session.SessionId, defaultVin);
                 }
 
                 if (carlock != null)
                 {
-                    await carlock.Fetch(Sessions, session, defaultVin);
+                    await carlock.FetchAsync(Sessions, session.SessionId, defaultVin);
                 }
 
                 CarInfoModel carInfo = new CarInfoModel()

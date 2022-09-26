@@ -31,37 +31,37 @@ namespace Leaf2Google.Controllers.API
         [HttpPost]
         public async Task<ViewComponentResult> Action([FromQuery] string? action, [FromQuery] int? duration)
         {
-            if (SessionId != null && action != null && duration != null && Sessions.VehicleSessions.Any(session => session.SessionId == SessionId))
+            var sessionId = SessionId ?? Guid.Empty;
+            if (SessionId != null && action != null && duration != null && Sessions.VehicleSessions[sessionId] != null)
             {
-                var session = Sessions.VehicleSessions.First(session => session.SessionId == SessionId);
                 var clampedDuration = duration.Value > 15 ? 15 : duration.Value < 5 ? 5 : duration.Value;
 
                 if (action == "flash")
-                    await Sessions.FlashLights(session.SessionId, SelectedVin, clampedDuration);
+                    await Sessions.FlashLights(sessionId, SelectedVin, clampedDuration);
                 else if (action == "horn")
-                    await Sessions.BeepHorn(session.SessionId, SelectedVin, clampedDuration);
+                    await Sessions.BeepHorn(sessionId, SelectedVin, clampedDuration);
             }
 
             return ViewComponent("SessionInfo", new
             {
-                sessionId = ViewBag?.SessionId ?? null
+                sessionId = sessionId
             });
         }
 
         [HttpPost]
         public async Task<ActionResult> Status([FromBody] JObject body)
         {
-            if (SessionId != null && body["query"] != null && Sessions.VehicleSessions.Any(session => session.SessionId == SessionId))
+            var sessionId = SessionId ?? Guid.Empty;
+            if (SessionId != null && body["query"] != null && Sessions.VehicleSessions[sessionId] != null)
             {
-                var session = Sessions.VehicleSessions.First(session => session.SessionId == SessionId);
-                string? vin = body["vin"]?.ToString().IsNullOrWhiteSpace() ?? true ? session.PrimaryVin : body["vin"]?.ToString();
+                string? vin = body["vin"]?.ToString().IsNullOrWhiteSpace() ?? true ? SelectedVin : body["vin"]?.ToString();
 
                 if (body["query"]?.ToString() == "battery")
                 {
-                    Lock? carlock = (Lock?)_google.Devices[session.SessionId].FirstOrDefault(device => device is Lock);
+                    Lock? carlock = (Lock?)_google.Devices[sessionId].FirstOrDefault(device => device is Lock);
                     if (carlock != null)
                     {
-                        await carlock.Fetch(Sessions, session, vin);
+                        await carlock.FetchAsync(Sessions, sessionId, vin);
                         return Json(new
                         {
                             percentage = carlock.CapacityRemaining,

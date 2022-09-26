@@ -49,15 +49,15 @@ namespace Leaf2Google.Models.Google.Devices
               "lastUpdateTime": "2022-08-31T02:16:25...
         */
 
-        public override async Task<bool> Fetch(LeafSessionManager sessionManager, VehicleSessionBase session, string? vin, bool forceFetch = false)
+        public async override Task<bool> FetchAsync(LeafSessionManager sessionManager, Guid sessionId, string? vin, bool forceFetch = false)
         {
             bool success = false;
 
             if (WillFetch || forceFetch)
             {
-                var lockStatus = await sessionManager.VehicleLock(session.SessionId, vin);
+                var lockStatus = await sessionManager.VehicleLock(sessionId, vin);
 
-                var batteryStatus = await sessionManager.VehicleBattery(session.SessionId, vin);
+                var batteryStatus = await sessionManager.VehicleBattery(sessionId, vin);
 
                 if (lockStatus is not null && lockStatus.Success == true && batteryStatus is not null && batteryStatus.Success == true)
                 {
@@ -79,9 +79,9 @@ namespace Leaf2Google.Models.Google.Devices
             return success;
         }
 
-        public override async Task<JObject> QueryAsync(LeafSessionManager sessionManager, VehicleSessionBase session, string? vin) // Pass in what to query?
+        public async override Task<JObject> QueryAsync(LeafSessionManager sessionManager, Guid sessionId, string? vin) // Pass in what to query?
         {
-            bool success = await Fetch(sessionManager, session, vin); ;
+            bool success = await FetchAsync(sessionManager, sessionId, vin);
 
             var descriptiveCapacity = "FULL";
 
@@ -146,17 +146,17 @@ namespace Leaf2Google.Models.Google.Devices
             };
         }
 
-        public override async Task<JObject> ExecuteAsync(LeafSessionManager sessionManager, VehicleSessionBase session, string? vin, JObject data)
+        public async override Task<JObject> ExecuteAsync(LeafSessionManager sessionManager, Guid sessionId, string? vin, JObject data)
         {
             if ((string?)data.Root["command"] == "action.devices.commands.Locate" && ((bool?)data["silence"] ?? false) == false)
             {
-                var flashStatus = await sessionManager.FlashLights(session.SessionId, vin, 5);
+                var flashStatus = await sessionManager.FlashLights(sessionId, vin, 5);
             }
             else if ((string?)data.Root["command"] == "action.devices.commands.LockUnlock")
             {
                 Locked = data.ContainsKey("lock") ? (bool?)data["lock"] ?? Locked : Locked;
 
-                var lockStatus = await sessionManager.SetVehicleLock(session.SessionId, vin, Locked);
+                var lockStatus = await sessionManager.SetVehicleLock(sessionId, vin, Locked);
 
                 bool success = false;
                 if (lockStatus is not null && lockStatus.Success)

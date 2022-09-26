@@ -6,6 +6,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Leaf2Google.Models.Google.Devices
 {
+    /*
     public class TemperatureControl : BaseDevice
     {
         public decimal Target { get; set; } = 21;
@@ -105,4 +106,5 @@ namespace Leaf2Google.Models.Google.Devices
             }
         }
     }
+    */
 }

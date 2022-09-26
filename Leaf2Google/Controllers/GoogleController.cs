@@ -51,7 +51,7 @@ namespace Leaf2Google.Controllers
                 }}
             };
 
-            var leafSession = Sessions.VehicleSessions.FirstOrDefault(session => session.SessionId == auth.Owner.CarModelId);
+            var leafSession = Sessions.VehicleSessions[auth.Owner.CarModelId];
             if (leafSession is null)
                 return Unauthorized("{\"error\": \"invalid_grant\"}");
 
@@ -82,7 +82,7 @@ namespace Leaf2Google.Controllers
                             var deviceQuery = new JObject();
                             foreach (var device in userDevices.Where(device => requestedDevices.Contains(device.Id)))
                             {
-                                deviceQuery.Add(new JProperty($"{device.Id}", await device.QueryAsync(Sessions, leafSession, leafSession.PrimaryVin)));
+                                deviceQuery.Add(new JProperty($"{device.Id}", await device.QueryAsync(Sessions, leafSession.SessionId, leafSession.PrimaryVin)));
                             }
 
                             ((JObject)response["payload"]!).Add("devices", deviceQuery);
@@ -109,7 +109,7 @@ namespace Leaf2Google.Controllers
                                     foreach (var device in userDevices.Where(device => requestedDevices.Contains(device.Id) && device.SupportedCommands.Contains((string?)execution["command"] ?? string.Empty)))
                                     {
                                         updatedIds.Add(device.Id);
-                                        updatedStates.Add(await device.ExecuteAsync(Sessions, leafSession, leafSession.PrimaryVin, (JObject)execution["params"]!));
+                                        updatedStates.Add(await device.ExecuteAsync(Sessions, leafSession.SessionId, leafSession.PrimaryVin, (JObject)execution["params"]!));
                                     }
 
                                     var mergedStates = new JObject();
