@@ -1,23 +1,17 @@
-﻿using Leaf2Google.Helpers;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.Drawing;
-using System.Net;
-using System.Text;
+﻿using System.Drawing;
 
 namespace Leaf2Google.Models.Car
 {
-    public delegate void AuthEventHandler(object sender, string authToken);
+    public delegate void AuthEventHandler(object sender, string? authToken);
+
     public delegate void RequestEventHandler(object sender, bool requestSuccess);
 
     public class VehicleSessionBase
     {
-        public TaskCompletionSource<bool> tcs;
+        private string? _authenticatedAccessToken = string.Empty;
 
-
-        private string _authenticatedAccessToken = string.Empty;
-
-        public string? AuthenticatedAccessToken {
+        public string? AuthenticatedAccessToken
+        {
             get
             {
                 return _authenticatedAccessToken;
@@ -25,7 +19,7 @@ namespace Leaf2Google.Models.Car
             set
             {
                 if (_authenticatedAccessToken != value)
-                    OnAuthenticationAttempt.Invoke(this, value);
+                    OnAuthenticationAttempt?.Invoke(this, value);
 
                 _authenticatedAccessToken = value;
             }
@@ -50,6 +44,7 @@ namespace Leaf2Google.Models.Car
         public bool LoginGivenUp { get => LoginFailedCount >= 5; }
 
         public event RequestEventHandler OnRequest;
+
         public event AuthEventHandler OnAuthenticationAttempt;
 
         public VehicleSessionBase(string username, string password, Guid sessionId)
@@ -72,7 +67,7 @@ namespace Leaf2Google.Models.Car
             LastRequestSuccessful = requestSuccess;
         }
 
-        private void VehicleSessionBase_OnAuthenticationAttempt(object? sender, string authToken)
+        private void VehicleSessionBase_OnAuthenticationAttempt(object? sender, string? authToken)
         {
             LoginFailedCount = Authenticated ? 0 : LoginFailedCount++;
         }
@@ -83,7 +78,6 @@ namespace Leaf2Google.Models.Car
         public NissanConnectSession(string username, string password, Guid sessionId)
             : base(username, password, sessionId)
         {
-
         }
     }
 }

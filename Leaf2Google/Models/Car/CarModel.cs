@@ -1,5 +1,4 @@
 ﻿using Leaf2Google.Helpers;
-using Leaf2Google.Models.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;

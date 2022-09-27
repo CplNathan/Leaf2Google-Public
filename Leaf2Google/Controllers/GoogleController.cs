@@ -1,7 +1,9 @@
 ﻿using Leaf2Google.Contexts;
-using Leaf2Google.Dependency.Managers;
-using Leaf2Google.Models;
+using Leaf2Google.Dependency.Car;
+using Leaf2Google.Dependency.Google;
+using Leaf2Google.Dependency.Google.Devices;
 using Leaf2Google.Models.Car;
+using Leaf2Google.Models.Generic;
 using Leaf2Google.Models.Google;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,14 +20,17 @@ namespace Leaf2Google.Controllers
 
         private readonly LeafContext _leafContext;
 
+        private readonly IEnumerable<IDevice> _devices;
+
         private readonly IConfiguration _configuration;
 
-        public GoogleController(ILogger<HomeController> logger, LeafSessionManager sessions, GoogleStateManager googleState, LeafContext googleContext, IConfiguration configuration)
+        public GoogleController(ILogger<HomeController> logger, LeafSessionManager sessions, GoogleStateManager googleState, LeafContext googleContext, IEnumerable<IDevice> activeDevices, IConfiguration configuration)
             : base(logger, sessions, configuration)
         {
             _logger = logger;
             _googleState = googleState;
             _leafContext = googleContext;
+            _devices = activeDevices;
             _configuration = configuration;
         }
 
@@ -69,7 +74,7 @@ namespace Leaf2Google.Controllers
                 {
                     case "SYNC":
                         {
-                            ((JObject)response["payload"]!).Add("devices", JArray.FromObject(userDevices.Select(device => device.Sync())));
+                            ((JObject)response["payload"]!).Add("devices", JArray.FromObject(userDevices.Select(device => device.Value.Sync())));
                             break;
                         }
 
@@ -80,9 +85,15 @@ namespace Leaf2Google.Controllers
                             var requestedDevices = requestedDevicesObj.Select(device => (string?)device["id"]).Where(device => device is not null) ?? new List<string>();
 
                             var deviceQuery = new JObject();
-                            foreach (var device in userDevices.Where(device => requestedDevices.Contains(device.Id)))
+                            foreach (var device in userDevices.Where(device => requestedDevices.Contains(device.Value.Id)))
                             {
-                                deviceQuery.Add(new JProperty($"{device.Id}", await device.QueryAsync(Sessions, leafSession.SessionId, leafSession.PrimaryVin)));
+                                Type deviceType = device.Key;
+                                var deviceData = _devices.FirstOrDefault(x => x.GetType() == deviceType);
+
+                                if (deviceData != null)
+                                {
+                                    deviceQuery.Add(new JProperty($"{device.Value.Id}", await deviceData.QueryAsync(leafSession.SessionId, leafSession.PrimaryVin)));
+                                }
                             }
 
                             ((JObject)response["payload"]!).Add("devices", deviceQuery);
@@ -106,10 +117,16 @@ namespace Leaf2Google.Controllers
                                     List<string> updatedIds = new List<string>();
                                     List<JObject> updatedStates = new List<JObject>();
 
-                                    foreach (var device in userDevices.Where(device => requestedDevices.Contains(device.Id) && device.SupportedCommands.Contains((string?)execution["command"] ?? string.Empty)))
+                                    foreach (var device in userDevices.Where(device => requestedDevices.Contains(device.Value.Id) && device.Value.SupportedCommands.Contains((string?)execution["command"] ?? string.Empty)))
                                     {
-                                        updatedIds.Add(device.Id);
-                                        updatedStates.Add(await device.ExecuteAsync(Sessions, leafSession.SessionId, leafSession.PrimaryVin, (JObject)execution["params"]!));
+                                        Type deviceType = device.Key;
+                                        var deviceData = _devices.FirstOrDefault(x => x.GetType() == deviceType);
+
+                                        if (deviceData != null)
+                                        {
+                                            updatedIds.Add(device.Value.Id);
+                                            updatedStates.Add(await deviceData.ExecuteAsync(leafSession.SessionId, leafSession.PrimaryVin, (JObject)execution["params"]!));
+                                        }
                                     }
 
                                     var mergedStates = new JObject();
@@ -207,12 +224,12 @@ namespace Leaf2Google.Controllers
                 return BadRequest("{\"error\": \"invalid_grant\"}");
 
             // Token state
-            Token? token = null;
+            TokenModel? token = null;
             EntityState tokenState = EntityState.Unchanged;
 
             if (form["grant_type"] == "authorization_code")
             {
-                token = new Token()
+                token = new TokenModel()
                 {
                     Owner = (await _leafContext.GoogleAuths.FirstOrDefaultAsync(auth => form["code"].ToString() == auth.AuthCode.ToString()))!,
                     RefreshToken = Guid.NewGuid()
@@ -243,25 +260,21 @@ namespace Leaf2Google.Controllers
                 return BadRequest("{\"error\": \"invalid_grant\"}");
         }
 
-        private void Session_OnAuthenticationAttempt(object sender, string authToken)
+        private void Session_OnAuthenticationAttempt(object sender, string? authToken)
         {
             var session = sender as VehicleSessionBase;
 
-            if (session != null)
-            {
-                session.tcs?.TrySetResult(true);
-            }
         }
 
         [HttpGet]
-        public IActionResult Index([FromRoute] AuthForm form)
+        public IActionResult Index([FromRoute] AuthFormModel form)
         {
-            return View("Index", new AuthForm() { client_id = form.client_id, redirect_uri = form.redirect_uri, state = form.state} );
+            return View("Index", new AuthFormModel() { client_id = form.client_id, redirect_uri = form.redirect_uri, state = form.state });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Index([FromForm] AuthPostForm form)
+        public async Task<IActionResult> Index([FromForm] AuthPostFormModel form)
         {
             if (!ModelState.IsValid)
                 return View();
@@ -317,7 +330,7 @@ namespace Leaf2Google.Controllers
                     Message = "Unable to authenticate to Nissan Services using the supplied credentials."
                 });
 
-                var model = new AuthForm()
+                var model = new AuthFormModel()
                 {
                     client_id = form.client_id,
                     redirect_uri = form.redirect_uri,
@@ -330,7 +343,7 @@ namespace Leaf2Google.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Auth([FromQuery] AuthForm form)
+        public async Task<IActionResult> Auth([FromQuery] AuthFormModel form)
         {
             if (form.client_id != _configuration["Google:client_id"])
                 return BadRequest();
@@ -346,7 +359,7 @@ namespace Leaf2Google.Controllers
 
             var code = Guid.NewGuid().ToString();
 
-            Auth auth = new Auth()
+            AuthModel auth = new AuthModel()
             {
                 RedirectUri = form.redirect_uri,
                 ClientId = form.client_id,

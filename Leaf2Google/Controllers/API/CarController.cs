@@ -1,15 +1,13 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. APIController.cs
 
 using Leaf2Google.Contexts;
-using Leaf2Google.Dependency.Managers;
+using Leaf2Google.Dependency.Car;
+using Leaf2Google.Dependency.Google;
+using Leaf2Google.Dependency.Google.Devices;
 using Leaf2Google.Models.Google.Devices;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using NUglify.Helpers;
-using System;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Leaf2Google.Controllers.API
 {
@@ -21,11 +19,14 @@ namespace Leaf2Google.Controllers.API
 
         private readonly GoogleStateManager _google;
 
-        public CarController(ILogger<HomeController> logger, LeafSessionManager sessions, LeafContext leafContext, GoogleStateManager google, IConfiguration configuration)
+        private readonly IEnumerable<IDevice> _devices;
+
+        public CarController(ILogger<HomeController> logger, LeafSessionManager sessions, LeafContext leafContext, GoogleStateManager google, IEnumerable<IDevice> devices, IConfiguration configuration)
             : base(logger, sessions, configuration)
         {
             _leafContext = leafContext;
             _google = google;
+            _devices = devices;
         }
 
         [HttpPost]
@@ -58,14 +59,18 @@ namespace Leaf2Google.Controllers.API
 
                 if (body["query"]?.ToString() == "battery")
                 {
-                    Lock? carlock = (Lock?)_google.Devices[sessionId].FirstOrDefault(device => device is Lock);
-                    if (carlock != null)
+                    LockModel carLock = (LockModel)_google.Devices[sessionId][typeof(LockDevice)];
+                    if (carLock != null)
                     {
-                        await carlock.FetchAsync(Sessions, sessionId, vin);
+                        var deviceData = _devices.FirstOrDefault(x => x.GetType() == typeof(LockDevice));
+
+                        if (deviceData != null)
+                            await deviceData.FetchAsync(sessionId, vin);
+
                         return Json(new
                         {
-                            percentage = carlock.CapacityRemaining,
-                            charging = carlock.IsCharging
+                            percentage = carLock.CapacityRemaining,
+                            charging = carLock.IsCharging
                         });
                     }
                 }

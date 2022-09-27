@@ -41,7 +41,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="wwwroot\js\Partials\" />
     <Folder Include="wwwroot\js\WebComponents\Auth\" />
   </ItemGroup>
 

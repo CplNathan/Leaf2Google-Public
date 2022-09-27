@@ -1,4 +1,4 @@
-﻿namespace Leaf2Google.Models.Generic
+﻿namespace Leaf2Google.Models
 {
     public class BaseModel
     {

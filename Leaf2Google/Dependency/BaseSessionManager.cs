@@ -1,17 +1,16 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. SessionManagerBase.cs
 
 using Leaf2Google.Contexts;
+using Leaf2Google.Dependency.Google;
 using Leaf2Google.Helpers;
 using Leaf2Google.Models.Car;
-using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUglify.Helpers;
-using System.Drawing;
 using System.Net;
 using System.Text;
 
-namespace Leaf2Google.Dependency.Managers
+namespace Leaf2Google.Dependency
 {
     public class BaseSessionManager : IDisposable
     {
@@ -33,7 +32,8 @@ namespace Leaf2Google.Dependency.Managers
 
         public Dictionary<Guid, VehicleSessionBase> VehicleSessions { get => _vehicleSessions; }
 
-        public IReadOnlyDictionary<Guid, VehicleSessionBase> AllSessions {
+        public IReadOnlyDictionary<Guid, VehicleSessionBase> AllSessions
+        {
             get
             {
                 var allSessions = new Dictionary<Guid, VehicleSessionBase>();
@@ -156,7 +156,7 @@ namespace Leaf2Google.Dependency.Managers
                     { "X-Password", "anonymous" },
                     { "Accept", "application/json" }
                 },
-                Content = new StringContent(JsonConvert.SerializeObject(httpRequestData), UnicodeEncoding.UTF8, "application/json")
+                Content = new StringContent(JsonConvert.SerializeObject(httpRequestData), Encoding.UTF8, "application/json")
             };
 
             var response = await MakeRequest(sessionId, httpRequestMessage);
@@ -199,7 +199,7 @@ namespace Leaf2Google.Dependency.Managers
                     { "X-Password", "anonymous" },
                     { "Accept", "application/json" }
                 },
-                Content = new StringContent(String.Empty, UnicodeEncoding.UTF8, "application/x-www-form-urlencoded")
+                Content = new StringContent(string.Empty, Encoding.UTF8, "application/x-www-form-urlencoded")
             };
 
             var response = await MakeRequest(sessionId, httpRequestMessage);
@@ -262,16 +262,23 @@ namespace Leaf2Google.Dependency.Managers
 
                 session.VINs.AddRange(((JArray)vehiclesResult!.Data.data).Select(vehicle => (string?)((JObject)vehicle)["vin"]).Where(vehicle => !string.IsNullOrEmpty(vehicle)));
             }
+            else
+            {
+                session.AuthenticatedAccessToken = null;
+            }
 
             _vehicleSessions[session.SessionId] = session;
             _googleState.GetOrCreateDevices(session.SessionId);
 
-            if (!session.Authenticated)
+            if (!session.Authenticated && session.LoginGivenUp)
             {
                 _vehicleSessions.Remove(session.SessionId);
             }
+            else if(session.Authenticated || session.LoginGivenUp)
+            {
+                _pendingSessions.Remove(session.SessionId);
+            }
 
-            _pendingSessions.Remove(session.SessionId);
             return session;
         }
 
@@ -293,7 +300,7 @@ namespace Leaf2Google.Dependency.Managers
                     { "Authorization", $"Bearer {session.AuthenticatedAccessToken}" },
                     { "Accept", "*/*" }
                 },
-                Content = new StringContent(JsonConvert.SerializeObject(httpRequestData), UnicodeEncoding.UTF8, "application/vnd.api+json")
+                Content = new StringContent(JsonConvert.SerializeObject(httpRequestData), Encoding.UTF8, "application/vnd.api+json")
             };
 
             var response = await MakeRequest(session.SessionId, httpRequestMessage, _configuration["Nissan:EU:car_adapter_base_url"]);

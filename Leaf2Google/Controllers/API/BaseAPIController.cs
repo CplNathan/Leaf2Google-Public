@@ -1,8 +1,6 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. BaseAPIController.cs
 
-using Leaf2Google.Contexts;
-using Leaf2Google.Dependency.Managers;
-using Microsoft.AspNetCore.Mvc;
+using Leaf2Google.Dependency.Car;
 
 namespace Leaf2Google.Controllers.API
 {

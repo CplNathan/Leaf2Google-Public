@@ -1,9 +1,8 @@
 ﻿using Leaf2Google.Contexts;
+using Leaf2Google.Dependency.Car;
+using Leaf2Google.Dependency.Google;
+using Leaf2Google.Dependency.Google.Devices;
 using Leaf2Google.Dependency.Helpers;
-using Leaf2Google.Dependency.Managers;
-using Leaf2Google.Models;
-using Leaf2Google.Models.Car;
-using Leaf2Google.Models.Google;
 using Leaf2Google.Models.Google.Devices;
 using Microsoft.AspNetCore.Mvc;
 using System.Drawing;
@@ -40,8 +39,8 @@ namespace Leaf2Google.Controllers
             }
             else
             {
-                Thermostat? thermostat = (Thermostat?)Google.Devices[session.SessionId].FirstOrDefault(device => device is Thermostat);
-                Lock? carlock = (Lock?)Google.Devices[session.SessionId].FirstOrDefault(device => device is Lock);
+                ThermostatModel? thermostat = (ThermostatModel?)Google.Devices[session.SessionId][typeof(ThermostatDevice)];
+                LockModel? carlock = (LockModel?)Google.Devices[session.SessionId][typeof(LockDevice)];
                 PointF? location = await Sessions.VehicleLocation(session.SessionId, session.PrimaryVin);
 
                 return View("IndexUser");

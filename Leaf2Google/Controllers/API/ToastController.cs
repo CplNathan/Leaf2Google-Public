@@ -1,8 +1,7 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. ToastController.cs
 
-using Leaf2Google.Contexts;
-using Leaf2Google.Dependency.Managers;
-using Leaf2Google.Models;
+using Leaf2Google.Dependency.Car;
+using Leaf2Google.Models.Generic;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Leaf2Google.Controllers.API

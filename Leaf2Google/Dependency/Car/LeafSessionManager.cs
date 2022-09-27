@@ -1,14 +1,14 @@
-﻿using Leaf2Google.Contexts;
+﻿using Castle.Core.Internal;
+using Leaf2Google.Contexts;
+using Leaf2Google.Dependency.Google;
 using Leaf2Google.Helpers;
-using Leaf2Google.Models.Generic;
 using Leaf2Google.Models.Car;
+using Leaf2Google.Models.Generic;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 using System.Drawing;
-using System;
-using Microsoft.Extensions.DependencyInjection;
 
-namespace Leaf2Google.Dependency.Managers
+namespace Leaf2Google.Dependency.Car
 {
     public interface ILeafSessionManager
     {
@@ -110,7 +110,6 @@ namespace Leaf2Google.Dependency.Managers
             {
                 var session = new NissanConnectSession(leaf.NissanUsername, leaf.NissanPassword, leaf.CarModelId)
                 {
-                      
                 };
                 session.OnRequest += Session_OnRequest;
                 session.OnAuthenticationAttempt += Session_OnAuthenticationAttempt;
@@ -127,7 +126,7 @@ namespace Leaf2Google.Dependency.Managers
             }
         }
 
-        private async void Session_OnAuthenticationAttempt(object sender, string authToken)
+        private async void Session_OnAuthenticationAttempt(object sender, string? authToken)
         {
             var session = sender as VehicleSessionBase;
 
@@ -141,7 +140,7 @@ namespace Leaf2Google.Dependency.Managers
                     return leaf.CarModelId == session.SessionId;
                 };
 
-                if (!session.LoginGivenUp && !session.Authenticated)
+                if (!session.LoginGivenUp && !session.Authenticated && authToken.IsNullOrEmpty())
                     session = await Login(session);
 
                 if (!session.Authenticated && session.LoginGivenUp)
@@ -153,16 +152,18 @@ namespace Leaf2Google.Dependency.Managers
                         leafContext.Entry(leaf).State = EntityState.Modified;
                     }
 
-                    leafContext.NissanAudits.Add(new Audit<CarModel>
+                    leafContext.NissanAudits.Add(new AuditModel<CarModel>
                     {
                         Owner = leaf,
                         Action = AuditAction.Delete,
                         Context = AuditContext.Account,
                         Data = $"{session.Username} - Deleting Stale Leaf",
                     });
-
+                }
+                else if (!session.Authenticated)
+                {
                     Console.WriteLine($"{session.Username} - Authentication Failed");
-                    leafContext.NissanAudits.Add(new Audit<CarModel>
+                    leafContext.NissanAudits.Add(new AuditModel<CarModel>
                     {
                         Owner = leafContext.NissanLeafs.FirstOrDefault(authenticationPredicate),
                         Action = AuditAction.Access,
@@ -173,7 +174,7 @@ namespace Leaf2Google.Dependency.Managers
                 else if (session.Authenticated)
                 {
                     Console.WriteLine($"{session.Username} - Authentication Success");
-                    leafContext.NissanAudits.Add(new Audit<CarModel>
+                    leafContext.NissanAudits.Add(new AuditModel<CarModel>
                     {
                         Owner = leafContext.NissanLeafs.FirstOrDefault(authenticationPredicate),
                         Action = AuditAction.Access,
@@ -195,6 +196,7 @@ namespace Leaf2Google.Dependency.Managers
         {
             var session = sender as VehicleSessionBase;
 
+            // If we think we are logged in and we have a failed request, we have probably timed out. Reauthenticate and if that fails re-authentication will occur elsewhere.
             if (session != null && !requestSuccess && !session.LoginGivenUp && !session.Authenticated)
             {
                 await Login(session);
@@ -207,7 +209,6 @@ namespace Leaf2Google.Dependency.Managers
             session.OnRequest += Session_OnRequest;
             session.OnAuthenticationAttempt += Session_OnAuthenticationAttempt;
             session.OnAuthenticationAttempt += onAuthentication;
-            session.tcs = new TaskCompletionSource<bool>();
 
             bool success = false;
             Console.WriteLine("Authenticating");

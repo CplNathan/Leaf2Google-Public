@@ -1,7 +1,9 @@
 using Leaf2Google.Contexts;
 using Leaf2Google.Controllers;
+using Leaf2Google.Dependency.Car;
+using Leaf2Google.Dependency.Google;
+using Leaf2Google.Dependency.Google.Devices;
 using Leaf2Google.Dependency.Helpers;
-using Leaf2Google.Dependency.Managers;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,7 +26,9 @@ builder.Services.AddHttpClient<BaseController>(c =>
 });
 builder.Services.AddSingleton<LeafSessionManager>();
 builder.Services.AddSingleton<GoogleStateManager>();
-builder.Services.AddScoped<Captcha>();
+builder.Services.AddScoped<IDevice, LockDevice>();
+builder.Services.AddScoped<IDevice, ThermostatDevice>();
+builder.Services.AddTransient<Captcha>();
 
 builder.Services.AddWebOptimizer(pipeline =>
 {

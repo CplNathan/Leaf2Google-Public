@@ -1,5 +1,4 @@
-﻿using Leaf2Google.Models.Car;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System.Net.Http.Headers;
 
 namespace Leaf2Google.Helpers

@@ -57,7 +57,7 @@
     <script async id="captcha" src="https://www.google.com/recaptcha/api.js"></script>
 
     <script>
-        const api = @Html.Raw(ViewBag.API)
+        const api = @Html.Raw(ViewBag?.API)
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)

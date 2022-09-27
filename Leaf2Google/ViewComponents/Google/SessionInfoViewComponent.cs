@@ -4,7 +4,7 @@ using Leaf2Google.Contexts;
 using Leaf2Google.Models.Google;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Leaf2Google.ViewComponents
+namespace Leaf2Google.ViewComponents.Google
 {
     public class SessionInfoViewComponent : BaseViewComponent
     {
@@ -24,7 +24,7 @@ namespace Leaf2Google.ViewComponents
 
             if (auths.Any())
             {
-                SessionInfo sessionInfo = new SessionInfo()
+                SessionInfoViewModel sessionInfo = new SessionInfoViewModel()
                 {
                     auths = auths.ToList()
                 };

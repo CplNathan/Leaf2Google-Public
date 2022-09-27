@@ -5,11 +5,11 @@ using System.Drawing;
 
 namespace Leaf2Google.Models.Car
 {
-    public class CarInfoModel
+    public class CarViewModel
     {
-        public Lock? carlock { get; set; }
+        public LockModel? carLock { get; set; }
 
-        public Thermostat? thermostat { get; set; }
+        public ThermostatModel? carThermostat { get; set; }
 
         public CarModel? car { get; set; }
 

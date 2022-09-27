@@ -1,11 +1,8 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. APIController.cs
 
 using Leaf2Google.Contexts;
-using Leaf2Google.Dependency.Managers;
-using Microsoft.AspNetCore.Http;
+using Leaf2Google.Dependency.Car;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Leaf2Google.Controllers.API
 {

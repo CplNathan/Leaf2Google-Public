@@ -2,8 +2,8 @@
 
 namespace Leaf2Google.Models.Google
 {
-    public class SessionInfo
+    public class SessionInfoViewModel
     {
-        public List<Auth> auths { get; set; } = new List<Auth>();
+        public List<AuthModel> auths { get; set; } = new List<AuthModel>();
     }
 }

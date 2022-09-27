@@ -14,11 +14,11 @@ namespace Leaf2Google.ViewComponents
         {
             var scripts = (HttpContext.Items["ComponentScripts"] is HashSet<string>) ? (HttpContext.Items["ComponentScripts"] as HashSet<string>) : new HashSet<string>();
 
-            var success = scripts.Add(scriptPath);
+            var success = scripts?.Add(scriptPath);
 
             HttpContext.Items["ComponentScripts"] = scripts;
 
-            return success;
+            return success ?? false;
         }
     }
 }

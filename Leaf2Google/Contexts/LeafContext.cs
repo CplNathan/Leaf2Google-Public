@@ -1,6 +1,6 @@
-﻿using Leaf2Google.Models.Generic;
+﻿using Leaf2Google.Models.Car;
+using Leaf2Google.Models.Generic;
 using Leaf2Google.Models.Google;
-using Leaf2Google.Models.Car;
 using Microsoft.EntityFrameworkCore;
 
 namespace Leaf2Google.Contexts
@@ -14,13 +14,13 @@ namespace Leaf2Google.Contexts
 
         public DbSet<CarModel> NissanLeafs { get; set; }
 
-        public DbSet<Audit<CarModel>> NissanAudits { get; set; }
+        public DbSet<AuditModel<CarModel>> NissanAudits { get; set; }
 
-        public DbSet<Auth> GoogleAuths { get; set; }
+        public DbSet<AuthModel> GoogleAuths { get; set; }
 
-        public DbSet<Token> GoogleTokens { get; set; }
+        public DbSet<TokenModel> GoogleTokens { get; set; }
 
-        public DbSet<Config> AppConfig { get; set; }
+        public DbSet<ConfigModel> AppConfig { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -38,20 +38,20 @@ namespace Leaf2Google.Contexts
                 .ToTable("t_leafs_leaf");
 
             modelBuilder
-                .Entity<Audit<CarModel>>()
+                .Entity<AuditModel<CarModel>>()
                 .ToTable("t_leafs_audit")
                 .HasOne(i => i.Owner);
 
             modelBuilder
-                .Entity<Auth>()
+                .Entity<AuthModel>()
                 .ToTable("t_auths_auth");
 
             modelBuilder
-                .Entity<Token>()
+                .Entity<TokenModel>()
                 .ToTable("t_auths_token");
 
             modelBuilder
-                .Entity<Config>()
+                .Entity<ConfigModel>()
                 .ToTable("t_app_config");
         }
     }

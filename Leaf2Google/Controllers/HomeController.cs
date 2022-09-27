@@ -1,8 +1,10 @@
 ﻿using Leaf2Google.Contexts;
+using Leaf2Google.Dependency.Car;
+using Leaf2Google.Dependency.Google;
+using Leaf2Google.Dependency.Google.Devices;
 using Leaf2Google.Dependency.Helpers;
-using Leaf2Google.Dependency.Managers;
-using Leaf2Google.Models;
 using Leaf2Google.Models.Car;
+using Leaf2Google.Models.Generic;
 using Leaf2Google.Models.Google;
 using Leaf2Google.Models.Google.Devices;
 using Microsoft.AspNetCore.Mvc;
@@ -36,22 +38,22 @@ namespace Leaf2Google.Controllers
 
             if (session == null)
             {
-                return View("Index", new CarInfoModel()
+                return View("Index", new CarViewModel()
                 {
                     car = _leafContext.NissanLeafs.FirstOrDefault(car => car.CarModelId == SessionId) ?? new CarModel()
                 });
             }
             else
             {
-                Thermostat? thermostat = (Thermostat?)Google.Devices[session.SessionId].FirstOrDefault(device => device is Thermostat);
-                Lock? carlock = (Lock?)Google.Devices[session.SessionId].FirstOrDefault(device => device is Lock);
+                ThermostatModel? carThermostat = (ThermostatModel?)Google.Devices[session.SessionId][typeof(ThermostatDevice)];
+                LockModel? carLock = (LockModel?)Google.Devices[session.SessionId][typeof(LockDevice)];
                 PointF? location = await Sessions.VehicleLocation(session.SessionId, session.PrimaryVin);
 
-                return View("IndexUser", new CarInfoModel()
+                return View("IndexUser", new CarViewModel()
                 {
                     car = _leafContext.NissanLeafs.FirstOrDefault(car => car.CarModelId == SessionId),
-                    carlock = carlock,
-                    thermostat = thermostat,
+                    carLock = carLock,
+                    carThermostat = carThermostat,
                     location = location
                 });
             }
@@ -59,7 +61,7 @@ namespace Leaf2Google.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Index([FromForm] AuthPostForm authForm)
+        public async Task<IActionResult> Index([FromForm] AuthPostFormModel authForm)
         {
             Func<KeyValuePair<Guid, VehicleSessionBase>, bool> authenticationPredicate = session =>
             {

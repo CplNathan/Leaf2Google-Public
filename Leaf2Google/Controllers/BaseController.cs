@@ -1,9 +1,10 @@
 ﻿using Leaf2Google.Controllers.API;
-using Leaf2Google.Dependency.Managers;
-using Leaf2Google.Models;
+using Leaf2Google.Dependency.Car;
+using Leaf2Google.Models.Generic;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Newtonsoft.Json.Linq;
+using NUglify.Helpers;
 using System.Reflection;
 using System.Text;
 
@@ -62,11 +63,11 @@ namespace Leaf2Google.Controllers
         {
             var scripts = (HttpContext.Items["ComponentScripts"] is HashSet<string>) ? (HttpContext.Items["ComponentScripts"] as HashSet<string>) : new HashSet<string>();
 
-            var success = scripts.Add(scriptPath);
+            var success = scripts?.Add(scriptPath);
 
             HttpContext.Items["ComponentScripts"] = scripts;
 
-            return success;
+            return success ?? false;
         }
 
         public override void OnActionExecuting(ActionExecutingContext filterContext)
@@ -85,8 +86,9 @@ namespace Leaf2Google.Controllers
             var res = asm.GetTypes()
                 .Where(type => typeof(Controller).IsAssignableFrom(type)) //filter controllers
                 .SelectMany(type => type.GetMethods())
-                .Where(method => method.IsPublic && !method.IsDefined(typeof(NonActionAttribute)) && method.IsDefined(typeof(HttpPostAttribute)) && method.DeclaringType.IsSubclassOf(typeof(BaseAPIController)))
-                .Select(method => Tuple.Create(method.DeclaringType.Name.Replace("Controller", ""), method.Name))
+                .Where(method => method.IsPublic && !method.IsDefined(typeof(NonActionAttribute)) && method.IsDefined(typeof(HttpPostAttribute)) && (method.DeclaringType?.IsSubclassOf(typeof(BaseAPIController)) ?? false))
+                .Select(method => Tuple.Create(method.DeclaringType?.Name.Replace("Controller", "") ?? "", method.Name))
+                .Where(method => !method.Item1.IsNullOrWhiteSpace())
                 .GroupBy(method => method.Item1);
 
             JObject endpoints = new JObject();

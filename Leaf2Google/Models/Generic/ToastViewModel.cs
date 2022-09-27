@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. ToastViewModel.cs
 
-namespace Leaf2Google.Models
+namespace Leaf2Google.Models.Generic
 {
     public class ToastViewModel
     {

@@ -17,7 +17,7 @@
         Modify
     }
 
-    public class Audit<T> : BaseModel
+    public class AuditModel<T> : BaseModel
     {
         public Guid Id { get; set; }
 

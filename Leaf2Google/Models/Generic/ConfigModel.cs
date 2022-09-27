@@ -2,7 +2,7 @@
 
 namespace Leaf2Google.Models.Generic
 {
-    public class Config : BaseModel
+    public class ConfigModel : BaseModel
     {
         public Guid Id { get; set; }
 
