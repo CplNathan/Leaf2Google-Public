@@ -195,7 +195,7 @@ namespace Leaf2Google.Dependency.Managers
         {
             var session = sender as VehicleSessionBase;
 
-            if (session != null && !requestSuccess)
+            if (session != null && !requestSuccess && !session.LoginGivenUp && !session.Authenticated)
             {
                 await Login(session);
             }

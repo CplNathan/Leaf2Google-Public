@@ -77,6 +77,9 @@ namespace Leaf2Google.Dependency.Managers
                     success = false;
             }
 
+            if (result?.Code != (int)HttpStatusCode.OK && result?.Code != (int)HttpStatusCode.Found)
+                success = false;
+
             AllSessions[sessionId]?.Invoke_OnRequest(success);
             return result;
         }
@@ -184,7 +187,7 @@ namespace Leaf2Google.Dependency.Managers
 
         private async Task<Response?> AccessToken(Guid sessionId, Response? authenticateResult)
         {
-            if (authenticateResult?.Code != 302)
+            if (authenticateResult?.Code != (int)HttpStatusCode.Found)
                 return null;
 
             var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, $"oauth2{authenticateResult.Data.realm}/access_token?code={authenticateResult!.Headers.Location?.ToString().Split('=')[1].Split('&')[0]}&client_id={_configuration["Nissan:EU:client_id"]}&client_secret={_configuration["Nissan:EU:client_secret"]}&redirect_uri={_configuration["Nissan:EU:redirect_uri"]}&grant_type=authorization_code")
