@@ -10,8 +10,8 @@ namespace Leaf2Google.Dependency.Google.Devices
 {
     public class ThermostatDevice : BaseDevice, IDevice
     {
-        public ThermostatDevice(HttpClient client, GoogleStateManager googleState, LeafSessionManager sessionManager)
-            : base(client, googleState, sessionManager)
+        public ThermostatDevice(GoogleStateManager googleState, LeafSessionManager sessionManager)
+            : base(googleState, sessionManager)
         {
             // Use here, have as per request object not a singleton!
         }

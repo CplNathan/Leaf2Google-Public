@@ -16,17 +16,12 @@ namespace Leaf2Google.Dependency.Google.Devices
 
     public abstract class BaseDevice
     {
-        protected readonly HttpClient _client;
-
-        protected HttpClient Client { get => _client; }
-
         protected readonly GoogleStateManager _googleState;
 
         protected readonly LeafSessionManager _sessionManager;
 
-        public BaseDevice(HttpClient client, GoogleStateManager googleState, LeafSessionManager sessionManager)
+        public BaseDevice(GoogleStateManager googleState, LeafSessionManager sessionManager)
         {
-            _client = client;
             _googleState = googleState;
             _sessionManager = sessionManager;
         }

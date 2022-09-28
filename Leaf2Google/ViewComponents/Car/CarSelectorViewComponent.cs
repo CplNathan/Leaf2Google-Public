@@ -16,10 +16,9 @@ namespace Leaf2Google.ViewComponents.Car
 
         protected GoogleStateManager Google { get => _google; }
 
-        public CarSelectorViewComponent(LeafSessionManager sessions, GoogleStateManager google)
+        public CarSelectorViewComponent(LeafSessionManager sessions)
         {
             _sessions = sessions;
-            _google = google;
         }
 
         public IViewComponentResult Invoke(Guid? sessionId)

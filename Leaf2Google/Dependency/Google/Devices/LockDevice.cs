@@ -9,8 +9,8 @@ namespace Leaf2Google.Dependency.Google.Devices
 {
     public class LockDevice : BaseDevice, IDevice
     {
-        public LockDevice(HttpClient client, GoogleStateManager googleState, LeafSessionManager sessionManager)
-            : base(client, googleState, sessionManager)
+        public LockDevice(GoogleStateManager googleState, LeafSessionManager sessionManager)
+            : base(googleState, sessionManager)
         {
             // Use here, have as per request object not a singleton!
         }
