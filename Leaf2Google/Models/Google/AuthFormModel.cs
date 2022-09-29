@@ -1,5 +1,7 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. AuthFormModel.cs
 
+using System.ComponentModel.DataAnnotations;
+
 namespace Leaf2Google.Models.Google
 {
     public class AuthFormModel : BaseModel
@@ -9,10 +11,18 @@ namespace Leaf2Google.Models.Google
         public string state { get; set; } = string.Empty;
     }
 
-    public class AuthPostFormModel : AuthFormModel
+    public class AuthPostFormGoogleModel : AuthFormModel
     {
         public string NissanUsername { get; set; } = string.Empty;
         public string NissanPassword { get; set; } = string.Empty;
+    }
+
+    public class AuthPostFormModel : AuthPostFormGoogleModel
+    {
+        public string NissanUsername { get; set; } = string.Empty;
+        public string NissanPassword { get; set; } = string.Empty;
+
+        [Required(AllowEmptyStrings = true)]
         public string Captcha { get; set; } = string.Empty;
     }
 }

@@ -25,13 +25,15 @@ namespace Leaf2Google.Models.Car
             }
         }
 
-        public bool Authenticated { get => !string.IsNullOrEmpty(_authenticatedAccessToken); }
+        public bool Authenticated { get => !string.IsNullOrEmpty(_authenticatedAccessToken) && LastRequestSuccessful; }
 
         public string Username { get; init; }
         public string Password { get; init; }
         public Guid SessionId { get; init; }
 
         public Tuple<DateTime, PointF?> LastLocation { get; set; } = Tuple.Create<DateTime, PointF?>(DateTime.MinValue, null);
+
+        public string? CarPictureUrl { get; set; }
 
         public string? PrimaryVin { get => VINs.FirstOrDefault(); }
 
@@ -59,7 +61,7 @@ namespace Leaf2Google.Models.Car
 
         public void Invoke_OnRequest(bool requestSuccess)
         {
-            OnRequest.Invoke(this, requestSuccess);
+            OnRequest?.Invoke(this, requestSuccess);
         }
 
         private void VehicleSessionBase_OnRequest(object? sender, bool requestSuccess)

@@ -261,6 +261,7 @@ namespace Leaf2Google.Dependency
                 var vehiclesResult = await VehiclesResult(session.SessionId, (string)usersResult!.Data.userId);
 
                 session.VINs.AddRange(((JArray)vehiclesResult!.Data.data).Select(vehicle => (string?)((JObject)vehicle)["vin"]).Where(vehicle => !string.IsNullOrEmpty(vehicle)));
+                session.CarPictureUrl = (((JArray)vehiclesResult!.Data.data).Select(vehicle => (string?)((JObject)vehicle)["pictureURL"]).FirstOrDefault());
             }
             else
             {

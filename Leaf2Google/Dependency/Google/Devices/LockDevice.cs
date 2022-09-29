@@ -15,7 +15,7 @@ namespace Leaf2Google.Dependency.Google.Devices
             // Use here, have as per request object not a singleton!
         }
 
-        public override async Task<bool> FetchAsync(Guid sessionId, string? vin, bool forceFetch = false)
+        public async Task<bool> FetchAsync(Guid sessionId, string? vin, bool forceFetch = false)
         {
             LockModel vehicleLock = (LockModel)_googleState.Devices[sessionId][typeof(LockDevice)];
 
@@ -50,7 +50,7 @@ namespace Leaf2Google.Dependency.Google.Devices
             return success;
         }
 
-        public override async Task<JObject> QueryAsync(Guid sessionId, string? vin)
+        public async Task<JObject> QueryAsync(Guid sessionId, string? vin)
         {
             bool success = await FetchAsync(sessionId, vin);
 
@@ -119,7 +119,7 @@ namespace Leaf2Google.Dependency.Google.Devices
             };
         }
 
-        public override async Task<JObject> ExecuteAsync(Guid sessionId, string? vin, JObject data)
+        public async Task<JObject> ExecuteAsync(Guid sessionId, string? vin, JObject data)
         {
             LockModel vehicleLock = (LockModel)_googleState.Devices[sessionId][typeof(LockDevice)];
 

@@ -10,11 +10,7 @@ namespace Leaf2Google.ViewComponents.Car
     {
         private readonly LeafSessionManager _sessions;
 
-        private readonly GoogleStateManager _google;
-
         protected LeafSessionManager Sessions { get => _sessions; }
-
-        protected GoogleStateManager Google { get => _google; }
 
         public CarSelectorViewComponent(LeafSessionManager sessions)
         {

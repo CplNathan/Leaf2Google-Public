@@ -1,6 +1,6 @@
 ﻿class ChargeStatus extends HTMLElement {
     static get observedAttributes() {
-        return ['percentage', 'charging'];
+        return ['percentage', 'charging', 'orientation'];
     }
 
     constructor() {
@@ -16,7 +16,7 @@
 
         const container = $('<div>', {
             id: 'batteryStatus',
-            class: 'progress w-100 h-100 shadow',
+            class: 'progress d-flex w-100 h-100 shadow',
         });
 
         const remainingBar = $('<div>', {
@@ -70,11 +70,32 @@ function updateStyle(elem) {
     const shadow = elem.shadowRoot;
 
     var percentage = $(elem).attr('percentage');
-    $(shadow).find('#remainingBar').width(percentage + "%");
-    $(shadow).find('#usageBar').width(100 - percentage - Math.min(100 - percentage, 20) + "%");
-    $(shadow).find('#optimalBar').width(Math.min(100 - percentage, 20) + "%");
+
+    if ($(elem).attr('orientation') == "vertical") {
+        $(shadow).find('#remainingBar').height(percentage + "%");
+        $(shadow).find('#usageBar').height(100 - percentage - Math.min(100 - percentage, 20) + "%");
+        $(shadow).find('#optimalBar').height(Math.min(100 - percentage, 20) + "%");
+
+        $(shadow).find('#remainingBar').width('100%');
+        $(shadow).find('#usageBar').width('100%');
+        $(shadow).find('#optimalBar').width('100%');
+    }
+    else {
+        $(shadow).find('#remainingBar').width(percentage + "%");
+        $(shadow).find('#usageBar').width(100 - percentage - Math.min(100 - percentage, 20) + "%");
+        $(shadow).find('#optimalBar').width(Math.min(100 - percentage, 20) + "%");
+
+        $(shadow).find('#remainingBar').height('100%');
+        $(shadow).find('#usageBar').height('100%');
+        $(shadow).find('#optimalBar').height('100%');
+    }
 
     $(shadow).find('#remainingBarIcon').text(" " + percentage + "%");
+
+    if ($(elem).attr('orientation') == "vertical")
+        $(shadow).find('#batteryStatus').addClass('flex-column-reverse');
+    else
+        $(shadow).find('#batteryStatus').removeClass('flex-column-reverse');
 
     var charging = $(elem).attr('charging');
     if (charging == "true")

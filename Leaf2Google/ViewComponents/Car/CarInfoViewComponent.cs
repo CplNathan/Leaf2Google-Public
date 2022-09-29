@@ -57,7 +57,8 @@ namespace Leaf2Google.ViewComponents.Car
                 {
                     carThermostat = carThermostat, //new Models.Google.Devices.Thermostat("1-leaf-ac", "Air Conditioner"),
                     carLock = carLock, //new Models.Google.Devices.Charger("1-leaf-lock", "Leaf"),
-                    location = await Sessions.VehicleLocation(session.SessionId, defaultVin)
+                    carLocation = await Sessions.VehicleLocation(session.SessionId, defaultVin),
+                    carPicture = Sessions.AllSessions[session.SessionId].CarPictureUrl
                 };
 
                 return View(viewName, carInfo);

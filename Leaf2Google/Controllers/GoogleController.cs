@@ -266,21 +266,20 @@ namespace Leaf2Google.Controllers
 
         }
 
-        [HttpGet]
-        public IActionResult Index([FromRoute] AuthFormModel form)
-        {
-            return View("Index", new AuthFormModel() { client_id = form.client_id, redirect_uri = form.redirect_uri, state = form.state });
-        }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Index([FromForm] AuthPostFormModel form)
+        public async Task<ActionResult> Auth([FromForm] AuthPostFormGoogleModel form)
         {
-            if (!ModelState.IsValid)
-                return View();
-
             if (form == null)
-                return View();
+            {
+                var model = new AuthFormModel()
+                {
+                    client_id = form.client_id,
+                    redirect_uri = form.redirect_uri,
+                    state = form.state
+                };
+                return await Auth(model);
+            }
 
             var auth = await _leafContext.GoogleAuths.FirstOrDefaultAsync(auth => auth.AuthState == form.state);
             if (auth == null)
@@ -338,12 +337,12 @@ namespace Leaf2Google.Controllers
                 };
 
                 ReloadViewBag();
-                return RedirectToAction("Index", model);
+                return await Auth(model);
             }
         }
 
         [HttpGet]
-        public async Task<IActionResult> Auth([FromQuery] AuthFormModel form)
+        public async Task<ActionResult> Auth([FromQuery] AuthFormModel form)
         {
             if (form.client_id != _configuration["Google:client_id"])
                 return BadRequest();
@@ -369,7 +368,7 @@ namespace Leaf2Google.Controllers
             _leafContext.GoogleAuths.Add(auth);
             await _leafContext.SaveChangesAsync();
 
-            return RedirectToAction("Index", form);
+            return View("Index", form);
         }
     }
 }

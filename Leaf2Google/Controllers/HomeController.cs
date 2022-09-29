@@ -54,7 +54,7 @@ namespace Leaf2Google.Controllers
                     car = _leafContext.NissanLeafs.FirstOrDefault(car => car.CarModelId == SessionId),
                     carLock = carLock,
                     carThermostat = carThermostat,
-                    location = location
+                    carLocation = location
                 });
             }
         }

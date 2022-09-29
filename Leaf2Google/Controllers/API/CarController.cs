@@ -8,6 +8,7 @@ using Leaf2Google.Models.Google.Devices;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
 using NUglify.Helpers;
+using System.Drawing;
 
 namespace Leaf2Google.Controllers.API
 {
@@ -30,7 +31,7 @@ namespace Leaf2Google.Controllers.API
         }
 
         [HttpPost]
-        public async Task<ViewComponentResult> Action([FromQuery] string? action, [FromQuery] int? duration)
+        public async Task<IActionResult> Action([FromQuery] string? action, [FromQuery] int? duration)
         {
             var sessionId = SessionId ?? Guid.Empty;
             if (SessionId != null && action != null && duration != null && Sessions.VehicleSessions[sessionId] != null)
@@ -43,10 +44,7 @@ namespace Leaf2Google.Controllers.API
                     await Sessions.BeepHorn(sessionId, SelectedVin, clampedDuration);
             }
 
-            return ViewComponent("SessionInfo", new
-            {
-                sessionId = sessionId
-            });
+            return Json(null);
         }
 
         [HttpPost]
@@ -71,6 +69,35 @@ namespace Leaf2Google.Controllers.API
                         {
                             percentage = carLock.CapacityRemaining,
                             charging = carLock.IsCharging
+                        });
+                    }
+                }
+                else if (body["query"]?.ToString() == "location")
+                {
+                    PointF? carLocation = await Sessions.VehicleLocation(sessionId, vin);
+                    if (carLocation != null)
+                    {
+                        return Json(new
+                        {
+                            lat = carLocation?.X,
+                            @long = carLocation?.Y
+                        });
+                    }
+                }
+                else if (body["query"]?.ToString() == "climate")
+                {
+                    ThermostatModel carThermostat = (ThermostatModel)_google.Devices[sessionId][typeof(ThermostatDevice)];
+                    if (carThermostat != null)
+                    {
+                        var deviceData = _devices.FirstOrDefault(x => x.GetType() == typeof(ThermostatDevice));
+
+                        if (deviceData != null)
+                            await deviceData.FetchAsync(sessionId, vin);
+
+                        return Json(new
+                        {
+                            target = carThermostat?.Target,
+                            current = carThermostat?.LastTemperature
                         });
                     }
                 }

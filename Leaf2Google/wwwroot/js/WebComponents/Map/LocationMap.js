@@ -31,26 +31,22 @@
 
         mapboxgl.accessToken = $(elem).attr('key');
 
-        const map = new mapboxgl.Map({
+        elem.map = new mapboxgl.Map({
             container: $(shadow).find('#map')[0],
-            style: 'mapbox://styles/mapbox/streets-v11',
+            style: 'mapbox://styles/mapbox/dark-v10',
             center: [$(elem).attr('long') ?? 0, $(elem).attr('lat') ?? 0],
             zoom: 10,
             trackResize: true
         });
 
-        map.on('idle', function () {
-            map.resize()
-        })
-
-        const geojson = {
+        elem.mapgeojson = {
             'type': 'FeatureCollection',
             'features': [
                 {
                     'type': 'Feature',
                     'properties': {
                         'message': 'Leaf',
-                        'iconSize': [64, 64]
+                        'iconSize': [128, 64]
                     },
                     'geometry': {
                         'type': 'Point',
@@ -61,13 +57,13 @@
         };
 
         // Add markers to the map.
-        for (const marker of geojson.features) {
+        for (const marker of elem.mapgeojson.features) {
             // Create a DOM element for each marker.
             const el = document.createElement('div');
             const width = marker.properties.iconSize[0];
             const height = marker.properties.iconSize[1];
             el.className = 'marker';
-            el.style.backgroundImage = `url(img/leaf.png)`;
+            el.style.backgroundImage = `url('` + $(elem).attr('icon') + `')`;
             el.style.width = `${width}px`;
             el.style.height = `${height}px`;
             el.style.backgroundSize = '100%';
@@ -77,10 +73,14 @@
             });
 
             // Add markers to the map.
-            new mapboxgl.Marker(el)
+            elem.mapicon = new mapboxgl.Marker(el)
                 .setLngLat(marker.geometry.coordinates)
-                .addTo(map);
+                .addTo(elem.map);
         }
+
+        elem.map.on('idle', function () {
+            elem.map.resize()
+        })
     }
 
     disconnectedCallback() {
@@ -92,6 +92,46 @@
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
+        this.mapicon?.remove();
+
+        this.mapgeojson = {
+            'type': 'FeatureCollection',
+            'features': [
+                {
+                    'type': 'Feature',
+                    'properties': {
+                        'message': 'Leaf',
+                        'iconSize': [128, 64]
+                    },
+                    'geometry': {
+                        'type': 'Point',
+                        'coordinates': [$(this).attr('long') ?? 0, $(this).attr('lat') ?? 0]
+                    }
+                }
+            ]
+        };
+
+        // Add markers to the map.
+        for (const marker of this.mapgeojson.features) {
+            // Create a DOM element for each marker.
+            const el = document.createElement('div');
+            const width = marker.properties.iconSize[0];
+            const height = marker.properties.iconSize[1];
+            el.className = 'marker';
+            el.style.backgroundImage = `url('` + $(this).attr('icon') + `')`;
+            el.style.width = `${width}px`;
+            el.style.height = `${height}px`;
+            el.style.backgroundSize = '100%';
+
+            el.addEventListener('click', () => {
+                window.alert(marker.properties.message);
+            });
+
+            // Add markers to the map.
+            this.mapicon = new mapboxgl.Marker(el)
+                .setLngLat(marker.geometry.coordinates)
+                .addTo(this.map);
+        }
     }
 }
 

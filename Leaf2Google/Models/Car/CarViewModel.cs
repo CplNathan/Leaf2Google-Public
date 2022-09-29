@@ -11,8 +11,10 @@ namespace Leaf2Google.Models.Car
 
         public ThermostatModel? carThermostat { get; set; }
 
-        public CarModel? car { get; set; }
+        public PointF? carLocation { get; set; }
 
-        public PointF? location { get; set; }
+        public string? carPicture { get; set; }
+
+        public CarModel? car { get; set; }
     }
 }

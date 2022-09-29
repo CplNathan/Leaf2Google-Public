@@ -25,11 +25,5 @@ namespace Leaf2Google.Dependency.Google.Devices
             _googleState = googleState;
             _sessionManager = sessionManager;
         }
-
-        public abstract Task<JObject> QueryAsync(Guid sessionId, string? vin);
-
-        public abstract Task<JObject> ExecuteAsync(Guid sessionId, string? vin, JObject data);
-
-        public abstract Task<bool> FetchAsync(Guid sessionId, string? vin, bool forceFetch = false);
     }
 }

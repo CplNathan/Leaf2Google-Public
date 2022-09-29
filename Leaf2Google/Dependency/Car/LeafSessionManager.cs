@@ -40,7 +40,7 @@ namespace Leaf2Google.Dependency.Car
             return VehicleSessions[sessionId].LastLocation?.Item2 ?? new PointF(0f, 0f);
         }
 
-        public async Task<Response?> VehicleClimate(Guid sessionId, string? vin, bool forceUpdate = false)
+        public async Task<Response?> VehicleClimate(Guid sessionId, string? vin, bool forceUpdate = true)
         {
             var session = VehicleSessions[sessionId];
 

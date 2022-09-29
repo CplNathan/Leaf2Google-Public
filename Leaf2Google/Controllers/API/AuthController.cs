@@ -31,6 +31,7 @@ namespace Leaf2Google.Controllers.API
 
             return ViewComponent("SessionInfo", new
             {
+                viewName = "Auths",
                 sessionId = ViewBag?.SessionId ?? null
             });
         }
