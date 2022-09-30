@@ -10,3 +10,6 @@ A service which allows you to link your Nissan Connect enabled vehicle to Google
 * Decipher the SRP setup so that remote lock/unlocking is possible
 * Route planner and range visualizer
 * More?
+
+## Why?
+I wanted a way to heat my car up in the morning. Nissan supports scheduling heating or cooling through the car's interface, however, this is a scheduled time. I wanted to be able to integrate this into my assistants good morning routine which is something Nissan currently does not offer. Since then I have continued to take the web portion of this project further as a bit of a challenge and to familiarise myself with some newer technologies.
