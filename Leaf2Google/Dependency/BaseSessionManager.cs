@@ -1,63 +1,145 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. SessionManagerBase.cs
 
+using Castle.Core.Internal;
 using Leaf2Google.Contexts;
 using Leaf2Google.Dependency.Google;
 using Leaf2Google.Helpers;
 using Leaf2Google.Models.Car;
+using Leaf2Google.Models.Generic;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUglify.Helpers;
+using System.Drawing;
 using System.Net;
 using System.Text;
 
 namespace Leaf2Google.Dependency
 {
-    public class BaseSessionManager : IDisposable
+    public interface ICarSessionManager
     {
-        protected readonly HttpClient _client;
+        Task StartAsync();
+
+        Task<bool> AddAsync(CarModel NewLeaf);
+
+        Dictionary<Guid, VehicleSessionBase> VehicleSessions { get; }
+
+        IReadOnlyDictionary<Guid, VehicleSessionBase> AllSessions { get; }
+
+        Task<PointF> VehicleLocation(Guid sessionId, string? vin);
+        Task<Response?> VehicleClimate(Guid sessionId, string? vin, bool forceUpdate = true);
+        Task<Response?> VehicleLock(Guid sessionId, string? vin);
+        Task<Response?> VehicleBattery(Guid sessionId, string? vin);
+        Task<Response?> SetVehicleClimate(Guid sessionId, string? vin, decimal targetTemp, bool active);
+        Task<Response?> SetVehicleLock(Guid sessionId, string? vin, bool locked);
+        Task<Response?> FlashLights(Guid sessionId, string? vin, int duration = 5);
+        Task<Response?> BeepHorn(Guid sessionId, string? vin, int duration = 5);
+    }
+
+    public delegate void AuthEventHandler(object sender, Guid sessionId, string? authToken);
+
+    public delegate void RequestEventHandler(object sender, Guid sessionId, bool requestSuccess);
+
+    public abstract class BaseSessionManager
+    {
+        private readonly HttpClient _client;
 
         protected HttpClient Client { get => _client; }
 
-        protected readonly GoogleStateManager _googleState;
+        private readonly LeafContext _leafContext;
+
+        protected LeafContext LeafContext { get => _leafContext; }
+
+        private readonly LoggingManager _logging;
+
+        protected LoggingManager Logging { get => _logging; }
 
         protected readonly IServiceScopeFactory _serviceScopeFactory;
-        private readonly IServiceScope _serviceScope;
-        protected readonly LeafContext _leafContext;
 
-        protected readonly IConfiguration _configuration;
+        private IServiceScopeFactory ServiceScopeFactory { get => _serviceScopeFactory; }
+
+        private readonly IConfiguration _configuration;
+
+        protected IConfiguration Configuration { get => _configuration; }
 
         private Dictionary<Guid, VehicleSessionBase> _vehicleSessions = new Dictionary<Guid, VehicleSessionBase>();
 
-        private Dictionary<Guid, VehicleSessionBase> _pendingSessions = new Dictionary<Guid, VehicleSessionBase>();
-
         public Dictionary<Guid, VehicleSessionBase> VehicleSessions { get => _vehicleSessions; }
 
-        public IReadOnlyDictionary<Guid, VehicleSessionBase> AllSessions
+        public IReadOnlyDictionary<Guid, VehicleSessionBase> AllSessions { get => _vehicleSessions; }
+
+
+        public event RequestEventHandler OnRequest;
+
+
+        public event AuthEventHandler OnAuthenticationAttempt;
+
+        public BaseSessionManager(HttpClient client, LeafContext leafContext, LoggingManager logging, Dictionary<Guid, VehicleSessionBase> vehicleSessions, IServiceScopeFactory serviceScopeFactory, IConfiguration configuration)
         {
-            get
+            _client = client;
+            _leafContext = leafContext;
+            _logging = logging;
+            _vehicleSessions = vehicleSessions;
+            _serviceScopeFactory = serviceScopeFactory;
+            _configuration = configuration;
+
+            OnRequest += BaseSessionManager_OnRequest;
+            OnAuthenticationAttempt += BaseSessionManager_OnAuthenticationAttempt;
+        }
+
+        private async void BaseSessionManager_OnAuthenticationAttempt(object sender, Guid sessionId, string? authToken)
+        {
+            if (sender is VehicleSessionBase session)
             {
-                var allSessions = new Dictionary<Guid, VehicleSessionBase>();
+                var scope = ServiceScopeFactory.CreateScope();
+                var nissanContext = scope.ServiceProvider.GetRequiredService<LeafContext>();
 
-                _vehicleSessions.ForEach(x => allSessions[x.Key] = x.Value);
-                _pendingSessions.ForEach(x => allSessions[x.Key] = x.Value);
+                if (!session.Authenticated)
+                    session.LoginFailedCount += 1;
 
-                return allSessions;
+                if (!session.Authenticated && session.LoginGivenUp)
+                {
+                    var leaf = await nissanContext.NissanLeafs.FirstOrDefaultAsync(car => car.CarModelId == session.SessionId);
+                    if (leaf != null)
+                    {
+                        leaf.Deleted = DateTime.UtcNow;
+                        nissanContext.Entry(leaf).State = EntityState.Modified;
+                    }
+
+                    Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Delete, AuditContext.Leaf, "Deleting Stale Leaf"));
+
+                    VehicleSessions.Remove(session.SessionId);
+                }
+                else if (session.Authenticated)
+                {
+                    if (!await nissanContext.NissanLeafs.AnyAsync(car => car.CarModelId == session.SessionId))
+                    {
+                        await nissanContext.NissanLeafs.AddAsync(new CarModel(session.Username, session.Password));
+                    }
+
+                    Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf, "Authentication Success"));
+                }
+                else
+                {
+                    Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf, "Authentication Failed"));
+                    await Login(session.SessionId);
+                }
+
+                await nissanContext.SaveChangesAsync();
             }
         }
 
-        protected Timer? _timer;
-
-        public BaseSessionManager(HttpClient client, GoogleStateManager googleState, IServiceScopeFactory serviceScopeFactory, IConfiguration configuration)
+        private async void BaseSessionManager_OnRequest(object sender, Guid sessionId, bool requestSuccess)
         {
-            _client = client;
-            _configuration = configuration;
-            _googleState = googleState;
-            _serviceScopeFactory = serviceScopeFactory;
-            _serviceScope = _serviceScopeFactory.CreateScope();
-            _leafContext = _serviceScope.ServiceProvider.GetRequiredService<LeafContext>();
+            if (sender is VehicleSessionBase session && !session.Authenticated && !session.LoginGivenUp && session.LastAuthenticated > DateTime.MinValue && !requestSuccess)
+            {
+                session.LastRequestSuccessful = requestSuccess;
+                await Login(sessionId);
+            }
         }
 
-        private async Task<Response?> MakeRequest(Guid sessionId, HttpRequestMessage httpRequestMessage, string baseUri = "")
+        protected async Task<Response?> MakeRequest(Guid sessionId, HttpRequestMessage httpRequestMessage, string baseUri = "")
         {
             bool success = true;
             Response? result = null;
@@ -68,6 +150,9 @@ namespace Leaf2Google.Dependency
                 httpRequestMessage.Headers.Add("User-Agent", "NissanConnect/2 CFNetwork/978.0.7 Darwin/18.7.0");
 
                 result = await _client.MakeRequest(httpRequestMessage);
+
+                if (result?.Code != (int)HttpStatusCode.OK && result?.Code != (int)HttpStatusCode.Found)
+                    success = false;
             }
             catch (Exception ex)
             {
@@ -77,260 +162,93 @@ namespace Leaf2Google.Dependency
                     success = false;
             }
 
-            if (result?.Code != (int)HttpStatusCode.OK && result?.Code != (int)HttpStatusCode.Found)
-                success = false;
+            if (result != null)
+                result.Success = success;
 
-            AllSessions[sessionId]?.Invoke_OnRequest(success);
+            OnRequest?.Invoke(AllSessions.FirstOrDefault(session => session.Key == sessionId), sessionId, result?.Success ?? false);
+
             return result;
         }
 
-        private async Task<Response?> Authenticate(Guid sessionId)
-        {
-            var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, $"json/realms/root/realms/{_configuration["Nissan:EU:realm"]}/authenticate")
-            {
-                Headers =
-                {
-                    { "Accept-Api-Version", _configuration["Nissan:api_version"] },
-                    { "X-Username", "anonymous" },
-                    { "X-Password", "anonymous" },
-                    { "Accept", "application/json" }
-                }
-            };
-
-            return await MakeRequest(sessionId, httpRequestMessage);
-        }
-
-        private async Task<Response?> Authenticate(Guid sessionId, string username, string password, Response? authenticateResult)
-        {
-            if (authenticateResult?.Success != true)
-                return null;
-
-            // Because this data is so 'hand-crafted' I have left it as a simple JObject instead of creating a bespoke object to control this.
-            dynamic httpRequestData = new JObject {
-                { "authId", authenticateResult.Data.authId },
-                { "template", string.Empty },
-                { "stage", "LDAP1" },
-                { "header", "Sign in" },
-                { "callbacks", new JArray(
-                    new JObject
-                    {
-                        { "type", "NameCallback" },
-                        { "output", new JArray (
-                            new JObject {
-                                { "name", "prompt" },
-                                { "value", "User Name:" }
-                            }
-                        )},
-                        { "input", new JArray (
-                            new JObject {
-                                { "name", "IDToken1" },
-                                { "value", username }
-                            }
-                        )},
-                    },
-                    new JObject
-                    {
-                        { "type", "PasswordCallback" },
-                        { "output", new JArray (
-                            new JObject {
-                                { "name", "prompt" },
-                                { "value", "Password:" }
-                            }
-                        )},
-                        { "input", new JArray (
-                            new JObject {
-                                { "name", "IDToken2" },
-                                { "value", password }
-                            }
-                        )},
-                    })
-                }
-            };
-
-            var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, $"json/realms/root/realms/{_configuration["Nissan:EU:realm"]}/authenticate")
-            {
-                Headers =
-                {
-                    { "Accept-Api-Version", _configuration["Nissan:api_version"] },
-                    { "X-Username", "anonymous" },
-                    { "X-Password", "anonymous" },
-                    { "Accept", "application/json" }
-                },
-                Content = new StringContent(JsonConvert.SerializeObject(httpRequestData), Encoding.UTF8, "application/json")
-            };
-
-            var response = await MakeRequest(sessionId, httpRequestMessage);
-
-            return response;
-        }
-
-        private async Task<Response?> Authorize(Guid sessionId, Response? authenticateResult)
-        {
-            if (authenticateResult?.Success != true)
-                return null;
-
-            var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, $"oauth2{authenticateResult.Data.realm}/authorize?client_id={_configuration["Nissan:EU:client_id"]}&redirect_uri={_configuration["Nissan:EU:redirect_uri"]}&response_type=code&scope={_configuration["Nissan:EU:scope"]}&nonce=sdfdsfez")
-            {
-                Headers =
-                {
-                    { "Cookie", $"i18next=en-UK; amlbcookie=05; kauthSession=\"{authenticateResult.Data.tokenId}\"" }
-                }
-            };
-
-            var response = await MakeRequest(sessionId, httpRequestMessage);
-
-            if (response != null)
-                response.Data = authenticateResult!.Data;
-
-            return response;
-        }
-
-        private async Task<Response?> AccessToken(Guid sessionId, Response? authenticateResult)
-        {
-            if (authenticateResult?.Code != (int)HttpStatusCode.Found)
-                return null;
-
-            var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, $"oauth2{authenticateResult.Data.realm}/access_token?code={authenticateResult!.Headers.Location?.ToString().Split('=')[1].Split('&')[0]}&client_id={_configuration["Nissan:EU:client_id"]}&client_secret={_configuration["Nissan:EU:client_secret"]}&redirect_uri={_configuration["Nissan:EU:redirect_uri"]}&grant_type=authorization_code")
-            {
-                Headers =
-                {
-                    { "Accept-Api-Version", _configuration["Nissan:api_version"] },
-                    { "X-Username", "anonymous" },
-                    { "X-Password", "anonymous" },
-                    { "Accept", "application/json" }
-                },
-                Content = new StringContent(string.Empty, Encoding.UTF8, "application/x-www-form-urlencoded")
-            };
-
-            var response = await MakeRequest(sessionId, httpRequestMessage);
-
-            return response;
-        }
-
-        private async Task<Response?> UsersResult(Guid sessionId)
+        protected async Task<bool> Login(Guid sessionId) // make abstract/interface
         {
             var session = AllSessions[sessionId];
 
-            var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, $"v1/users/current")
+            if (!session.LoginGivenUp && !session.Authenticated)
             {
-                Headers =
-                {
-                    { "Authorization", $"Bearer {session.AuthenticatedAccessToken}" }
-                }
-            };
-
-            var response = await MakeRequest(sessionId, httpRequestMessage, _configuration["Nissan:EU:user_adapter_base_url"]);
-
-            return response;
-        }
-
-        private async Task<Response?> VehiclesResult(Guid sessionId, string userId)
-        {
-            var session = AllSessions[sessionId];
-
-            var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, $"v4/users/{userId}/cars")
-            {
-                Headers =
-                {
-                    { "Authorization", $"Bearer {session.AuthenticatedAccessToken}" }
-                }
-            };
-
-            var response = await MakeRequest(sessionId, httpRequestMessage, _configuration["Nissan:EU:user_base_url"]);
-
-            return response;
-        }
-
-        protected async Task<VehicleSessionBase> Login(VehicleSessionBase session) // make abstract/interface
-        {
-            _pendingSessions[session.SessionId] = session;
-            var authenticateResult = await Authenticate(session.SessionId);
-            Response? authenticationResult = null;
-
-            authenticationResult = await Authenticate(session.SessionId, session.Username, session.Password, authenticateResult);
-            var authorizeResult = await Authorize(session.SessionId, authenticationResult);
-            var accessTokenResult = await AccessToken(session.SessionId, authorizeResult);
-
-            if (accessTokenResult?.Success == true)
-            {
-                session.AuthenticatedAccessToken = (string?)accessTokenResult?.Data?.access_token;
-
-                // TODO add dropdown select on register
-                var usersResult = await UsersResult(session.SessionId);
-
-                var vehiclesResult = await VehiclesResult(session.SessionId, (string)usersResult!.Data.userId);
-
-                session.VINs.AddRange(((JArray)vehiclesResult!.Data.data).Select(vehicle => (string?)((JObject)vehicle)["vin"]).Where(vehicle => !string.IsNullOrEmpty(vehicle)));
-                session.CarPictureUrl = (((JArray)vehiclesResult!.Data.data).Select(vehicle => (string?)((JObject)vehicle)["pictureURL"]).FirstOrDefault());
+                Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf, "Authentication Attempting"));
+                session = VehicleSessions[session.SessionId] = await LoginImplementation(session);
             }
             else
             {
-                session.AuthenticatedAccessToken = null;
+                Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf, "Authentication Attempted - But Given Up"));
+                return false;
             }
 
-            _vehicleSessions[session.SessionId] = session;
-            _googleState.GetOrCreateDevices(session.SessionId);
+            OnAuthenticationAttempt?.Invoke(session, sessionId, session.AuthenticatedAccessToken);
 
-            if (!session.Authenticated && session.LoginGivenUp)
-            {
-                _vehicleSessions.Remove(session.SessionId);
-            }
-            else if(session.Authenticated || session.LoginGivenUp)
-            {
-                _pendingSessions.Remove(session.SessionId);
-            }
-
-            return session;
+            return session.Authenticated;
         }
+
+        public async Task StartAsync()
+        {
+            // Queue saved sessions into memory.
+            foreach (var leaf in LeafContext.NissanLeafs.Where(leaf => leaf.Deleted == null))
+            {
+                await AddAsync(new CarModel(leaf.NissanUsername, leaf.NissanPassword) { CarModelId = leaf.CarModelId });
+            }
+
+            await LeafContext.SaveChangesAsync();
+        }
+
+        private async Task<bool> AddAsync(CarModel NewCar, bool _ = false)
+        {
+            var session = new NissanConnectSession(NewCar.NissanUsername, NewCar.NissanPassword, NewCar.CarModelId);
+
+            bool success = false;
+            try
+            {
+                VehicleSessions[session.SessionId] = session;
+                success = await Login(session.SessionId);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Exception, AuditContext.Leaf, ex.ToString()));
+            }
+
+            return success;
+        }
+
+        public async Task<bool> AddAsync(CarModel NewCar)
+        {
+            var success = await AddAsync(NewCar, false);
+
+            if (success)
+                await LeafContext.SaveChangesAsync();
+
+            return success;
+        }
+
+        protected abstract Task<VehicleSessionBase> LoginImplementation(VehicleSessionBase session);
 
         protected async Task<Response?> PerformAction(Guid sessionId, string? vin, string action, string type, JObject attributes)
         {
-            var session = AllSessions[sessionId];
-
-            dynamic httpRequestData = new JObject {
-                { "data", new JObject {
-                    { "type", $"{type}" },
-                    { "attributes", attributes}
-                }}
-            };
-
-            var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, $"v1/cars/{vin}/actions/{action}")
-            {
-                Headers =
-                {
-                    { "Authorization", $"Bearer {session.AuthenticatedAccessToken}" },
-                    { "Accept", "*/*" }
-                },
-                Content = new StringContent(JsonConvert.SerializeObject(httpRequestData), Encoding.UTF8, "application/vnd.api+json")
-            };
-
-            var response = await MakeRequest(session.SessionId, httpRequestMessage, _configuration["Nissan:EU:car_adapter_base_url"]);
+            Console.WriteLine(await Logging.AddLog(sessionId, AuditAction.Execute, AuditContext.Leaf, $"Performing action {action} on {vin}"));
+            Response? response = await PerformActionImplementation(sessionId, vin, action, type, attributes);
 
             return response;
         }
+
+        protected abstract Task<Response?> PerformActionImplementation(Guid sessionId, string? vin, string action, string type, JObject attributes);
 
         protected async Task<Response?> GetStatus(Guid sessionId, string? vin, string action)
         {
-            var session = AllSessions[sessionId];
-
-            var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, $"v1/cars/{vin}/{action}")
-            {
-                Headers =
-                {
-                    { "Authorization", $"Bearer {session.AuthenticatedAccessToken}" }
-                }
-            };
-
-            var response = await MakeRequest(sessionId, httpRequestMessage, _configuration["Nissan:EU:car_adapter_base_url"]);
+            Console.WriteLine(await Logging.AddLog(sessionId, AuditAction.Execute, AuditContext.Leaf, $"Getting status {action} on {vin}"));
+            Response? response = await GetStatusImplementation(sessionId, vin, action);
 
             return response;
         }
 
-        public void Dispose()
-        {
-            _timer?.Dispose();
-            _serviceScope.Dispose();
-            GC.SuppressFinalize(this);
-        }
+        protected abstract Task<Response?> GetStatusImplementation(Guid sessionId, string? vin, string action);
     }
 }

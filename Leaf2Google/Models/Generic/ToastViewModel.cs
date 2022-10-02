@@ -11,5 +11,7 @@ namespace Leaf2Google.Models.Generic
         public string ClientId { get; set; }
 
         public string Colour { get; set; } = "primary";
+
+        public bool Displayed { get; set; } = false;
     }
 }

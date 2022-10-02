@@ -1,4 +1,5 @@
 ﻿using Leaf2Google.Contexts;
+using Leaf2Google.Dependency;
 using Leaf2Google.Dependency.Car;
 using Leaf2Google.Dependency.Google;
 using Leaf2Google.Dependency.Google.Devices;
@@ -16,16 +17,21 @@ namespace Leaf2Google.Controllers
     {
         private readonly LeafContext _leafContext;
 
+        private readonly LoggingManager _logging;
+
+        protected LoggingManager Logging { get => _logging; }
+
         private readonly GoogleStateManager _google;
 
         private readonly Captcha _captcha;
 
         public GoogleStateManager Google { get => _google; }
 
-        public HomeController(ILogger<HomeController> logger, LeafSessionManager sessions, LeafContext leafContext, GoogleStateManager google, Captcha captcha, IConfiguration configuration)
-            : base(logger, sessions, configuration)
+        public HomeController(ICarSessionManager sessionManager, LeafContext leafContext, LoggingManager logging, GoogleStateManager google, Captcha captcha)
+            : base(sessionManager)
         {
             _leafContext = leafContext;
+            _logging = logging;
             _google = google;
             _captcha = captcha;
         }
@@ -34,7 +40,7 @@ namespace Leaf2Google.Controllers
         {
             ReloadViewBag();
 
-            var session = Sessions.VehicleSessions.GetValueOrDefault(SessionId ?? Guid.Empty);
+            var session = SessionManager.VehicleSessions.GetValueOrDefault(SessionId ?? Guid.Empty);
 
             if (session == null)
             {
@@ -47,7 +53,7 @@ namespace Leaf2Google.Controllers
             {
                 ThermostatModel? carThermostat = (ThermostatModel?)Google.Devices[session.SessionId][typeof(ThermostatDevice)];
                 LockModel? carLock = (LockModel?)Google.Devices[session.SessionId][typeof(LockDevice)];
-                PointF? location = await Sessions.VehicleLocation(session.SessionId, session.PrimaryVin);
+                PointF? location = await SessionManager.VehicleLocation(session.SessionId, session.PrimaryVin);
 
                 return View("IndexUser", new CarViewModel()
                 {
@@ -68,20 +74,21 @@ namespace Leaf2Google.Controllers
                 return session.Value.Username == authForm.NissanUsername && session.Value.Password == authForm.NissanPassword;
             };
 
-            if (IsLoggedIn())
+            if (SessionId != null)
                 return RedirectToAction("Index", "Home");
 
             var captchaStatus = await _captcha.VerifyCaptcha(authForm.Captcha, HttpContext.Request.Host.Host);
 
-            if (Sessions.VehicleSessions.Any(authenticationPredicate) && captchaStatus)
+            if (SessionManager.VehicleSessions.Any(authenticationPredicate) && captchaStatus)
             {
-                var session = Sessions.VehicleSessions.First(authenticationPredicate);
+                var session = SessionManager.VehicleSessions.First(authenticationPredicate);
                 SessionId = session.Key;
                 ViewBag.SessionId = SessionId;
                 SelectedVin = session.Value.PrimaryVin;
                 ViewBag.SelectedVin = SelectedVin;
 
                 AddToast(new ToastViewModel() { Title = "Authentication", Message = "Authentication success." });
+                Console.WriteLine(await Logging.AddLog(Guid.Empty, AuditAction.Access, AuditContext.Account, $"Login success for {authForm.NissanUsername}"));
             }
             else
             {
@@ -89,6 +96,8 @@ namespace Leaf2Google.Controllers
                     AddToast(new ToastViewModel() { Title = "Authentication", Message = "Authentication failed with the given credentials.", Colour = "warning" });
                 else
                     AddToast(new ToastViewModel() { Title = "Authentication", Message = "Failed to verify reCaptcha response.", Colour = "warning" });
+
+                Console.WriteLine(await Logging.AddLog(Guid.Empty, AuditAction.Access, AuditContext.Account, $"Login failed for {authForm.NissanUsername}"));
             }
 
             ReloadViewBag();

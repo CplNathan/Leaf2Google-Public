@@ -14,14 +14,15 @@
         Delete,
         Update,
         Create,
-        Modify
+        Modify,
+        Exception
     }
 
-    public class AuditModel<T> : BaseModel
+    public class AuditModel : BaseModel
     {
         public Guid Id { get; set; }
 
-        public virtual T? Owner { get; set; }
+        public Guid? Owner { get; set; }
 
         public AuditContext Context { get; set; }
 

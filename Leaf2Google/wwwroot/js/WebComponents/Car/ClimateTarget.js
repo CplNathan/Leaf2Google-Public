@@ -22,18 +22,21 @@
 
         const increaseButton = $('<i>', {
             id: 'increaseButton',
-            class: 'bi bi-caret-up text-danger'
+            class: 'bi bi-caret-up text-danger',
+            role: 'button'
         }).appendTo(container);
 
         const targetTemperature = $('<i>', {
             id: 'targetTemperature',
             class: 'bi bi-fan',
-            text: '21°'
+            text: '21°',
+            role: 'button'
         }).appendTo(container);
 
         const decreaseButton = $('<i>', {
             id: 'decreaseButton',
-            class: 'bi bi-caret-down text-primary'
+            class: 'bi bi-caret-down text-primary',
+            role: 'button'
         }).appendTo(container);
 
         container.appendTo(shadow)
@@ -41,7 +44,22 @@
 
     connectedCallback() {
         var target = $(this).attr('target');
+        var elem = this;
+        elem.customtarget = target;
+
         $(this.shadowRoot).find('#targetTemperature').text(target + '°');
+
+        $(this.shadowRoot).find('#increaseButton').on('click', function () {
+            elem.customtarget = parseInt(elem.customtarget) + 1;
+            $(elem.shadowRoot).find('#targetTemperature').text(elem.customtarget + '°');
+            elem.override = true;
+        })
+
+        $(this.shadowRoot).find('#decreaseButton').on('click', function () {
+            elem.customtarget = parseInt(elem.customtarget) - 1;
+            $(elem.shadowRoot).find('#targetTemperature').text(elem.customtarget + '°');
+            elem.override = true;
+        })
     }
 
     disconnectedCallback() {
@@ -54,7 +72,14 @@
 
     attributeChangedCallback(name, oldValue, newValue) {
         var target = $(this).attr('target');
-        $(this.shadowRoot).find('#targetTemperature').text(target + '°');
+
+        if (this?.override && target != this.customtarget) {
+            $(this.shadowRoot).find('#targetTemperature').text(this.customtarget + '°');
+        }
+        else {
+            $(this.shadowRoot).find('#targetTemperature').text(target + '°');
+            this.override = false;
+        }
     }
 }
 

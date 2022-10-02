@@ -16,7 +16,7 @@
 
         const buttonAction = $('<button>', {
             id: 'buttonAction',
-            class: 'btn'
+            class: 'btn rounded-pill2'
         }).appendTo(shadow);
     }
 

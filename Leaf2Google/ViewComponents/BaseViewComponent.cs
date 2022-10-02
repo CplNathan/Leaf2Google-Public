@@ -1,13 +1,19 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. Class.cs
 
+using Leaf2Google.Dependency;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Leaf2Google.ViewComponents
 {
     public abstract class BaseViewComponent : ViewComponent
     {
-        public BaseViewComponent()
+        private readonly ICarSessionManager _sessionManager;
+
+        protected ICarSessionManager SessionManager { get => _sessionManager; }
+
+        public BaseViewComponent(ICarSessionManager sessionManager)
         {
+            _sessionManager = sessionManager;
         }
 
         public bool RegisterViewComponentScript(string scriptPath)

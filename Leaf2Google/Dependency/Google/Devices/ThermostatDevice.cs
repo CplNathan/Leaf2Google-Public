@@ -10,7 +10,7 @@ namespace Leaf2Google.Dependency.Google.Devices
 {
     public class ThermostatDevice : BaseDevice, IDevice
     {
-        public ThermostatDevice(GoogleStateManager googleState, LeafSessionManager sessionManager)
+        public ThermostatDevice(GoogleStateManager googleState, ICarSessionManager sessionManager)
             : base(googleState, sessionManager)
         {
             // Use here, have as per request object not a singleton!
@@ -18,13 +18,13 @@ namespace Leaf2Google.Dependency.Google.Devices
 
         public async Task<bool> FetchAsync(Guid sessionId, string? vin, bool forceFetch = false)
         {
-            ThermostatModel vehicleThermostat = (ThermostatModel)_googleState.Devices[sessionId][typeof(ThermostatDevice)];
+            ThermostatModel vehicleThermostat = (ThermostatModel)GoogleState.Devices[sessionId][typeof(ThermostatDevice)];
 
             bool success = false;
 
             if (vehicleThermostat.WillFetch || forceFetch)
             {
-                var climateStatus = await _sessionManager.VehicleClimate(sessionId, vin, DateTime.UtcNow - vehicleThermostat.LastUpdated > TimeSpan.FromSeconds(10));
+                var climateStatus = await SessionManager.VehicleClimate(sessionId, vin, DateTime.UtcNow - vehicleThermostat.LastUpdated > TimeSpan.FromSeconds(10));
 
                 if (climateStatus is not null && climateStatus.Success == true)
                 {
@@ -34,7 +34,7 @@ namespace Leaf2Google.Dependency.Google.Devices
                     vehicleThermostat.LastUpdated = DateTime.UtcNow; //climateStatus.Data?.data.attributes.lastUpdateTime;
                 }
 
-                _googleState.Devices[sessionId][typeof(ThermostatDevice)] = vehicleThermostat;
+                GoogleState.Devices[sessionId][typeof(ThermostatDevice)] = vehicleThermostat;
             }
             else
             {
@@ -48,7 +48,7 @@ namespace Leaf2Google.Dependency.Google.Devices
         {
             bool success = await FetchAsync(sessionId, vin);
 
-            ThermostatModel vehicleThermostat = (ThermostatModel)_googleState.Devices[sessionId][typeof(ThermostatDevice)];
+            ThermostatModel vehicleThermostat = (ThermostatModel)GoogleState.Devices[sessionId][typeof(ThermostatDevice)];
 
             return new JObject()
             {
@@ -62,11 +62,11 @@ namespace Leaf2Google.Dependency.Google.Devices
 
         public async Task<JObject> ExecuteAsync(Guid sessionId, string? vin, JObject data)
         {
-            ThermostatModel vehicleThermostat = (ThermostatModel)_googleState.Devices[sessionId][typeof(ThermostatDevice)];
+            ThermostatModel vehicleThermostat = (ThermostatModel)GoogleState.Devices[sessionId][typeof(ThermostatDevice)];
 
             vehicleThermostat.Target = data.ContainsKey("thermostatTemperatureSetpoint") ? (decimal)data["thermostatTemperatureSetpoint"]! : vehicleThermostat.Target;
             vehicleThermostat.Active = data.ContainsKey("thermostatMode") ? ((string)data["thermostatMode"]! == "heatcool") : data.ContainsKey("thermostatTemperatureSetpoint") ? true : vehicleThermostat.Active;
-            var climateStatus = await _sessionManager.SetVehicleClimate(sessionId, vin, vehicleThermostat.Target, vehicleThermostat.Active);
+            var climateStatus = await SessionManager.SetVehicleClimate(sessionId, vin, vehicleThermostat.Target, vehicleThermostat.Active);
 
             bool success = false;
             if (climateStatus is not null && climateStatus.Success == true)

@@ -1,15 +1,14 @@
 using Leaf2Google.Contexts;
 using Leaf2Google.Controllers;
+using Leaf2Google.Dependency;
 using Leaf2Google.Dependency.Car;
 using Leaf2Google.Dependency.Google;
 using Leaf2Google.Dependency.Google.Devices;
 using Leaf2Google.Dependency.Helpers;
+using Leaf2Google.Models.Car;
+using Leaf2Google.Models.Google.Devices;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
-
-// Add-Migration NAME
-
-// TODO re-write existing Google API to be better, fit into better MVC flow. Login page etc. JQuery validate tooltips for error messages.
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,13 +21,18 @@ builder.Services.AddDbContext<LeafContext>(options => options
 );
 builder.Services.AddHttpClient<BaseController>(c =>
 {
-    c.BaseAddress = new Uri(builder.Configuration["Nissan:EU:auth_base_url"]);
+    //c.BaseAddress = new Uri(builder.Configuration["Nissan:EU:auth_base_url"]);
 });
-builder.Services.AddSingleton<LeafSessionManager>();
-builder.Services.AddSingleton<GoogleStateManager>();
+
+builder.Services.AddSingleton(x => new Dictionary<Guid, Dictionary<Type, BaseDeviceModel>>());
+builder.Services.AddSingleton(x => new Dictionary<Guid, VehicleSessionBase>());
+
+builder.Services.AddScoped<ICarSessionManager, LeafSessionManager>();
+builder.Services.AddScoped<GoogleStateManager>();
 builder.Services.AddScoped<IDevice, LockDevice>();
 builder.Services.AddScoped<IDevice, ThermostatDevice>();
 builder.Services.AddTransient<Captcha>();
+builder.Services.AddTransient<LoggingManager>();
 
 builder.Services.AddWebOptimizer(pipeline =>
 {
@@ -63,9 +67,8 @@ app.UseWebOptimizer();
 using (var scope = app.Services.CreateScope())
 {
     scope.ServiceProvider.GetRequiredService<LeafContext>().Database.Migrate();
+    await scope.ServiceProvider.GetRequiredService<ICarSessionManager>().StartAsync();
 }
-
-await app.Services.GetRequiredService<LeafSessionManager>().StartAsync();
 
 app.UseStaticFiles();
 

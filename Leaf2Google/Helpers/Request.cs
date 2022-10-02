@@ -31,7 +31,7 @@ namespace Leaf2Google.Helpers
             this.Code = Code;
         }
 
-        public bool Success { get; init; }
+        public bool Success { get; set; }
 
         public dynamic Data { get; set; }
 

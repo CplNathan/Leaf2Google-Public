@@ -1,14 +1,37 @@
 ﻿using Leaf2Google.Dependency.Google.Devices;
+using Leaf2Google.Models.Car;
 using Leaf2Google.Models.Google.Devices;
+using NUglify.Helpers;
 
 namespace Leaf2Google.Dependency.Google
 {
     public class GoogleStateManager
     {
-        public Dictionary<Guid, Dictionary<Type, BaseDeviceModel>> Devices { get; set; } = new Dictionary<Guid, Dictionary<Type, BaseDeviceModel>>();
+        private readonly Dictionary<Guid, Dictionary<Type, BaseDeviceModel>> _devices;
 
-        public GoogleStateManager()
+        public Dictionary<Guid, Dictionary<Type, BaseDeviceModel>> Devices { get => _devices; }
+
+        public GoogleStateManager(Dictionary<Guid, Dictionary<Type, BaseDeviceModel>> devices, ICarSessionManager sessionManager)
         {
+            _devices = devices;
+
+            if (sessionManager is BaseSessionManager baseSessionManager)
+            {
+                baseSessionManager.OnAuthenticationAttempt += BaseSessionManager_OnAuthenticationAttempt;
+
+                if (devices.Count <= 0)
+                {
+                    baseSessionManager.VehicleSessions.Where(session => session.Value.Authenticated).ForEach(session => GetOrCreateDevices(session.Key));
+                }
+            }    
+        }
+
+        private void BaseSessionManager_OnAuthenticationAttempt(object sender, Guid sessionId, string? authToken)
+        {
+            if (sender is VehicleSessionBase session)
+            {
+                _ = GetOrCreateDevices(sessionId);
+            }
         }
 
         private static Dictionary<Type, BaseDeviceModel> MakeDevices()

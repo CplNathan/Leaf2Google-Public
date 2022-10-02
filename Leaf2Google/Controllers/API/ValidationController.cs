@@ -1,4 +1,5 @@
 ﻿using Leaf2Google.Contexts;
+using Leaf2Google.Dependency;
 using Leaf2Google.Dependency.Car;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,8 +9,8 @@ namespace Leaf2Google.Controllers.API
     {
         private readonly LeafContext _leafContext;
 
-        public ValidationController(ILogger<HomeController> logger, LeafSessionManager sessions, LeafContext leafContext, IConfiguration configuration)
-            : base(logger, sessions, configuration)
+        public ValidationController(ICarSessionManager sessionManager, LeafContext leafContext)
+            : base(sessionManager)
         {
             _leafContext = leafContext;
         }

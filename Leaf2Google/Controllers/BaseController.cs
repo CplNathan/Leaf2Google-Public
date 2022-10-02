@@ -1,4 +1,5 @@
 ﻿using Leaf2Google.Controllers.API;
+using Leaf2Google.Dependency;
 using Leaf2Google.Dependency.Car;
 using Leaf2Google.Models.Generic;
 using Microsoft.AspNetCore.Mvc;
@@ -12,13 +13,9 @@ namespace Leaf2Google.Controllers
 {
     public class BaseController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
+        private readonly ICarSessionManager _sessionManager;
 
-        private readonly LeafSessionManager _sessions;
-
-        private readonly IConfiguration _configuration;
-
-        protected LeafSessionManager Sessions { get => _sessions; }
+        protected ICarSessionManager SessionManager { get => _sessionManager; }
 
         protected Guid? SessionId
         {
@@ -49,14 +46,9 @@ namespace Leaf2Google.Controllers
             }
         }
 
-        public bool IsLoggedIn() =>
-            Sessions.VehicleSessions.GetValueOrDefault(SessionId ?? Guid.Empty) != null;
-
-        public BaseController(ILogger<HomeController> logger, LeafSessionManager sessions, IConfiguration configuration)
+        public BaseController(ICarSessionManager sessionManager)
         {
-            _logger = logger;
-            _sessions = sessions;
-            _configuration = configuration;
+            _sessionManager = sessionManager;
         }
 
         public bool RegisterViewComponentScript(string scriptPath)
@@ -108,7 +100,13 @@ namespace Leaf2Google.Controllers
             ViewBag.API = endpoints.ToString();
 
             if (resetToasts)
-                ViewBag.Toasts = new List<ToastViewModel>();
+            {
+                if (ViewBag.Toasts is null)
+                    ViewBag.Toasts = new List<ToastViewModel>();
+
+                ViewBag.Toasts = ((List<ToastViewModel>)ViewBag.Toasts).Where(toast => !toast.Displayed).ToList();
+                ViewBag.Toasts = ((List<ToastViewModel>)ViewBag.Toasts).Select(toast => { toast.Displayed = true; return toast; }).ToList();
+            }
         }
 
         protected void AddToast(ToastViewModel toastView)

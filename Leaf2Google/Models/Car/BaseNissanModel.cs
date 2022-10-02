@@ -1,13 +1,12 @@
-﻿using System.Drawing;
+﻿using Castle.Core.Internal;
+using System.Drawing;
 
 namespace Leaf2Google.Models.Car
 {
-    public delegate void AuthEventHandler(object sender, string? authToken);
-
-    public delegate void RequestEventHandler(object sender, bool requestSuccess);
-
     public class VehicleSessionBase
     {
+        public object _authLock = new object();
+
         private string? _authenticatedAccessToken = string.Empty;
 
         public string? AuthenticatedAccessToken
@@ -18,12 +17,17 @@ namespace Leaf2Google.Models.Car
             }
             set
             {
-                if (_authenticatedAccessToken != value)
-                    OnAuthenticationAttempt?.Invoke(this, value);
+                if (!value.IsNullOrEmpty() && value != _authenticatedAccessToken)
+                    _lastAuthenticated = DateTime.UtcNow;
 
                 _authenticatedAccessToken = value;
             }
         }
+
+        private DateTime _lastAuthenticated = DateTime.MinValue;
+
+        public DateTime LastAuthenticated { get => _lastAuthenticated; }
+
 
         public bool Authenticated { get => !string.IsNullOrEmpty(_authenticatedAccessToken) && LastRequestSuccessful; }
 
@@ -39,39 +43,17 @@ namespace Leaf2Google.Models.Car
 
         public List<string?> VINs { get; init; } = new List<string?>();
 
-        public bool LastRequestSuccessful { get; protected set; }
+        public bool LastRequestSuccessful { get; set; } = true;
 
-        public int LoginFailedCount { get; protected set; }
+        public int LoginFailedCount { get; set; }
 
         public bool LoginGivenUp { get => LoginFailedCount >= 5; }
-
-        public event RequestEventHandler OnRequest;
-
-        public event AuthEventHandler OnAuthenticationAttempt;
 
         public VehicleSessionBase(string username, string password, Guid sessionId)
         {
             this.Username = username;
             this.Password = password;
             this.SessionId = sessionId;
-
-            OnRequest += VehicleSessionBase_OnRequest;
-            OnAuthenticationAttempt += VehicleSessionBase_OnAuthenticationAttempt;
-        }
-
-        public void Invoke_OnRequest(bool requestSuccess)
-        {
-            OnRequest?.Invoke(this, requestSuccess);
-        }
-
-        private void VehicleSessionBase_OnRequest(object? sender, bool requestSuccess)
-        {
-            LastRequestSuccessful = requestSuccess;
-        }
-
-        private void VehicleSessionBase_OnAuthenticationAttempt(object? sender, string? authToken)
-        {
-            LoginFailedCount = Authenticated ? 0 : LoginFailedCount++;
         }
     }
 

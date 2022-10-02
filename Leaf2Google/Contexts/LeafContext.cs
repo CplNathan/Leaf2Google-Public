@@ -14,7 +14,7 @@ namespace Leaf2Google.Contexts
 
         public DbSet<CarModel> NissanLeafs { get; set; }
 
-        public DbSet<AuditModel<CarModel>> NissanAudits { get; set; }
+        public DbSet<AuditModel> NissanAudits { get; set; }
 
         public DbSet<AuthModel> GoogleAuths { get; set; }
 
@@ -38,9 +38,8 @@ namespace Leaf2Google.Contexts
                 .ToTable("t_leafs_leaf");
 
             modelBuilder
-                .Entity<AuditModel<CarModel>>()
-                .ToTable("t_leafs_audit")
-                .HasOne(i => i.Owner);
+                .Entity<AuditModel>()
+                .ToTable("t_leafs_audit");
 
             modelBuilder
                 .Entity<AuthModel>()

@@ -9,7 +9,7 @@ namespace Leaf2Google.Dependency.Google.Devices
 {
     public class LockDevice : BaseDevice, IDevice
     {
-        public LockDevice(GoogleStateManager googleState, LeafSessionManager sessionManager)
+        public LockDevice(GoogleStateManager googleState, ICarSessionManager sessionManager)
             : base(googleState, sessionManager)
         {
             // Use here, have as per request object not a singleton!
@@ -17,15 +17,15 @@ namespace Leaf2Google.Dependency.Google.Devices
 
         public async Task<bool> FetchAsync(Guid sessionId, string? vin, bool forceFetch = false)
         {
-            LockModel vehicleLock = (LockModel)_googleState.Devices[sessionId][typeof(LockDevice)];
+            LockModel vehicleLock = (LockModel)GoogleState.Devices[sessionId][typeof(LockDevice)];
 
             bool success = false;
 
             if (vehicleLock.WillFetch || forceFetch)
             {
-                var lockStatus = await _sessionManager.VehicleLock(sessionId, vin);
+                var lockStatus = await SessionManager.VehicleLock(sessionId, vin);
 
-                var batteryStatus = await _sessionManager.VehicleBattery(sessionId, vin);
+                var batteryStatus = await SessionManager.VehicleBattery(sessionId, vin);
 
                 if (lockStatus is not null && lockStatus.Success == true && batteryStatus is not null && batteryStatus.Success == true)
                 {
@@ -40,7 +40,7 @@ namespace Leaf2Google.Dependency.Google.Devices
                     vehicleLock.LastUpdated = DateTime.UtcNow;
                 }
 
-                _googleState.Devices[sessionId][typeof(LockDevice)] = vehicleLock;
+                GoogleState.Devices[sessionId][typeof(LockDevice)] = vehicleLock;
             }
             else
             {
@@ -54,7 +54,7 @@ namespace Leaf2Google.Dependency.Google.Devices
         {
             bool success = await FetchAsync(sessionId, vin);
 
-            LockModel vehicleLock = (LockModel)_googleState.Devices[sessionId][typeof(LockDevice)];
+            LockModel vehicleLock = (LockModel)GoogleState.Devices[sessionId][typeof(LockDevice)];
 
             var descriptiveCapacity = "FULL";
 
@@ -121,17 +121,17 @@ namespace Leaf2Google.Dependency.Google.Devices
 
         public async Task<JObject> ExecuteAsync(Guid sessionId, string? vin, JObject data)
         {
-            LockModel vehicleLock = (LockModel)_googleState.Devices[sessionId][typeof(LockDevice)];
+            LockModel vehicleLock = (LockModel)GoogleState.Devices[sessionId][typeof(LockDevice)];
 
             if ((string?)data.Root["command"] == "action.devices.commands.Locate" && ((bool?)data["silence"] ?? false) == false)
             {
-                var flashStatus = await _sessionManager.FlashLights(sessionId, vin, 5);
+                var flashStatus = await SessionManager.FlashLights(sessionId, vin, 5);
             }
             else if ((string?)data.Root["command"] == "action.devices.commands.LockUnlock")
             {
                 vehicleLock.Locked = data.ContainsKey("lock") ? (bool?)data["lock"] ?? vehicleLock.Locked : vehicleLock.Locked;
 
-                var lockStatus = await _sessionManager.SetVehicleLock(sessionId, vin, vehicleLock.Locked);
+                var lockStatus = await SessionManager.SetVehicleLock(sessionId, vin, vehicleLock.Locked);
 
                 bool success = false;
                 if (lockStatus is not null && lockStatus.Success)
@@ -139,7 +139,7 @@ namespace Leaf2Google.Dependency.Google.Devices
                     success = lockStatus.Success;
                 }
 
-                _googleState.Devices[sessionId][typeof(LockDevice)] = vehicleLock;
+                GoogleState.Devices[sessionId][typeof(LockDevice)] = vehicleLock;
 
                 return new JObject()
                 {

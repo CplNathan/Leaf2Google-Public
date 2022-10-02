@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. CarInfoViewComponent.cs
 
+using Leaf2Google.Dependency;
 using Leaf2Google.Dependency.Car;
 using Leaf2Google.Dependency.Google;
 using Leaf2Google.Dependency.Google.Devices;
@@ -12,26 +13,22 @@ namespace Leaf2Google.ViewComponents.Car
 {
     public class CarInfoViewComponent : BaseViewComponent
     {
-        private readonly LeafSessionManager _sessions;
-
         private readonly GoogleStateManager _google;
-
-        private readonly IEnumerable<IDevice> _devices;
-
-        protected LeafSessionManager Sessions { get => _sessions; }
 
         protected GoogleStateManager Google { get => _google; }
 
-        public CarInfoViewComponent(LeafSessionManager sessions, GoogleStateManager google, IEnumerable<IDevice> devices)
+        private readonly IEnumerable<IDevice> _devices;
+
+        public CarInfoViewComponent(ICarSessionManager sessionManager, GoogleStateManager google, IEnumerable<IDevice> devices)
+            : base(sessionManager)
         {
-            _sessions = sessions;
             _google = google;
             _devices = devices;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(string viewName, Guid? sessionId, string? defaultVin)
         {
-            var session = Sessions.VehicleSessions[sessionId ?? Guid.Empty];
+            var session = SessionManager.VehicleSessions[sessionId ?? Guid.Empty];
 
             if (session != null && defaultVin != null)
             {
@@ -57,8 +54,8 @@ namespace Leaf2Google.ViewComponents.Car
                 {
                     carThermostat = carThermostat, //new Models.Google.Devices.Thermostat("1-leaf-ac", "Air Conditioner"),
                     carLock = carLock, //new Models.Google.Devices.Charger("1-leaf-lock", "Leaf"),
-                    carLocation = await Sessions.VehicleLocation(session.SessionId, defaultVin),
-                    carPicture = Sessions.AllSessions[session.SessionId].CarPictureUrl
+                    carLocation = await SessionManager.VehicleLocation(session.SessionId, defaultVin),
+                    carPicture = SessionManager.AllSessions[session.SessionId].CarPictureUrl
                 };
 
                 return View(viewName, carInfo);

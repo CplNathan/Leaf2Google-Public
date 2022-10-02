@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. APIController.cs
 
 using Leaf2Google.Contexts;
+using Leaf2Google.Dependency;
 using Leaf2Google.Dependency.Car;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,8 +13,8 @@ namespace Leaf2Google.Controllers.API
     {
         private readonly LeafContext _googleContext;
 
-        public AuthController(ILogger<HomeController> logger, LeafSessionManager sessions, LeafContext googleContext, IConfiguration configuration)
-        : base(logger, sessions, configuration)
+        public AuthController(ICarSessionManager sessionManager, LeafContext googleContext)
+        : base(sessionManager)
         {
             _googleContext = googleContext;
         }

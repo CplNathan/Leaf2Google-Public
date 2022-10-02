@@ -19,9 +19,6 @@ namespace Leaf2Google.Models.Google
 
     public class AuthPostFormModel : AuthPostFormGoogleModel
     {
-        public string NissanUsername { get; set; } = string.Empty;
-        public string NissanPassword { get; set; } = string.Empty;
-
         [Required(AllowEmptyStrings = true)]
         public string Captcha { get; set; } = string.Empty;
     }
