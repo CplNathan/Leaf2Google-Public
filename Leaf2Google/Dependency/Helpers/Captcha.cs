@@ -1,15 +1,6 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. CaptchaVerification.cs
 
 using Leaf2Google.Helpers;
-using Microsoft.IdentityModel.Protocols;
-using Newtonsoft.Json;
-using static System.Net.WebRequestMethods;
-using System.Reflection.PortableExecutable;
-using System.Text;
-using System;
-using Newtonsoft.Json.Linq;
-using System.Xml.Linq;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Leaf2Google.Dependency.Helpers
 {
@@ -41,7 +32,7 @@ namespace Leaf2Google.Dependency.Helpers
                 {
                     new KeyValuePair<string, string>("secret", Configuration["Google:captcha:secret_key"]),
                     new KeyValuePair<string, string>("response", response),
-                    new KeyValuePair<string, string>("remoteip", remoteip)
+                    new KeyValuePair<string, string>("remoteip", remoteip ?? "")
                 })
             };
             httpRequestMessage.RequestUri = new Uri("https://www.google.com/recaptcha/api/siteverify");

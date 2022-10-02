@@ -1,16 +1,18 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. SessionInfoViewModel.cs
 
 using Leaf2Google.Contexts;
+using Leaf2Google.Dependency;
 using Leaf2Google.Models.Google;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Leaf2Google.ViewComponents
+namespace Leaf2Google.ViewComponents.Google
 {
     public class SessionInfoViewComponent : BaseViewComponent
     {
         private readonly LeafContext _googleContext;
 
-        public SessionInfoViewComponent(LeafContext googleContext)
+        public SessionInfoViewComponent(ICarSessionManager sessionManager, LeafContext googleContext)
+            : base (sessionManager)
         {
             _googleContext = googleContext;
         }
@@ -22,18 +24,17 @@ namespace Leaf2Google.ViewComponents
 
             var auths = _googleContext.GoogleAuths.Where(auth => auth.Owner != null && auth.Owner.CarModelId == sessionId && sessionId != null);
 
+            SessionInfoViewModel sessionInfo = new SessionInfoViewModel();
+
             if (auths.Any())
             {
-                SessionInfo sessionInfo = new SessionInfo()
-                {
-                    auths = auths.ToList()
-                };
+                sessionInfo.auths = auths.ToList();
 
                 return View(viewName, sessionInfo);
             }
             else
             {
-                return View(null);
+                return View(viewName, sessionInfo);
             }
         }
     }

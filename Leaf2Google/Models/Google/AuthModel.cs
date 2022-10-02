@@ -1,31 +1,20 @@
-﻿using Leaf2Google.Models.Generic;
+﻿using Leaf2Google.Helpers;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text;
 
 namespace Leaf2Google.Models.Google
 {
-    // Form Objects
-    public class AuthForm
-    {
-        public string client_id { get; set; } = string.Empty;
-        public Uri? redirect_uri { get; set; }
-        public string state { get; set; } = string.Empty;
-    }
-
-    public class AuthPostForm : AuthForm
-    {
-        public string NissanUsername { get; set; } = string.Empty;
-        public string NissanPassword { get; set; } = string.Empty;
-        public string Captcha { get; set; } = string.Empty;
-    }
-
     // Database Object
-    public class Auth : BaseModel
+    public class AuthModel : BaseModel
     {
-        public Auth()
+        public AuthModel()
         {
             this.AuthState = string.Empty;
             this.ClientId = string.Empty;
         }
 
+        [Key]
         public Guid AuthId { get; set; }
 
         public virtual Car.CarModel? Owner { get; set; }

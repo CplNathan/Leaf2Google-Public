@@ -1,5 +1,4 @@
-﻿using Leaf2Google.Models.Car;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System.Net.Http.Headers;
 
 namespace Leaf2Google.Helpers
@@ -32,7 +31,7 @@ namespace Leaf2Google.Helpers
             this.Code = Code;
         }
 
-        public bool Success { get; init; }
+        public bool Success { get; set; }
 
         public dynamic Data { get; set; }
 

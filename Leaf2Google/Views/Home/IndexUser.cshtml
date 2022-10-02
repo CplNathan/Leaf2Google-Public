@@ -4,35 +4,73 @@
 @{
     ViewData["Title"] = "Home Page";
 }
-@model Leaf2Google.Models.Car.CarInfoModel
+@model Leaf2Google.Models.Car.CarViewModel
 
 @{
     <div class="row h-100">
-        <div class="d-flex justify-content-center align-items-end col col-12 col-md-8 position-relative g-3 g-md-0 shadow-sm">
-            <div class="w-100 h-100">
+        <div class="col col-12 d-flex justify-content-center align-items-end position-relative m-0 p-0">
+            <div class="h-100 col-12">
                 @await Component.InvokeAsync("CarInfo",
-                    new {
-                        viewName = "Location",
-                        sessionId = (Guid?)ViewBag?.SessionId,
-                        defaultVin = (string?)ViewBag?.SelectedVin
-                    })
+            new {
+            viewName = "Location",
+            sessionId = (Guid?)ViewBag?.SessionId,
+            defaultVin = (string?)ViewBag?.SelectedVin
+            })
             </div>
-            <div class="charge mb-5 position-absolute">
+            <div class="chargeContainer mb-5 position-absolute bottom-0">
                 @await Component.InvokeAsync("CarInfo",
-                    new {
-                        viewName = "Charge",
-                        sessionId = (Guid?)ViewBag?.SessionId,
-                        defaultVin = (string?)ViewBag?.SelectedVin
-                    })
+            new {
+            viewName = "Charge",
+            sessionId = (Guid?)ViewBag?.SessionId,
+            defaultVin = (string?)ViewBag?.SelectedVin
+            })
             </div>
         </div>
-        <div class="col col-12 col-md-4 shadow-lg" style="z-index: 3;">
-                @await Component.InvokeAsync("CarInfo",
-                    new {
-                        viewName = "Default",
-                        sessionId = (Guid?)ViewBag?.SessionId,
-                        defaultVin = (string?)ViewBag?.SelectedVin
-                    })
+        <div class="col col-12 col-xxl-2 col-lg-3 col-md-4 col-sm-5 position-absolute end-0 rounded m-0 m-sm-3 my-3">
+            <div class="row gy-2 gx-2 px-1 p-2 m-1 bg-dark bg-gradient shadow-lg border border-secondary border-2 controlContainer">
+                <div class="col col-12">
+                    @await Component.InvokeAsync("CarInfo",
+                new {
+                viewName = "CarPicture",
+                sessionId = (Guid?)ViewBag?.SessionId,
+                defaultVin = (string?)ViewBag?.SelectedVin
+                })
+                </div>
+                <div class="col col-4">
+                    @await Component.InvokeAsync("CarInfo",
+                new {
+                viewName = "ClimateTarget",
+                sessionId = (Guid?)ViewBag?.SessionId,
+                defaultVin = (string?)ViewBag?.SelectedVin
+                })
+                </div>
+                <div class="col col-4">
+                    @await Component.InvokeAsync("CarInfo",
+                new {
+                viewName = "ChargeVertical",
+                sessionId = (Guid?)ViewBag?.SessionId,
+                defaultVin = (string?)ViewBag?.SelectedVin
+                })
+                </div>
+                <div class="col col-4">
+                    @await Component.InvokeAsync("CarInfo",
+                new {
+                viewName = "ClimateCurrent",
+                sessionId = (Guid?)ViewBag?.SessionId,
+                defaultVin = (string?)ViewBag?.SelectedVin
+                })
+                </div>
+                <div class="col col-6">
+                    <div class="d-flex flex-column align-items-center justify-content-between h-100 rounded-pill2 bg-warning text-white shadow">
+                        <l2g-buttonaction colour="warning" action="flash" text="Lights"></l2g-buttonaction>
+                    </div>
+                </div>
+                <div class="col col-6">
+                    <div class="d-flex flex-column align-items-center justify-content-between h-100 rounded-pill2 bg-danger text-white shadow">
+                        <l2g-buttonaction colour="danger" action="horn" text="Horn"></l2g-buttonaction>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 }

@@ -9,6 +9,10 @@
     <title>@ViewData["Title"] - Leaf2Google</title>
     <link defer rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.css" />
     <link defer rel="stylesheet" href="~/css/bundle.css" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Signika:wght@300;400&display=swap" rel="stylesheet" />
 </head>
 <body class="d-flex flex-column">
     <header>
@@ -57,7 +61,7 @@
     <script async id="captcha" src="https://www.google.com/recaptcha/api.js"></script>
 
     <script>
-        const api = @Html.Raw(ViewBag.API)
+        const api = @Html.Raw(ViewBag?.API)
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)

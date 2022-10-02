@@ -55,7 +55,7 @@ namespace Leaf2Google.Migrations
                     b.ToTable("t_leafs_leaf", (string)null);
                 });
 
-            modelBuilder.Entity("Leaf2Google.Models.Generic.Audit<Leaf2Google.Models.Car.CarModel>", b =>
+            modelBuilder.Entity("Leaf2Google.Models.Generic.AuditModel", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -70,7 +70,7 @@ namespace Leaf2Google.Migrations
                     b.Property<string>("Data")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("OwnerCarModelId")
+                    b.Property<Guid?>("Owner")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("Time")
@@ -78,12 +78,10 @@ namespace Leaf2Google.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OwnerCarModelId");
-
                     b.ToTable("t_leafs_audit", (string)null);
                 });
 
-            modelBuilder.Entity("Leaf2Google.Models.Generic.Config", b =>
+            modelBuilder.Entity("Leaf2Google.Models.Generic.ConfigModel", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -102,7 +100,7 @@ namespace Leaf2Google.Migrations
                     b.ToTable("t_app_config", (string)null);
                 });
 
-            modelBuilder.Entity("Leaf2Google.Models.Google.Auth", b =>
+            modelBuilder.Entity("Leaf2Google.Models.Google.AuthModel", b =>
                 {
                     b.Property<Guid>("AuthId")
                         .ValueGeneratedOnAdd()
@@ -141,7 +139,7 @@ namespace Leaf2Google.Migrations
                     b.ToTable("t_auths_auth", (string)null);
                 });
 
-            modelBuilder.Entity("Leaf2Google.Models.Google.Token", b =>
+            modelBuilder.Entity("Leaf2Google.Models.Google.TokenModel", b =>
                 {
                     b.Property<Guid>("TokenId")
                         .ValueGeneratedOnAdd()
@@ -166,7 +164,7 @@ namespace Leaf2Google.Migrations
                     b.ToTable("t_auths_token", (string)null);
                 });
 
-            modelBuilder.Entity("Leaf2Google.Models.Generic.Audit<Leaf2Google.Models.Car.CarModel>", b =>
+            modelBuilder.Entity("Leaf2Google.Models.Google.AuthModel", b =>
                 {
                     b.HasOne("Leaf2Google.Models.Car.CarModel", "Owner")
                         .WithMany()
@@ -175,18 +173,9 @@ namespace Leaf2Google.Migrations
                     b.Navigation("Owner");
                 });
 
-            modelBuilder.Entity("Leaf2Google.Models.Google.Auth", b =>
+            modelBuilder.Entity("Leaf2Google.Models.Google.TokenModel", b =>
                 {
-                    b.HasOne("Leaf2Google.Models.Car.CarModel", "Owner")
-                        .WithMany()
-                        .HasForeignKey("OwnerCarModelId");
-
-                    b.Navigation("Owner");
-                });
-
-            modelBuilder.Entity("Leaf2Google.Models.Google.Token", b =>
-                {
-                    b.HasOne("Leaf2Google.Models.Google.Auth", "Owner")
+                    b.HasOne("Leaf2Google.Models.Google.AuthModel", "Owner")
                         .WithMany()
                         .HasForeignKey("OwnerAuthId")
                         .OnDelete(DeleteBehavior.Cascade)

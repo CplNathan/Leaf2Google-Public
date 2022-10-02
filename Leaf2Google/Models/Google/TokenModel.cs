@@ -1,12 +1,16 @@
-﻿using Leaf2Google.Models.Generic;
+﻿using Leaf2Google.Helpers;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text;
 
 namespace Leaf2Google.Models.Google
 {
-    public class Token : BaseModel
+    public class TokenModel : BaseModel
     {
+        [Key]
         public Guid TokenId { get; set; }
 
-        public virtual Auth Owner { get; set; }
+        public virtual AuthModel Owner { get; set; }
 
         public Guid AccessToken { get; set; }
 
@@ -17,7 +21,7 @@ namespace Leaf2Google.Models.Google
 
     public class AccessTokenDto
     {
-        public AccessTokenDto(Token InToken)
+        public AccessTokenDto(TokenModel InToken)
         {
             this.token_type = "Bearer";
             this.access_token = InToken.AccessToken;
@@ -31,7 +35,7 @@ namespace Leaf2Google.Models.Google
 
     public class RefreshTokenDto : AccessTokenDto
     {
-        public RefreshTokenDto(Token InToken) : base(InToken)
+        public RefreshTokenDto(TokenModel InToken) : base(InToken)
         {
             this.refresh_token = InToken.RefreshToken;
         }

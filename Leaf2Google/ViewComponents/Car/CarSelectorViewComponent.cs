@@ -1,29 +1,22 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. CarSelectorViewComponent.cs
 
-using Leaf2Google.Dependency.Managers;
+using Leaf2Google.Dependency;
+using Leaf2Google.Dependency.Car;
+using Leaf2Google.Dependency.Google;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Leaf2Google.ViewComponents.Car
 {
-    public class CarSelectorViewComponent : ViewComponent
+    public class CarSelectorViewComponent : BaseViewComponent
     {
-        private readonly LeafSessionManager _sessions;
-
-        private readonly GoogleStateManager _google;
-
-        protected LeafSessionManager Sessions { get => _sessions; }
-
-        protected GoogleStateManager Google { get => _google; }
-
-        public CarSelectorViewComponent(LeafSessionManager sessions, GoogleStateManager google)
+        public CarSelectorViewComponent(ICarSessionManager sessionManager)
+            : base (sessionManager)
         {
-            _sessions = sessions;
-            _google = google;
         }
 
         public IViewComponentResult Invoke(Guid? sessionId)
         {
-            var session = Sessions.VehicleSessions.GetValueOrDefault(sessionId ?? Guid.Empty);
+            var session = SessionManager.VehicleSessions.GetValueOrDefault(sessionId ?? Guid.Empty);
 
             if (session != null)
             {

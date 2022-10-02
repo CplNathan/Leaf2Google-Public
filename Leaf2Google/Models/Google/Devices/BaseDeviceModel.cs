@@ -1,12 +1,11 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. BaseDevice.cs
 
-using Leaf2Google.Dependency.Managers;
-using Leaf2Google.Models.Car;
+using Leaf2Google.Dependency.Car;
 using Newtonsoft.Json.Linq;
 
 namespace Leaf2Google.Models.Google.Devices
 {
-    public abstract class BaseDevice
+    public abstract class BaseDeviceModel
     {
         public string Id { get; set; }
 
@@ -46,7 +45,7 @@ namespace Leaf2Google.Models.Google.Devices
 
         public JObject DeviceInfo { get; set; } = new JObject();
 
-        public BaseDevice(string Id, string Name)
+        public BaseDeviceModel(string Id, string Name)
         {
             this.Id = Id;
             this.Name = Name;
@@ -91,14 +90,5 @@ namespace Leaf2Google.Models.Google.Devices
         public DateTime LastUpdated { get; set; } = DateTime.MinValue;
 
         public bool WillFetch { get => DateTime.UtcNow - LastUpdated > TimeSpan.FromMinutes(1); }
-
-        public JObject Query(in LeafSessionManager sessionManager, Guid sessionId, string? vin) => QueryAsync(sessionManager, sessionId, vin).Result;
-        public abstract Task<JObject> QueryAsync(LeafSessionManager sessionManager, Guid sessionId, string? vin);
-
-        public JObject Execute(in LeafSessionManager sessionManager, Guid sessionId, string? vin, JObject data) => ExecuteAsync(sessionManager, sessionId, vin, data).Result;
-        public abstract Task<JObject> ExecuteAsync(LeafSessionManager sessionManager, Guid sessionId, string? vin, JObject data);
-
-        public bool Fetch(in LeafSessionManager sessionManager, Guid sessionId, string? vin, bool forceFetch = false) => FetchAsync(sessionManager, sessionId, vin, forceFetch).Result;
-        public abstract Task<bool> FetchAsync(LeafSessionManager sessionManager, Guid sessionId, string? vin, bool forceFetch = false);
     }
 }

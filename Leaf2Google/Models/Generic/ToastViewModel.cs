@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. ToastViewModel.cs
 
-namespace Leaf2Google.Models
+namespace Leaf2Google.Models.Generic
 {
     public class ToastViewModel
     {
@@ -11,5 +11,7 @@ namespace Leaf2Google.Models
         public string ClientId { get; set; }
 
         public string Colour { get; set; } = "primary";
+
+        public bool Displayed { get; set; } = false;
     }
 }
