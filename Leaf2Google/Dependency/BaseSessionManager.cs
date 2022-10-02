@@ -113,11 +113,6 @@ namespace Leaf2Google.Dependency
                 }
                 else if (session.Authenticated)
                 {
-                    if (!await nissanContext.NissanLeafs.AnyAsync(car => car.CarModelId == session.SessionId))
-                    {
-                        await nissanContext.NissanLeafs.AddAsync(new CarModel(session.Username, session.Password));
-                    }
-
                     Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf, "Authentication Success"));
                 }
                 else

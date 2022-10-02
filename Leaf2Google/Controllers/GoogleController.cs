@@ -67,7 +67,7 @@ namespace Leaf2Google.Controllers
                 }}
             };
 
-            var leafSession = SessionManager.VehicleSessions[auth.Owner.CarModelId];
+            var leafSession = SessionManager.VehicleSessions.FirstOrDefault(session => session.Key == auth.Owner.CarModelId).Value;
             if (leafSession is null)
                 return Unauthorized("{\"error\": \"invalid_grant\"}");
 
@@ -317,6 +317,7 @@ namespace Leaf2Google.Controllers
             {
                 leaf = leafs.First(authenticationPredicate);
                 leaf.Deleted = null;
+                LeafContext.Entry(leaf).State = EntityState.Modified;
             }
             else
             {
@@ -327,7 +328,12 @@ namespace Leaf2Google.Controllers
             {
                 auth.Owner = leaf;
 
-                LeafContext.Entry(auth);
+                if (!await LeafContext.NissanLeafs.AnyAsync(car => car.CarModelId == leaf.CarModelId))
+                {
+                    await LeafContext.NissanLeafs.AddAsync(leaf);
+                }
+
+                LeafContext.Entry(auth).State = EntityState.Modified;
                 await LeafContext.SaveChangesAsync();
 
                 return Redirect(redirect_uri_processed.ToString());
@@ -376,7 +382,7 @@ namespace Leaf2Google.Controllers
                 AuthState = form.state
             };
 
-            LeafContext.GoogleAuths.Add(auth);
+            await LeafContext.GoogleAuths.AddAsync(auth);
             await LeafContext.SaveChangesAsync();
 
             return View("Index", form);
