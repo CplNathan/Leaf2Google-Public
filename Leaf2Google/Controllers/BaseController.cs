@@ -1,6 +1,7 @@
 ﻿using Leaf2Google.Controllers.API;
 using Leaf2Google.Dependency;
 using Leaf2Google.Dependency.Car;
+using Leaf2Google.Models.Car;
 using Leaf2Google.Models.Generic;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -32,6 +33,11 @@ namespace Leaf2Google.Controllers
             {
                 HttpContext.Session.SetString("SessionId", value.HasValue ? value.Value.ToString() : "");
             }
+        }
+
+        protected VehicleSessionBase? Session
+        {
+            get => SessionManager.AllSessions.FirstOrDefault(session => session.Key == SessionId).Value;
         }
 
         protected string? SelectedVin

@@ -5,9 +5,9 @@ using Leaf2Google.Dependency;
 using Leaf2Google.Dependency.Car;
 using Leaf2Google.Dependency.Google;
 using Leaf2Google.Dependency.Google.Devices;
+using Leaf2Google.Models.Car;
 using Leaf2Google.Models.Google.Devices;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json.Linq;
 using NUglify.Helpers;
 using System.Drawing;
 
@@ -29,7 +29,7 @@ namespace Leaf2Google.Controllers.API
         }
 
         [HttpPost]
-        public async Task<IActionResult> Action([FromQuery] string? action, [FromQuery] int? duration)
+        public async Task<JsonResult> Action([FromForm] string action, [FromForm] int? duration)
         {
             var sessionId = SessionId ?? Guid.Empty;
             if (SessionId != null && action != null && duration != null && SessionManager.VehicleSessions[sessionId] != null)
@@ -46,14 +46,14 @@ namespace Leaf2Google.Controllers.API
         }
 
         [HttpPost]
-        public async Task<ActionResult> Status([FromBody] JObject body)
+        public async Task<JsonResult> Status([FromForm] string query, [FromForm] string vin)
         {
             var sessionId = SessionId ?? Guid.Empty;
-            if (SessionId != null && body["query"] != null && SessionManager.VehicleSessions[sessionId] != null)
+            if (SessionId != null && query != null && SessionManager.VehicleSessions[sessionId] != null)
             {
-                string? vin = body["vin"]?.ToString().IsNullOrWhiteSpace() ?? true ? SelectedVin : body["vin"]?.ToString();
+                string? activevin = vin.IsNullOrWhiteSpace() ? SelectedVin : vin;
 
-                if (body["query"]?.ToString() == "battery")
+                if (query == "battery")
                 {
                     LockModel carLock = (LockModel)_google.Devices[sessionId][typeof(LockDevice)];
                     if (carLock != null)
@@ -61,7 +61,7 @@ namespace Leaf2Google.Controllers.API
                         var deviceData = _devices.FirstOrDefault(x => x.GetType() == typeof(LockDevice));
 
                         if (deviceData != null)
-                            await deviceData.FetchAsync(sessionId, vin);
+                            await deviceData.FetchAsync(sessionId, activevin);
 
                         return Json(new
                         {
@@ -70,9 +70,9 @@ namespace Leaf2Google.Controllers.API
                         });
                     }
                 }
-                else if (body["query"]?.ToString() == "location")
+                else if (query == "location")
                 {
-                    PointF? carLocation = await SessionManager.VehicleLocation(sessionId, vin);
+                    PointF? carLocation = await SessionManager.VehicleLocation(sessionId, activevin);
                     if (carLocation != null)
                     {
                         return Json(new
@@ -82,7 +82,7 @@ namespace Leaf2Google.Controllers.API
                         });
                     }
                 }
-                else if (body["query"]?.ToString() == "climate")
+                else if (query == "climate")
                 {
                     ThermostatModel carThermostat = (ThermostatModel)_google.Devices[sessionId][typeof(ThermostatDevice)];
                     if (carThermostat != null)
@@ -90,7 +90,7 @@ namespace Leaf2Google.Controllers.API
                         var deviceData = _devices.FirstOrDefault(x => x.GetType() == typeof(ThermostatDevice));
 
                         if (deviceData != null)
-                            await deviceData.FetchAsync(sessionId, vin);
+                            await deviceData.FetchAsync(sessionId, activevin);
 
                         return Json(new
                         {
@@ -101,7 +101,7 @@ namespace Leaf2Google.Controllers.API
                 }
             };
 
-            return BadRequest();
+            return Json(BadRequest());
         }
     }
 }

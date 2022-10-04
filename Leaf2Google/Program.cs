@@ -13,8 +13,7 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllersWithViews()
-    .AddNewtonsoftJson();
+builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<LeafContext>(options => options
     .UseLazyLoadingProxies()
     .UseSqlServer(builder.Configuration[$"ConnectionStrings:{(builder.Environment.IsDevelopment() ? "Test" : "Live")}"])
@@ -22,6 +21,15 @@ builder.Services.AddDbContext<LeafContext>(options => options
 builder.Services.AddHttpClient<BaseController>(c =>
 {
     //c.BaseAddress = new Uri(builder.Configuration["Nissan:EU:auth_base_url"]);
+});
+
+builder.Services.AddFido2(options =>
+{
+    options.ServerDomain = builder.Environment.IsDevelopment() ? "localhost" : builder.Configuration["fido2:serverDomain"];
+    options.ServerName = "Leaf2Google";
+    options.Origins = builder.Configuration.GetSection("fido2:origins").Get<HashSet<string>>();
+    options.TimestampDriftTolerance = builder.Configuration.GetValue<int>("fido2:timestampDriftTolerance");
+    options.MDSCacheDirPath = builder.Configuration["fido2:MDSCacheDirPath"];
 });
 
 builder.Services.AddSingleton(x => new Dictionary<Guid, Dictionary<Type, BaseDeviceModel>>());

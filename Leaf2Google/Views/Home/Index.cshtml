@@ -7,6 +7,7 @@
     <div class="d-flex align-items-center justify-content-center">
         <form method="post" id="loginform" class="container rounded bg-light p-3 shadow">
             @await Html.PartialAsync("Authentication/AuthenticationFormPartial", Model.car)
+            <l2g-securitykey-login class="w-100 mt-3"></l2g-securitykey-login>
             @Html.AntiForgeryToken()
         </form>
     </div>

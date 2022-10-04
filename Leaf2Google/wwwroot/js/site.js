@@ -1,84 +1,86 @@
-﻿function updatePanels() {
-    $('l2g-chargestatus').each(function (index) {
+﻿async function updatePanels() {
+    $('l2g-chargestatus').each(async function (index) {
         var control = $(this);
         var vin = control.attr('vin') ?? null;
 
-        $.ajax({
-            url: api.Car.Status,
-            type: "POST",
-            data: JSON.stringify({
-                "query": "battery",
-                "vin": vin
-            }),
-            contentType: "application/json",
-            cache: false,
-            async: false,
-            success: function (data) {
-                control.attr('percentage', data.percentage);
-                control.attr('charging', data.charging);
+        var data = new FormData();
+        data.append('query', 'battery');
+        data.append('vin', vin);
+
+        let battery = await fetch(api.Car.Status, {
+            method: 'POST',
+            body: data,
+            headers: {
+                'Accept': 'application/json'
             }
         });
+
+        battery = await battery.json();
+
+        control.attr('percentage', battery.percentage);
+        control.attr('charging', battery.charging);
+    });
+
+    $('l2g-locationmap').each(async function (index) {
+        var control = $(this);
+        var vin = control.attr('vin') ?? null;
+
+        var data = new FormData();
+        data.append('query', 'location');
+        data.append('vin', vin);
+
+        let location = await fetch(api.Car.Status, {
+            method: 'POST',
+            body: data,
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+
+        location = await location.json();
+
+        control.attr('lat', location.lat);
+        control.attr('long', location.long);
     })
 
-    $('l2g-locationmap').each(function (index) {
+    $('l2g-climatecurrent').each(async function (index) {
         var control = $(this);
         var vin = control.attr('vin') ?? null;
 
-        $.ajax({
-            url: api.Car.Status,
-            type: "POST",
-            data: JSON.stringify({
-                "query": "location",
-                "vin": vin
-            }),
-            contentType: "application/json",
-            cache: false,
-            async: false,
-            success: function (data) {
-                control.attr('lat', data.lat);
-                control.attr('long', data.long);
+        var data = new FormData();
+        data.append('query', 'climate');
+        data.append('vin', vin);
+
+        let climate = await fetch(api.Car.Status, {
+            method: 'POST',
+            body: data,
+            headers: {
+                'Accept': 'application/json'
             }
         });
+
+        climate = await climate.json();
+
+        control.attr('current', climate.current);
     })
 
-    $('l2g-climatecurrent').each(function (index) {
+    $('l2g-climatetarget').each(async function (index) {
         var control = $(this);
         var vin = control.attr('vin') ?? null;
 
-        $.ajax({
-            url: api.Car.Status,
-            type: "POST",
-            data: JSON.stringify({
-                "query": "climate",
-                "vin": vin
-            }),
-            contentType: "application/json",
-            cache: false,
-            async: false,
-            success: function (data) {
-                control.attr('current', data.current);
+        var data = new FormData();
+        data.append('query', 'climate');
+        data.append('vin', vin);
+
+        let climate = await fetch(api.Car.Status, {
+            method: 'POST',
+            body: data,
+            headers: {
+                'Accept': 'application/json'
             }
         });
-    })
 
-    $('l2g-climatetarget').each(function (index) {
-        var control = $(this);
-        var vin = control.attr('vin') ?? null;
-
-        $.ajax({
-            url: api.Car.Status,
-            type: "POST",
-            data: JSON.stringify({
-                "query": "climate",
-                "vin": vin
-            }),
-            contentType: "application/json",
-            cache: false,
-            async: false,
-            success: function (data) {
-                control.attr('target', data.target);
-            }
-        });
+        control.attr('target', climate.target);
     })
 }
 
