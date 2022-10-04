@@ -20,7 +20,7 @@ namespace Leaf2Google.Controllers.API
         }
 
         [HttpPost]
-        public async Task<ViewComponentResult> Delete([FromQuery] Guid? authId)
+        public async Task<ViewComponentResult> Delete([FromForm] Guid? authId)
         {
             if (SessionId != null && authId != null && _googleContext.GoogleAuths.Any(auth => auth.Owner != null && auth.Owner.CarModelId == SessionId && auth.AuthId == authId && auth.Deleted == null))
             {

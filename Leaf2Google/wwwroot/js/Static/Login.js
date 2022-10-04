@@ -54,7 +54,7 @@ function onExpire() {
         }),
         contentType: "application/json",
         cache: false,
-        async: false,
+        async: true,
         success: function (data) {
             $('#toaster').append(data);
             $('#' + clientId).toast('show');
@@ -75,7 +75,7 @@ function onError() {
         }),
         contentType: "application/json",
         cache: false,
-        async: false,
+        async: true,
         success: function (data) {
             $('#toaster').append(data);
             $('#' + clientId).toast('show');

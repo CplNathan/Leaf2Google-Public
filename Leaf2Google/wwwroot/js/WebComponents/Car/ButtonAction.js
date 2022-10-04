@@ -23,42 +23,45 @@
     connectedCallback() {
         var text = $(this).attr('text');
         var colour = $(this).attr('colour');
-        var action = $(this).attr('action');
+        var command = $(this).attr('action');
 
         $(this.shadowRoot).find('#buttonAction').text(text);
         $(this.shadowRoot).find('#buttonAction').addClass('btn-' + colour);
 
-        $(this.shadowRoot).find('#buttonAction').on('click', function () {
-            $.ajax({
-                url: api.Car.Action + "/?action=" + action + "&duration=" + 5,
-                type: "POST",
-                data: JSON.stringify({ action: action, duration: 5 }),
-                contentType: "application/json",
-                cache: false,
-                async: false,
-                success: function (data) {
-                    $('#sessionWrapper').html(data);
+        $(this.shadowRoot).find('#buttonAction').on('click', async function () {
+            var data = new FormData();
+            data.append('action', command);
+            data.append('duration', 5);
 
-                    var clientId = Math.floor(Math.random() * 100);
-                    $.ajax({
-                        url: api.Toast.Create,
-                        type: "POST",
-                        data: JSON.stringify({
-                            "Title": "Nissan Action",
-                            "Message": "The action '" + action + "' has been sent.",
-                            "ClientId": clientId,
-                            "Colour": "success"
-                        }),
-                        contentType: "application/json",
-                        cache: false,
-                        async: false,
-                        success: function (data) {
-                            $('#toaster').append(data);
-                            $('#' + clientId).toast('show');
-                        }
-                    });
+            let action = await fetch(api.Car.Action, {
+                method: 'POST',
+                body: data,
+                headers: {
+                    'Accept': 'application/json'
                 }
             });
+
+            action = await action.json();
+
+            var clientId = Math.floor(Math.random() * 100);
+            var toastdata = new FormData();
+            toastdata.append('Title', 'Nissan Action');
+            toastdata.append('Message', "The action '" + action + "' has been sent.");
+            toastdata.append('ClientId', clientId);
+            toastdata.append('Colour', 'success');
+
+            let toast = await fetch(api.Toast.Create, {
+                method: 'POST',
+                body: toastdata,
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            toast = await toast.text();
+
+            $('#toaster').append(toast);
+            $('#' + clientId).toast('show');
         })
     }
 
