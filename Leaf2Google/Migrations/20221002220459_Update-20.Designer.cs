@@ -4,6 +4,7 @@ using Leaf2Google.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Leaf2Google.Migrations
 {
     [DbContext(typeof(LeafContext))]
-    partial class LeafContextModelSnapshot : ModelSnapshot
+    [Migration("20221002220459_Update-20")]
+    partial class Update20
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -24,9 +26,6 @@ namespace Leaf2Google.Migrations
 
             modelBuilder.Entity("Fido2NetLib.Development.StoredCredential", b =>
                 {
-                    b.Property<byte[]>("PublicKey")
-                        .HasColumnType("varbinary(900)");
-
                     b.Property<Guid>("AaGuid")
                         .HasColumnType("uniqueidentifier");
 
@@ -36,6 +35,9 @@ namespace Leaf2Google.Migrations
                     b.Property<string>("Discriminator")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte[]>("PublicKey")
+                        .HasColumnType("varbinary(max)");
 
                     b.Property<DateTime>("RegDate")
                         .HasColumnType("datetime2");
@@ -48,8 +50,6 @@ namespace Leaf2Google.Migrations
 
                     b.Property<byte[]>("UserId")
                         .HasColumnType("varbinary(max)");
-
-                    b.HasKey("PublicKey");
 
                     b.ToTable("t_leafs_securitykey", (string)null);
 
@@ -202,9 +202,10 @@ namespace Leaf2Google.Migrations
                 {
                     b.HasBaseType("Fido2NetLib.Development.StoredCredential");
 
-                    b.Property<byte[]>("CredentialId")
-                        .IsRequired()
-                        .HasColumnType("varbinary(max)");
+                    b.Property<Guid?>("OwnerCarModelId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasIndex("OwnerCarModelId");
 
                     b.ToTable("t_leafs_securitykey", (string)null);
 
@@ -227,6 +228,15 @@ namespace Leaf2Google.Migrations
                         .HasForeignKey("OwnerAuthId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("Leaf2Google.Models.Security.StoredCredentialModel", b =>
+                {
+                    b.HasOne("Leaf2Google.Models.Car.CarModel", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerCarModelId");
 
                     b.Navigation("Owner");
                 });

@@ -1,7 +1,10 @@
-﻿using Leaf2Google.Models.Car;
+﻿using Fido2NetLib.Development;
+using Leaf2Google.Models.Car;
 using Leaf2Google.Models.Generic;
 using Leaf2Google.Models.Google;
+using Leaf2Google.Models.Security;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Leaf2Google.Contexts
 {
@@ -13,6 +16,8 @@ namespace Leaf2Google.Contexts
         }
 
         public DbSet<CarModel> NissanLeafs { get; set; }
+
+        public DbSet<StoredCredentialModel> SecurityKeys { get; set; }
 
         public DbSet<AuditModel> NissanAudits { get; set; }
 
@@ -36,6 +41,17 @@ namespace Leaf2Google.Contexts
             modelBuilder
                 .Entity<CarModel>()
                 .ToTable("t_leafs_leaf");
+
+            modelBuilder
+                .Entity<StoredCredentialModel>()
+                .ToTable("t_leafs_securitykey")
+                .Ignore(s => s.Descriptor);
+
+            modelBuilder
+                .Entity<StoredCredential>()
+                .ToTable("t_leafs_securitykey")
+                .Ignore(s => s.Descriptor)
+                .HasKey(s => s.PublicKey);
 
             modelBuilder
                 .Entity<AuditModel>()

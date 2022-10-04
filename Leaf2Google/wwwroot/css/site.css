@@ -294,3 +294,7 @@ select {
     .container {
         width: 100%;
     }
+
+    hr {
+        margin: 0 !important;
+    }

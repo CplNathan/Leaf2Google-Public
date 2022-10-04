@@ -17,9 +17,9 @@ namespace Leaf2Google.Controllers.API
         }
 
         [HttpPost]
-        public IActionResult Create([FromBody] ToastViewModel toast)
+        public IActionResult Create([FromForm] string Title, [FromForm] string Message, [FromForm] string ClientId, [FromForm] string Colour)
         {
-            return PartialView("Toaster/ToastPartial", toast);
+            return PartialView("Toaster/ToastPartial", new ToastViewModel() { Title = Title, Message = Message, ClientId = ClientId, Colour = Colour} );
         }
     }
 }

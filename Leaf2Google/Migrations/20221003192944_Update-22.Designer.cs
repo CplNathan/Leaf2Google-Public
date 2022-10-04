@@ -4,6 +4,7 @@ using Leaf2Google.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Leaf2Google.Migrations
 {
     [DbContext(typeof(LeafContext))]
-    partial class LeafContextModelSnapshot : ModelSnapshot
+    [Migration("20221003192944_Update-22")]
+    partial class Update22
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -24,7 +26,7 @@ namespace Leaf2Google.Migrations
 
             modelBuilder.Entity("Fido2NetLib.Development.StoredCredential", b =>
                 {
-                    b.Property<byte[]>("PublicKey")
+                    b.Property<byte[]>("UserId")
                         .HasColumnType("varbinary(900)");
 
                     b.Property<Guid>("AaGuid")
@@ -37,6 +39,9 @@ namespace Leaf2Google.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<byte[]>("PublicKey")
+                        .HasColumnType("varbinary(max)");
+
                     b.Property<DateTime>("RegDate")
                         .HasColumnType("datetime2");
 
@@ -46,10 +51,7 @@ namespace Leaf2Google.Migrations
                     b.Property<byte[]>("UserHandle")
                         .HasColumnType("varbinary(max)");
 
-                    b.Property<byte[]>("UserId")
-                        .HasColumnType("varbinary(max)");
-
-                    b.HasKey("PublicKey");
+                    b.HasKey("UserId");
 
                     b.ToTable("t_leafs_securitykey", (string)null);
 

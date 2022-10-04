@@ -1,0 +1,5 @@
+﻿@*@model Leaf2Google.Models.Car.CarInfoModel*@
+@inject IConfiguration Configuration
+
+@*Unique ID to refer to key tracked on server = uid*@
+<l2g-securitykey-link url="@ViewContext.HttpContext.Request.Host.Host" uid="1" key="@Guid.NewGuid().ToString()" register="true"></l2g-securitykey-link>
