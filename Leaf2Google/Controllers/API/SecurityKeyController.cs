@@ -123,12 +123,12 @@ public class SecurityKeyController : BaseAPIController
                 AaGuid = success.Result.Aaguid,
                 UserId = SessionId.Value.ToByteArray(),
                 CredentialId = success.Result.CredentialId
-            });
+            }, cancellationToken);
 
             success.Result.AttestationCertificate = null;
             success.Result.AttestationCertificateChain = null;
 
-            await _leafContext.SaveChangesAsync();
+            await _leafContext.SaveChangesAsync(cancellationToken: cancellationToken);
 
             return Json(success);
         }
@@ -186,7 +186,7 @@ public class SecurityKeyController : BaseAPIController
             var jsonOptions = HttpContext.Session.GetString("fido2.assertionOptions");
             var options = AssertionOptions.FromJson(jsonOptions);
 
-            var securitykeys = await _leafContext.SecurityKeys.ToListAsync();
+            var securitykeys = await _leafContext.SecurityKeys.ToListAsync(cancellationToken: cancellationToken);
             var creds = securitykeys.Where(key => key.CredentialId.Length > 0).FirstOrDefault(key =>
                             new PublicKeyCredentialDescriptor(key.CredentialId).Id.SequenceEqual(clientResponse.Id)) ??
                         throw new Exception("Unknown credentials");
@@ -206,7 +206,7 @@ public class SecurityKeyController : BaseAPIController
             var res = await _fido2.MakeAssertionAsync(clientResponse, options, creds.PublicKey, storedCounter, callback,
                 cancellationToken: cancellationToken);
 
-            var key = await _leafContext.SecurityKeys.FirstOrDefaultAsync(key => key.CredentialId == res.CredentialId);
+            var key = await _leafContext.SecurityKeys.FirstOrDefaultAsync(key => key.CredentialId == res.CredentialId, cancellationToken);
             if (key != null)
             {
                 key.SignatureCounter = res.Counter;
@@ -214,7 +214,7 @@ public class SecurityKeyController : BaseAPIController
                 await _leafContext.SaveChangesAsync();
 
                 var car = await _leafContext.NissanLeafs.FirstOrDefaultAsync(car =>
-                    car.CarModelId == new Guid(key.UserId));
+                    car.CarModelId == new Guid(key.UserId), cancellationToken);
                 SessionId = car?.CarModelId ?? Guid.Empty;
             }
 
