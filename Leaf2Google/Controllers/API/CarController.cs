@@ -48,7 +48,7 @@ namespace Leaf2Google.Controllers.API
             var sessionId = SessionId ?? Guid.Empty;
             if (SessionId != null && query != null && SessionManager.VehicleSessions[sessionId] != null)
             {
-                string? activevin = vin.IsNullOrWhiteSpace() ? SelectedVin : vin;
+                string? activevin = vin.IsNullOrWhiteSpace() || vin == "null" ? SelectedVin : vin;
 
                 if (query == "battery")
                 {

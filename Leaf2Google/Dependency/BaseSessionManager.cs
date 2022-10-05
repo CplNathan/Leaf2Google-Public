@@ -48,7 +48,7 @@ namespace Leaf2Google.Dependency
 
         protected LoggingManager Logging { get => _logging; }
 
-        protected readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
         private IServiceScopeFactory ServiceScopeFactory { get => _serviceScopeFactory; }
 
@@ -137,15 +137,13 @@ namespace Leaf2Google.Dependency
                 httpRequestMessage.RequestUri = new Uri($"{(string.IsNullOrEmpty(baseUri) ? _configuration["Nissan:EU:auth_base_url"] : baseUri)}{httpRequestMessage.RequestUri?.ToString() ?? ""}");
                 httpRequestMessage.Headers.Add("User-Agent", "NissanConnect/2 CFNetwork/978.0.7 Darwin/18.7.0");
 
-                result = await _client.MakeRequest(httpRequestMessage);
+                result = await Client.MakeRequest(httpRequestMessage);
 
                 if (result?.Code != (int)HttpStatusCode.OK && result?.Code != (int)HttpStatusCode.Found)
                     success = false;
             }
             catch (Exception ex)
             {
-                ex.GetHashCode();
-
                 if (ex.Source != "Newtonsoft.Json")
                     success = false;
             }
@@ -153,7 +151,7 @@ namespace Leaf2Google.Dependency
             if (result != null)
                 result.Success = success;
 
-            OnRequest?.Invoke(AllSessions.FirstOrDefault(session => session.Key == sessionId), sessionId, result?.Success ?? false);
+            OnRequest?.Invoke(AllSessions.FirstOrDefault(session => session.Key == sessionId).Value, sessionId, result?.Success ?? false);
 
             return result;
         }
