@@ -46,7 +46,7 @@
             var clientId = Math.floor(Math.random() * 100);
             var toastdata = new FormData();
             toastdata.append('Title', 'Nissan Action');
-            toastdata.append('Message', "The action '" + action + "' has been sent.");
+            toastdata.append('Message', "The action '" + command + "' has been sent.");
             toastdata.append('ClientId', clientId);
             toastdata.append('Colour', 'success');
 
