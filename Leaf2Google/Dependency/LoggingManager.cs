@@ -1,10 +1,6 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. LoggingManager.cs
 
-using Leaf2Google.Contexts;
-using Leaf2Google.Models.Car;
 using Leaf2Google.Models.Generic;
-using Microsoft.EntityFrameworkCore;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Leaf2Google.Dependency
 {

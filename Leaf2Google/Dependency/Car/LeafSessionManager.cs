@@ -1,10 +1,5 @@
-﻿using Castle.Core.Internal;
-using Leaf2Google.Contexts;
-using Leaf2Google.Dependency.Google;
-using Leaf2Google.Helpers;
+﻿using Leaf2Google.Helpers;
 using Leaf2Google.Models.Car;
-using Leaf2Google.Models.Generic;
-using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Drawing;

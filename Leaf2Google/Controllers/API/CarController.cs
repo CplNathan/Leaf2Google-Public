@@ -1,11 +1,8 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. APIController.cs
 
-using Leaf2Google.Contexts;
 using Leaf2Google.Dependency;
-using Leaf2Google.Dependency.Car;
 using Leaf2Google.Dependency.Google;
 using Leaf2Google.Dependency.Google.Devices;
-using Leaf2Google.Models.Car;
 using Leaf2Google.Models.Google.Devices;
 using Microsoft.AspNetCore.Mvc;
 using NUglify.Helpers;

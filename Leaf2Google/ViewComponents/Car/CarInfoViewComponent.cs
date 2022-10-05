@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. CarInfoViewComponent.cs
 
 using Leaf2Google.Dependency;
-using Leaf2Google.Dependency.Car;
 using Leaf2Google.Dependency.Google;
 using Leaf2Google.Dependency.Google.Devices;
 using Leaf2Google.Models.Car;

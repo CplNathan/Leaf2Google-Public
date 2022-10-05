@@ -1,19 +1,12 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. SessionManagerBase.cs
 
-using Castle.Core.Internal;
-using Leaf2Google.Contexts;
-using Leaf2Google.Dependency.Google;
 using Leaf2Google.Helpers;
 using Leaf2Google.Models.Car;
 using Leaf2Google.Models.Generic;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NUglify.Helpers;
 using System.Drawing;
 using System.Net;
-using System.Text;
 
 namespace Leaf2Google.Dependency
 {

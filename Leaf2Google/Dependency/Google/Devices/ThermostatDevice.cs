@@ -1,10 +1,7 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. Lock.cs
 
-using Leaf2Google.Dependency.Car;
 using Leaf2Google.Models.Google.Devices;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Net.Sockets;
 
 namespace Leaf2Google.Dependency.Google.Devices
 {

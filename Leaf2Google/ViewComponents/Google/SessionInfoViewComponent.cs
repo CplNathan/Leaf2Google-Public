@@ -1,6 +1,5 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. SessionInfoViewModel.cs
 
-using Leaf2Google.Contexts;
 using Leaf2Google.Dependency;
 using Leaf2Google.Models.Google;
 using Microsoft.AspNetCore.Mvc;

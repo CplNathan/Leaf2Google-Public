@@ -1,6 +1,5 @@
 ﻿using Leaf2Google.Controllers.API;
 using Leaf2Google.Dependency;
-using Leaf2Google.Dependency.Car;
 using Leaf2Google.Models.Car;
 using Leaf2Google.Models.Generic;
 using Microsoft.AspNetCore.Mvc;
@@ -8,7 +7,6 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using Newtonsoft.Json.Linq;
 using NUglify.Helpers;
 using System.Reflection;
-using System.Text;
 
 namespace Leaf2Google.Controllers
 {

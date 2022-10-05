@@ -1,5 +1,4 @@
-﻿using Castle.Core.Internal;
-using System.Drawing;
+﻿using System.Drawing;
 
 namespace Leaf2Google.Models.Car
 {
