@@ -1,66 +1,60 @@
 ﻿using System.Drawing;
 
-namespace Leaf2Google.Models.Car
+namespace Leaf2Google.Models.Car;
+
+public class VehicleSessionBase
 {
-    public class VehicleSessionBase
+    private string? _authenticatedAccessToken = string.Empty;
+    public object _authLock = new();
+
+    public VehicleSessionBase(string username, string password, Guid sessionId)
     {
-        public object _authLock = new object();
+        Username = username;
+        Password = password;
+        SessionId = sessionId;
+    }
 
-        private string? _authenticatedAccessToken = string.Empty;
-
-        public string? AuthenticatedAccessToken
+    public string? AuthenticatedAccessToken
+    {
+        get => _authenticatedAccessToken;
+        set
         {
-            get
-            {
-                return _authenticatedAccessToken;
-            }
-            set
-            {
-                if (!value.IsNullOrEmpty() && value != _authenticatedAccessToken)
-                    _lastAuthenticated = DateTime.UtcNow;
+            if (!value.IsNullOrEmpty() && value != _authenticatedAccessToken)
+                LastAuthenticated = DateTime.UtcNow;
 
-                _authenticatedAccessToken = value;
-            }
-        }
-
-        private DateTime _lastAuthenticated = DateTime.MinValue;
-
-        public DateTime LastAuthenticated { get => _lastAuthenticated; }
-
-
-        public bool Authenticated { get => !string.IsNullOrEmpty(_authenticatedAccessToken) && LastRequestSuccessful; }
-
-        public string Username { get; init; }
-        public string Password { get; init; }
-        public Guid SessionId { get; init; }
-
-        public Tuple<DateTime, PointF?> LastLocation { get; set; } = Tuple.Create<DateTime, PointF?>(DateTime.MinValue, null);
-
-        public string? CarPictureUrl { get; set; }
-
-        public string? PrimaryVin { get => VINs.FirstOrDefault(); }
-
-        public List<string?> VINs { get; init; } = new List<string?>();
-
-        public bool LastRequestSuccessful { get; set; } = true;
-
-        public int LoginFailedCount { get; set; }
-
-        public bool LoginGivenUp { get => LoginFailedCount >= 5; }
-
-        public VehicleSessionBase(string username, string password, Guid sessionId)
-        {
-            this.Username = username;
-            this.Password = password;
-            this.SessionId = sessionId;
+            _authenticatedAccessToken = value;
         }
     }
 
-    public class NissanConnectSession : VehicleSessionBase
+    public DateTime LastAuthenticated { get; private set; } = DateTime.MinValue;
+
+
+    public bool Authenticated => !string.IsNullOrEmpty(_authenticatedAccessToken) && LastRequestSuccessful;
+
+    public string Username { get; init; }
+    public string Password { get; init; }
+    public Guid SessionId { get; init; }
+
+    public Tuple<DateTime, PointF?> LastLocation { get; set; } =
+        Tuple.Create<DateTime, PointF?>(DateTime.MinValue, null);
+
+    public string? CarPictureUrl { get; set; }
+
+    public string? PrimaryVin => VINs.FirstOrDefault();
+
+    public List<string?> VINs { get; init; } = new();
+
+    public bool LastRequestSuccessful { get; set; } = true;
+
+    public int LoginFailedCount { get; set; }
+
+    public bool LoginGivenUp => LoginFailedCount >= 5;
+}
+
+public class NissanConnectSession : VehicleSessionBase
+{
+    public NissanConnectSession(string username, string password, Guid sessionId)
+        : base(username, password, sessionId)
     {
-        public NissanConnectSession(string username, string password, Guid sessionId)
-            : base(username, password, sessionId)
-        {
-        }
     }
 }

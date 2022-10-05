@@ -2,30 +2,25 @@
 
 using Newtonsoft.Json.Linq;
 
-namespace Leaf2Google.Dependency.Google.Devices
+namespace Leaf2Google.Dependency.Google.Devices;
+
+public interface IDevice
 {
-    public interface IDevice
-    {
-        public abstract Task<JObject> QueryAsync(Guid sessionId, string? vin);
-        public abstract Task<JObject> ExecuteAsync(Guid sessionId, string? vin, JObject data);
+    public Task<JObject> QueryAsync(Guid sessionId, string? vin);
+    public Task<JObject> ExecuteAsync(Guid sessionId, string? vin, JObject data);
 
-        public abstract Task<bool> FetchAsync(Guid sessionId, string? vin, bool forceFetch = false);
+    public Task<bool> FetchAsync(Guid sessionId, string? vin, bool forceFetch = false);
+}
+
+public abstract class BaseDevice
+{
+    public BaseDevice(GoogleStateManager googleState, ICarSessionManager sessionManager)
+    {
+        GoogleState = googleState;
+        SessionManager = sessionManager;
     }
 
-    public abstract class BaseDevice
-    {
-        private readonly GoogleStateManager _googleState;
+    protected GoogleStateManager GoogleState { get; }
 
-        protected GoogleStateManager GoogleState { get => _googleState; }
-
-        private readonly ICarSessionManager _sessionManager;
-
-        protected ICarSessionManager SessionManager { get => _sessionManager; }
-
-        public BaseDevice(GoogleStateManager googleState, ICarSessionManager sessionManager)
-        {
-            _googleState = googleState;
-            _sessionManager = sessionManager;
-        }
-    }
+    protected ICarSessionManager SessionManager { get; }
 }

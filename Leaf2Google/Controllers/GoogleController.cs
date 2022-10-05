@@ -1,4 +1,4 @@
-﻿using Leaf2Google.Dependency;
+﻿using System.Web;
 using Leaf2Google.Dependency.Google;
 using Leaf2Google.Dependency.Google.Devices;
 using Leaf2Google.Models.Car;
@@ -7,383 +7,390 @@ using Leaf2Google.Models.Google;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
-using System.Web;
 
-namespace Leaf2Google.Controllers
+namespace Leaf2Google.Controllers;
+
+public class GoogleController : BaseController
 {
-    public class GoogleController : BaseController
+    public GoogleController(ICarSessionManager sessionManager, GoogleStateManager googleState, LeafContext leafContext,
+        LoggingManager logging, IEnumerable<IDevice> activeDevices, IConfiguration configuration)
+        : base(sessionManager)
     {
-        private readonly GoogleStateManager _googleState;
+        GoogleState = googleState;
+        LeafContext = leafContext;
+        Logging = logging;
+        Devices = activeDevices;
+        Configuration = configuration;
+    }
 
-        protected GoogleStateManager GoogleState { get => _googleState; }
+    protected GoogleStateManager GoogleState { get; }
 
-        private readonly LeafContext _leafContext;
+    protected LeafContext LeafContext { get; }
 
-        protected LeafContext LeafContext { get => _leafContext; }
+    protected LoggingManager Logging { get; }
 
-        private readonly LoggingManager _logging;
+    protected IEnumerable<IDevice> Devices { get; }
 
-        protected LoggingManager Logging { get => _logging; }
+    protected IConfiguration Configuration { get; }
 
-        private readonly IEnumerable<IDevice> _devices;
+    // Welcome to hell
+    [HttpPost]
+    [Consumes("application/json")]
+    public async Task<ActionResult> Fulfillment([FromBody] JObject fulfillment, [FromHeader] string Authorization)
+    {
+        var accessToken = Authorization?.Split("Bearer ")[1];
 
-        protected IEnumerable<IDevice> Devices { get => _devices; }
+        var token = await LeafContext.GoogleTokens.FirstOrDefaultAsync(token =>
+            accessToken == token.AccessToken.ToString() && token.TokenExpires > DateTime.UtcNow);
+        if (token is null)
+            return Unauthorized("{\"error\": \"invalid_grant\"}");
 
-        private readonly IConfiguration _configuration;
+        var auth = token.Owner;
+        if (auth.Owner is null || auth.Deleted.HasValue)
+            return Unauthorized("{\"error\": \"invalid_grant\"}");
 
-        protected IConfiguration Configuration { get => _configuration; }
-
-        public GoogleController(ICarSessionManager sessionManager, GoogleStateManager googleState, LeafContext leafContext, LoggingManager logging, IEnumerable<IDevice> activeDevices, IConfiguration configuration)
-            : base(sessionManager)
+        var response = new JObject
         {
-            _googleState = googleState;
-            _leafContext = leafContext;
-            _logging = logging;
-            _devices = activeDevices;
-            _configuration = configuration;
-        }
-
-        // Welcome to hell
-        [HttpPost]
-        [Consumes("application/json")]
-        public async Task<ActionResult> Fulfillment([FromBody] JObject fulfillment, [FromHeader] string Authorization)
-        {
-            var accessToken = Authorization?.Split("Bearer ")[1];
-
-            var token = await LeafContext.GoogleTokens.FirstOrDefaultAsync(token => accessToken == token.AccessToken.ToString() && token.TokenExpires > DateTime.UtcNow);
-            if (token is null)
-                return Unauthorized("{\"error\": \"invalid_grant\"}");
-
-            var auth = token.Owner;
-            if (auth.Owner is null || auth.Deleted.HasValue)
-                return Unauthorized("{\"error\": \"invalid_grant\"}");
-
-            JObject response = new JObject {
-                { "requestId", fulfillment["requestId"] },
-                { "payload", new JObject() {
-                    { "agentUserId", token.TokenId }
-                }}
-            };
-
-            var leafSession = SessionManager.VehicleSessions.FirstOrDefault(session => session.Key == auth.Owner.CarModelId).Value;
-            if (leafSession is null)
-                return Unauthorized("{\"error\": \"invalid_grant\"}");
-
-            var userDevices = GoogleState.GetOrCreateDevices(leafSession.SessionId);
-
-            var inputs = (JArray?)fulfillment["inputs"] ?? new JArray();
-            foreach (JObject action in inputs)
+            { "requestId", fulfillment["requestId"] },
             {
-                string[] intent = (action["intent"]?.ToString() ?? string.Empty).Split("action.devices.");
-
-                if (intent.Length <= 1)
-                    return BadRequest();
-
-                switch (intent[1])
+                "payload", new JObject
                 {
-                    case "SYNC":
-                        {
-                            ((JObject)response["payload"]!).Add("devices", JArray.FromObject(userDevices.Select(device => device.Value.Sync())));
-                            break;
-                        }
+                    { "agentUserId", token.TokenId }
+                }
+            }
+        };
 
-                    case "QUERY":
-                        {
-                            Console.WriteLine(await Logging.AddLog(token.Owner.Owner.CarModelId, AuditAction.Execute, AuditContext.Google, $"Google executing query for {token.Owner.Owner.NissanUsername}"));
-                            auth.LastQuery = DateTime.UtcNow;
-                            var requestedDevicesObj = action["payload"]?["devices"]?.ToObject<List<JObject>>() ?? new List<JObject>();
-                            var requestedDevices = requestedDevicesObj.Select(device => (string?)device["id"]).Where(device => device is not null) ?? new List<string>();
+        var leafSession = SessionManager.VehicleSessions.FirstOrDefault(session => session.Key == auth.Owner.CarModelId)
+            .Value;
+        if (leafSession is null)
+            return Unauthorized("{\"error\": \"invalid_grant\"}");
 
-                            var deviceQuery = new JObject();
-                            foreach (var device in userDevices.Where(device => requestedDevices.Contains(device.Value.Id)))
+        var userDevices = GoogleState.GetOrCreateDevices(leafSession.SessionId);
+
+        var inputs = (JArray?)fulfillment["inputs"] ?? new JArray();
+        foreach (JObject action in inputs)
+        {
+            var intent = (action["intent"]?.ToString() ?? string.Empty).Split("action.devices.");
+
+            if (intent.Length <= 1)
+                return BadRequest();
+
+            switch (intent[1])
+            {
+                case "SYNC":
+                {
+                    ((JObject)response["payload"]!).Add("devices",
+                        JArray.FromObject(userDevices.Select(device => device.Value.Sync())));
+                    break;
+                }
+
+                case "QUERY":
+                {
+                    Console.WriteLine(await Logging.AddLog(token.Owner.Owner.CarModelId, AuditAction.Execute,
+                        AuditContext.Google, $"Google executing query for {token.Owner.Owner.NissanUsername}"));
+                    auth.LastQuery = DateTime.UtcNow;
+                    var requestedDevicesObj =
+                        action["payload"]?["devices"]?.ToObject<List<JObject>>() ?? new List<JObject>();
+                    var requestedDevices =
+                        requestedDevicesObj.Select(device => (string?)device["id"])
+                            .Where(device => device is not null) ?? new List<string>();
+
+                    var deviceQuery = new JObject();
+                    foreach (var device in userDevices.Where(device => requestedDevices.Contains(device.Value.Id)))
+                    {
+                        var deviceType = device.Key;
+                        var deviceData = Devices.FirstOrDefault(x => x.GetType() == deviceType);
+
+                        if (deviceData != null)
+                            deviceQuery.Add(new JProperty($"{device.Value.Id}",
+                                await deviceData.QueryAsync(leafSession.SessionId, leafSession.PrimaryVin)));
+                    }
+
+                    ((JObject)response["payload"]!).Add("devices", deviceQuery);
+                    break;
+                }
+                case "EXECUTE":
+                {
+                    Console.WriteLine(await Logging.AddLog(token.Owner.Owner.CarModelId, AuditAction.Execute,
+                        AuditContext.Google, $"Google executing command for {token.Owner.Owner.NissanUsername}"));
+                    auth.LastExecute = DateTime.UtcNow;
+                    var executedCommands = new List<JObject>();
+
+                    var requestedCommands =
+                        action["payload"]?["commands"]?.ToObject<List<JObject>>() ?? new List<JObject>();
+                    foreach (var command in requestedCommands)
+                    {
+                        var requestedDevicesObj = command?["devices"]?.ToObject<List<JObject>>() ?? new List<JObject>();
+                        var requestedDevices =
+                            requestedDevicesObj.Select(device => (string?)device["id"])
+                                .Where(device => device is not null) ?? new List<string>();
+
+                        var requestedExecution =
+                            command?["execution"]?.ToObject<List<JObject>>() ?? new List<JObject>();
+
+                        foreach (var execution in requestedExecution)
+                        {
+                            var updatedIds = new List<string>();
+                            var updatedStates = new List<JObject>();
+
+                            foreach (var device in userDevices.Where(device =>
+                                         requestedDevices.Contains(device.Value.Id) &&
+                                         device.Value.SupportedCommands.Contains((string?)execution["command"] ??
+                                             string.Empty)))
                             {
-                                Type deviceType = device.Key;
+                                var deviceType = device.Key;
                                 var deviceData = Devices.FirstOrDefault(x => x.GetType() == deviceType);
 
                                 if (deviceData != null)
                                 {
-                                    deviceQuery.Add(new JProperty($"{device.Value.Id}", await deviceData.QueryAsync(leafSession.SessionId, leafSession.PrimaryVin)));
+                                    updatedIds.Add(device.Value.Id);
+                                    updatedStates.Add(await deviceData.ExecuteAsync(leafSession.SessionId,
+                                        leafSession.PrimaryVin, (JObject)execution["params"]!));
                                 }
                             }
 
-                            ((JObject)response["payload"]!).Add("devices", deviceQuery);
-                            break;
-                        }
-                    case "EXECUTE":
-                        {
-                            Console.WriteLine(await Logging.AddLog(token.Owner.Owner.CarModelId, AuditAction.Execute, AuditContext.Google, $"Google executing command for {token.Owner.Owner.NissanUsername}"));
-                            auth.LastExecute = DateTime.UtcNow;
-                            List<JObject> executedCommands = new List<JObject>();
-
-                            var requestedCommands = action["payload"]?["commands"]?.ToObject<List<JObject>>() ?? new List<JObject>();
-                            foreach (JObject command in requestedCommands)
-                            {
-                                var requestedDevicesObj = command?["devices"]?.ToObject<List<JObject>>() ?? new List<JObject>();
-                                var requestedDevices = requestedDevicesObj.Select(device => (string?)device["id"]).Where(device => device is not null) ?? new List<string>();
-
-                                var requestedExecution = command?["execution"]?.ToObject<List<JObject>>() ?? new List<JObject>();
-
-                                foreach (JObject execution in requestedExecution)
+                            var mergedStates = new JObject();
+                            foreach (var state in updatedStates)
+                                mergedStates.Merge(state, new JsonMergeSettings
                                 {
-                                    List<string> updatedIds = new List<string>();
-                                    List<JObject> updatedStates = new List<JObject>();
+                                    // union array values together to avoid duplicates
+                                    MergeArrayHandling = MergeArrayHandling.Union
+                                });
 
-                                    foreach (var device in userDevices.Where(device => requestedDevices.Contains(device.Value.Id) && device.Value.SupportedCommands.Contains((string?)execution["command"] ?? string.Empty)))
-                                    {
-                                        Type deviceType = device.Key;
-                                        var deviceData = Devices.FirstOrDefault(x => x.GetType() == deviceType);
+                            if (mergedStates.ContainsKey("errors")) mergedStates.Merge(mergedStates["errors"]!);
 
-                                        if (deviceData != null)
-                                        {
-                                            updatedIds.Add(device.Value.Id);
-                                            updatedStates.Add(await deviceData.ExecuteAsync(leafSession.SessionId, leafSession.PrimaryVin, (JObject)execution["params"]!));
-                                        }
-                                    }
+                            var executedCommand = new JObject
+                            {
+                                { "ids", JArray.FromObject(updatedIds) },
+                                { "status", "SUCCESS" }, // ??
+                                { "states", mergedStates }
+                            };
 
-                                    var mergedStates = new JObject();
-                                    foreach (var state in updatedStates)
-                                    {
-                                        mergedStates.Merge(state, new JsonMergeSettings
-                                        {
-                                            // union array values together to avoid duplicates
-                                            MergeArrayHandling = MergeArrayHandling.Union
-                                        });
-                                    }
-
-                                    if (mergedStates.ContainsKey("errors"))
-                                    {
-                                        mergedStates.Merge(mergedStates["errors"]!);
-                                    }
-
-                                    var executedCommand = new JObject()
-                                    {
-                                        { "ids", JArray.FromObject(updatedIds) },
-                                        { "status", "SUCCESS" }, // ??
-                                        { "states", mergedStates }
-                                    };
-
-                                    executedCommands.Add(new JObject()
-                                    {
-                                        { "ids", JArray.FromObject(updatedIds) },
-                                        { "status", "SUCCESS" }, // ??
-                                        { "states", mergedStates }
-                                    });
-                                }
-                            }
-
-                            ((JObject)response["payload"]!).Add("commands", JArray.FromObject(executedCommands));
-
-                            break;
+                            executedCommands.Add(new JObject
+                            {
+                                { "ids", JArray.FromObject(updatedIds) },
+                                { "status", "SUCCESS" }, // ??
+                                { "states", mergedStates }
+                            });
                         }
+                    }
 
-                    case "DISCONNECT":
-                        {
-                            // Todo: handle
-                            break;
-                        }
+                    ((JObject)response["payload"]!).Add("commands", JArray.FromObject(executedCommands));
+
+                    break;
                 }
 
-                LeafContext.GoogleAuths.Update(auth);
-                await LeafContext.SaveChangesAsync();
-                GoogleState.Devices[leafSession.SessionId] = userDevices;
-
-                /*
-                 * ????
-                var user = _googleContext.GoogleAuths.FirstOrDefault(user => user.Auth == token.Auth);
-                if (user == null)
-                    return Unauthorized("{\"error\": \"invalid_grant\"}");
-                */
-            }
-
-            return Json(response);
-        }
-
-        [HttpPost]
-        [Consumes("application/x-www-form-urlencoded")]
-        public async Task<ActionResult<AccessTokenDto>> Token([FromForm] IFormCollection form)
-        {
-            if (form == null)
-                return BadRequest();
-
-            if (form["grant_type"] != "refresh_token" && form["grant_type"] != "authorization_code")
-                return BadRequest();
-
-            if (form["grant_type"] == "authorization_code" && string.IsNullOrEmpty(form["code"]))
-                return BadRequest();
-
-            // Ensure that the provided code matches the same client that requested it.
-            if (form["grant_type"] == "authorization_code" && !(await LeafContext.GoogleAuths.AnyAsync(auth => auth.AuthCode.ToString() == form["code"].ToString() || auth.ClientId == form["client_id"].ToString())))
-                return BadRequest("{\"error\": \"invalid_grant\"}");
-
-            if (form["grant_type"] == "authorization_code" && string.IsNullOrEmpty(form["redirect_uri"]))
-            {
-                return BadRequest("{\"error\": \"invalid_grant\"}");
-            }
-            else if (form["grant_type"] == "authorization_code")
-            {
-                // Ensure that the uri which requested this matches the token request.
-                var formUri = new Uri(form["redirect_uri"].ToString());
-                if (form["grant_type"] == "authorization_code" && !(await LeafContext.GoogleAuths.AnyAsync(auth => auth.RedirectUri == formUri)))
-                    return BadRequest("{\"error\": \"invalid_grant\"}");
-            }
-
-            if (form["grant_type"] == "refresh_token" && !(await LeafContext.GoogleTokens.AnyAsync(token => (form["refresh_token"].ToString() == token.RefreshToken.ToString()) && (form["client_id"].ToString() == token.Owner.ClientId))))
-                return BadRequest("{\"error\": \"invalid_grant\"}");
-
-            // Ensure that the client secret given by google matches our stored one.
-            if (form["client_secret"] != Configuration["Google:client_secret"])
-                return BadRequest("{\"error\": \"invalid_grant\"}");
-
-            // Token state
-            TokenModel? token = null;
-            EntityState tokenState = EntityState.Unchanged;
-
-            if (form["grant_type"] == "authorization_code")
-            {
-                token = new TokenModel()
+                case "DISCONNECT":
                 {
-                    Owner = (await LeafContext.GoogleAuths.FirstOrDefaultAsync(auth => form["code"].ToString() == auth.AuthCode.ToString()))!,
-                    RefreshToken = Guid.NewGuid()
-                };
-
-                Console.WriteLine(await Logging.AddLog(token.Owner.Owner.CarModelId, AuditAction.Update, AuditContext.Google, $"Regenerating refresh token for {token.Owner.Owner.NissanUsername}"));
-
-                tokenState = EntityState.Added;
-            }
-            else if (form["grant_type"] == "refresh_token")
-            {
-                token = await LeafContext.GoogleTokens.FirstOrDefaultAsync(token => form["refresh_token"].ToString() == token.RefreshToken.ToString())!;
-                tokenState = EntityState.Modified;
-
-                Console.WriteLine(await Logging.AddLog(token.Owner.Owner.CarModelId, AuditAction.Update, AuditContext.Google, $"Regenerating authorization code for {token.Owner.Owner.NissanUsername}"));
-            }
-
-            if (token == null || token.Owner == null || token.Owner.Deleted.HasValue)
-                return BadRequest("{\"error\": \"invalid_grant\"}");
-
-            token.AccessToken = Guid.NewGuid(); // generate
-            token.TokenExpires = DateTime.UtcNow + TimeSpan.FromMinutes(30);
-
-            LeafContext.Entry(token).State = tokenState;
-            await LeafContext.SaveChangesAsync();
-
-            if (tokenState == EntityState.Added)
-                return new RefreshTokenDto(token);
-            else if (tokenState == EntityState.Modified)
-                return new AccessTokenDto(token);
-            else
-                return BadRequest("{\"error\": \"invalid_grant\"}");
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Auth([FromForm] AuthPostFormGoogleModel form)
-        {
-            if (form == null)
-            {
-                var model = new AuthFormModel()
-                {
-                    client_id = form?.client_id ?? "",
-                    redirect_uri = form?.redirect_uri,
-                    state = form?.state ?? ""
-                };
-                return await Auth(model);
-            }
-
-            var auth = await LeafContext.GoogleAuths.FirstOrDefaultAsync(auth => auth.AuthState == form.state);
-            if (auth == null)
-                return BadRequest();
-
-            auth.AuthCode = Guid.NewGuid();
-
-            var query = HttpUtility.ParseQueryString(string.Empty);
-            query["code"] = auth.AuthCode.ToString();
-            query["state"] = form.state;
-
-            var redirect_uri_processed = new UriBuilder(form.redirect_uri!);
-            redirect_uri_processed.Query = query.ToString();
-
-            CarModel? leaf = null;
-            IEnumerable<CarModel> leafs = LeafContext.NissanLeafs.AsEnumerable();
-
-            Func<CarModel, bool> authenticationPredicate = leaf =>
-            {
-                return leaf.NissanUsername == form.NissanUsername && leaf.NissanPassword == form.NissanPassword;
-            };
-
-            if (leafs.Any(authenticationPredicate))
-            {
-                leaf = leafs.First(authenticationPredicate);
-                leaf.Deleted = null;
-                LeafContext.Entry(leaf).State = EntityState.Modified;
-            }
-            else
-            {
-                leaf = new CarModel(form.NissanUsername, form.NissanPassword);
-            }
-
-            if (await SessionManager.AddAsync(leaf))
-            {
-                auth.Owner = leaf;
-
-                if (!await LeafContext.NissanLeafs.AnyAsync(car => car.CarModelId == leaf.CarModelId))
-                {
-                    await LeafContext.NissanLeafs.AddAsync(leaf);
+                    // Todo: handle
+                    break;
                 }
-
-                LeafContext.Entry(auth).State = EntityState.Modified;
-                await LeafContext.SaveChangesAsync();
-
-                return Redirect(redirect_uri_processed.ToString());
             }
-            else
-            {
-                AddToast(new ToastViewModel()
-                {
-                    Title = "Authentication",
-                    Message = "Unable to authenticate to Nissan Services using the supplied credentials."
-                });
 
-                var model = new AuthFormModel()
-                {
-                    client_id = form.client_id,
-                    redirect_uri = form.redirect_uri,
-                    state = form.state
-                };
+            LeafContext.GoogleAuths.Update(auth);
+            await LeafContext.SaveChangesAsync();
+            GoogleState.Devices[leafSession.SessionId] = userDevices;
 
-                ReloadViewBag();
-                return await Auth(model);
-            }
+            /*
+             * ????
+            var user = _googleContext.GoogleAuths.FirstOrDefault(user => user.Auth == token.Auth);
+            if (user == null)
+                return Unauthorized("{\"error\": \"invalid_grant\"}");
+            */
         }
 
-        [HttpGet]
-        public async Task<ActionResult> Auth([FromQuery] AuthFormModel form)
+        return Json(response);
+    }
+
+    [HttpPost]
+    [Consumes("application/x-www-form-urlencoded")]
+    public async Task<ActionResult<AccessTokenDto>> Token([FromForm] IFormCollection form)
+    {
+        if (form == null)
+            return BadRequest();
+
+        if (form["grant_type"] != "refresh_token" && form["grant_type"] != "authorization_code")
+            return BadRequest();
+
+        if (form["grant_type"] == "authorization_code" && string.IsNullOrEmpty(form["code"]))
+            return BadRequest();
+
+        // Ensure that the provided code matches the same client that requested it.
+        if (form["grant_type"] == "authorization_code" && !await LeafContext.GoogleAuths.AnyAsync(auth =>
+                auth.AuthCode.ToString() == form["code"].ToString() || auth.ClientId == form["client_id"].ToString()))
+            return BadRequest("{\"error\": \"invalid_grant\"}");
+
+        if (form["grant_type"] == "authorization_code" && string.IsNullOrEmpty(form["redirect_uri"]))
+            return BadRequest("{\"error\": \"invalid_grant\"}");
+
+        if (form["grant_type"] == "authorization_code")
         {
-            if (form.client_id != Configuration["Google:client_id"])
-                return BadRequest();
+            // Ensure that the uri which requested this matches the token request.
+            var formUri = new Uri(form["redirect_uri"].ToString());
+            if (form["grant_type"] == "authorization_code" &&
+                !await LeafContext.GoogleAuths.AnyAsync(auth => auth.RedirectUri == formUri))
+                return BadRequest("{\"error\": \"invalid_grant\"}");
+        }
 
-            var redirect_application = form!.redirect_uri?.AbsolutePath.Split('/')
-                .Where(item => !string.IsNullOrEmpty(item))
-                .Skip(1)
-                .Take(1)
-                .FirstOrDefault();
+        if (form["grant_type"] == "refresh_token" && !await LeafContext.GoogleTokens.AnyAsync(token =>
+                form["refresh_token"].ToString() == token.RefreshToken.ToString() &&
+                form["client_id"].ToString() == token.Owner.ClientId))
+            return BadRequest("{\"error\": \"invalid_grant\"}");
 
-            if (redirect_application != Configuration["Google:client_reference"])
-                return BadRequest();
+        // Ensure that the client secret given by google matches our stored one.
+        if (form["client_secret"] != Configuration["Google:client_secret"])
+            return BadRequest("{\"error\": \"invalid_grant\"}");
 
-            var code = Guid.NewGuid().ToString();
+        // Token state
+        TokenModel? token = null;
+        var tokenState = EntityState.Unchanged;
 
-            AuthModel auth = new AuthModel()
+        if (form["grant_type"] == "authorization_code")
+        {
+            token = new TokenModel
             {
-                RedirectUri = form.redirect_uri,
-                ClientId = form.client_id,
-                AuthState = form.state
+                Owner = (await LeafContext.GoogleAuths.FirstOrDefaultAsync(auth =>
+                    form["code"].ToString() == auth.AuthCode.ToString()))!,
+                RefreshToken = Guid.NewGuid()
             };
 
-            await LeafContext.GoogleAuths.AddAsync(auth);
+            Console.WriteLine(await Logging.AddLog(token.Owner.Owner.CarModelId, AuditAction.Update,
+                AuditContext.Google, $"Regenerating refresh token for {token.Owner.Owner.NissanUsername}"));
+
+            tokenState = EntityState.Added;
+        }
+        else if (form["grant_type"] == "refresh_token")
+        {
+            token = await LeafContext.GoogleTokens.FirstOrDefaultAsync(token =>
+                form["refresh_token"].ToString() == token.RefreshToken.ToString())!;
+            tokenState = EntityState.Modified;
+
+            Console.WriteLine(await Logging.AddLog(token.Owner.Owner.CarModelId, AuditAction.Update,
+                AuditContext.Google, $"Regenerating authorization code for {token.Owner.Owner.NissanUsername}"));
+        }
+
+        if (token == null || token.Owner == null || token.Owner.Deleted.HasValue)
+            return BadRequest("{\"error\": \"invalid_grant\"}");
+
+        token.AccessToken = Guid.NewGuid(); // generate
+        token.TokenExpires = DateTime.UtcNow + TimeSpan.FromMinutes(30);
+
+        LeafContext.Entry(token).State = tokenState;
+        await LeafContext.SaveChangesAsync();
+
+        if (tokenState == EntityState.Added)
+            return new RefreshTokenDto(token);
+        if (tokenState == EntityState.Modified)
+            return new AccessTokenDto(token);
+        return BadRequest("{\"error\": \"invalid_grant\"}");
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<ActionResult> Auth([FromForm] AuthPostFormGoogleModel form)
+    {
+        if (form == null)
+        {
+            var model = new AuthFormModel
+            {
+                client_id = form?.client_id ?? "",
+                redirect_uri = form?.redirect_uri,
+                state = form?.state ?? ""
+            };
+            return await Auth(model);
+        }
+
+        var auth = await LeafContext.GoogleAuths.FirstOrDefaultAsync(auth => auth.AuthState == form.state);
+        if (auth == null)
+            return BadRequest();
+
+        auth.AuthCode = Guid.NewGuid();
+
+        var query = HttpUtility.ParseQueryString(string.Empty);
+        query["code"] = auth.AuthCode.ToString();
+        query["state"] = form.state;
+
+        var redirect_uri_processed = new UriBuilder(form.redirect_uri!);
+        redirect_uri_processed.Query = query.ToString();
+
+        CarModel? leaf = null;
+        var leafs = LeafContext.NissanLeafs.AsEnumerable();
+
+        Func<CarModel, bool> authenticationPredicate = leaf =>
+        {
+            return leaf.NissanUsername == form.NissanUsername && leaf.NissanPassword == form.NissanPassword;
+        };
+
+        if (leafs.Any(authenticationPredicate))
+        {
+            leaf = leafs.First(authenticationPredicate);
+            leaf.Deleted = null;
+            LeafContext.Entry(leaf).State = EntityState.Modified;
+        }
+        else
+        {
+            leaf = new CarModel(form.NissanUsername, form.NissanPassword);
+        }
+
+        if (await SessionManager.AddAsync(leaf))
+        {
+            auth.Owner = leaf;
+
+            if (!await LeafContext.NissanLeafs.AnyAsync(car => car.CarModelId == leaf.CarModelId))
+                await LeafContext.NissanLeafs.AddAsync(leaf);
+
+            LeafContext.Entry(auth).State = EntityState.Modified;
             await LeafContext.SaveChangesAsync();
 
-            return View("Index", form);
+            return Redirect(redirect_uri_processed.ToString());
         }
+
+        {
+            AddToast(new ToastViewModel
+            {
+                Title = "Authentication",
+                Message = "Unable to authenticate to Nissan Services using the supplied credentials."
+            });
+
+            var model = new AuthFormModel
+            {
+                client_id = form.client_id,
+                redirect_uri = form.redirect_uri,
+                state = form.state
+            };
+
+            ReloadViewBag();
+            return await Auth(model);
+        }
+    }
+
+    [HttpGet]
+    public async Task<ActionResult> Auth([FromQuery] AuthFormModel form)
+    {
+        if (form.client_id != Configuration["Google:client_id"])
+            return BadRequest();
+
+        var redirect_application = form!.redirect_uri?.AbsolutePath.Split('/')
+            .Where(item => !string.IsNullOrEmpty(item))
+            .Skip(1)
+            .Take(1)
+            .FirstOrDefault();
+
+        if (redirect_application != Configuration["Google:client_reference"])
+            return BadRequest();
+
+        var code = Guid.NewGuid().ToString();
+
+        var auth = new AuthModel
+        {
+            RedirectUri = form.redirect_uri,
+            ClientId = form.client_id,
+            AuthState = form.state
+        };
+
+        await LeafContext.GoogleAuths.AddAsync(auth);
+        await LeafContext.SaveChangesAsync();
+
+        return View("Index", form);
     }
 }

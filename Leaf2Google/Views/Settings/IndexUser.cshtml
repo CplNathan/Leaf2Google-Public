@@ -6,15 +6,16 @@
     <div class="d-flex align-items-center justify-content-center">
         <div class="container rounded bg-light p-3 shadow">
             <label class="form-label w-100"><i class="bi bi-key-fill"></i> Security Keys</label>
-            <hr />
+            <hr/>
             <l2g-securitykey-register class="w-100"></l2g-securitykey-register>
             <label class="form-label w-100"><i class="bi bi-key-fill"></i> Google Auths</label>
-            <hr />
+            <hr/>
             @await Component.InvokeAsync("SessionInfo",
-            new {
-            viewName = "Auths",
-            sessionId = (Guid?)ViewBag?.SessionId
-            })
+                new
+                {
+                    viewName = "Auths",
+                    sessionId = (Guid?)ViewBag?.SessionId
+                })
         </div>
     </div>
 }

@@ -3,53 +3,46 @@ using Leaf2Google.Models.Car;
 using Leaf2Google.Models.Google.Devices;
 using NUglify.Helpers;
 
-namespace Leaf2Google.Dependency.Google
+namespace Leaf2Google.Dependency.Google;
+
+public class GoogleStateManager
 {
-    public class GoogleStateManager
+    public GoogleStateManager(Dictionary<Guid, Dictionary<Type, BaseDeviceModel>> devices,
+        ICarSessionManager sessionManager)
     {
-        private readonly Dictionary<Guid, Dictionary<Type, BaseDeviceModel>> _devices;
+        Devices = devices;
 
-        public Dictionary<Guid, Dictionary<Type, BaseDeviceModel>> Devices { get => _devices; }
-
-        public GoogleStateManager(Dictionary<Guid, Dictionary<Type, BaseDeviceModel>> devices, ICarSessionManager sessionManager)
+        if (sessionManager is BaseSessionManager baseSessionManager)
         {
-            _devices = devices;
+            baseSessionManager.OnAuthenticationAttempt += BaseSessionManager_OnAuthenticationAttempt;
 
-            if (sessionManager is BaseSessionManager baseSessionManager)
-            {
-                baseSessionManager.OnAuthenticationAttempt += BaseSessionManager_OnAuthenticationAttempt;
-
-                if (devices.Count <= 0)
-                {
-                    baseSessionManager.VehicleSessions.Where(session => session.Value.Authenticated).ForEach(session => GetOrCreateDevices(session.Key));
-                }
-            }    
+            if (devices.Count <= 0)
+                baseSessionManager.VehicleSessions.Where(session => session.Value.Authenticated)
+                    .ForEach(session => GetOrCreateDevices(session.Key));
         }
+    }
 
-        private void BaseSessionManager_OnAuthenticationAttempt(object sender, Guid sessionId, string? authToken)
-        {
-            if (sender is VehicleSessionBase session)
-            {
-                _ = GetOrCreateDevices(sessionId);
-            }
-        }
+    public Dictionary<Guid, Dictionary<Type, BaseDeviceModel>> Devices { get; }
 
-        private static Dictionary<Type, BaseDeviceModel> MakeDevices()
-        {
-            var devices = new Dictionary<Type, BaseDeviceModel>();
+    private void BaseSessionManager_OnAuthenticationAttempt(object sender, Guid sessionId, string? authToken)
+    {
+        if (sender is VehicleSessionBase session) _ = GetOrCreateDevices(sessionId);
+    }
 
-            devices.Add(typeof(ThermostatDevice), new ThermostatModel("1-leaf-ac", "Air Conditioner"));
-            devices.Add(typeof(LockDevice), new LockModel("1-leaf-lock", "Leaf"));
+    private static Dictionary<Type, BaseDeviceModel> MakeDevices()
+    {
+        var devices = new Dictionary<Type, BaseDeviceModel>();
 
-            return devices;
-        }
+        devices.Add(typeof(ThermostatDevice), new ThermostatModel("1-leaf-ac", "Air Conditioner"));
+        devices.Add(typeof(LockDevice), new LockModel("1-leaf-lock", "Leaf"));
 
-        public Dictionary<Type, BaseDeviceModel> GetOrCreateDevices(Guid sessionId)
-        {
-            if (Devices.ContainsKey(sessionId))
-                return Devices[sessionId];
-            else
-                return Devices[sessionId] = MakeDevices();
-        }
+        return devices;
+    }
+
+    public Dictionary<Type, BaseDeviceModel> GetOrCreateDevices(Guid sessionId)
+    {
+        if (Devices.ContainsKey(sessionId))
+            return Devices[sessionId];
+        return Devices[sessionId] = MakeDevices();
     }
 }

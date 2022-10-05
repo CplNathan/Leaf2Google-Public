@@ -3,13 +3,13 @@
 @inject IConfiguration Configuration
 
 @{
-
     <div class="input-group form-outline mb-3">
-        @Html.TextBoxFor(m => m.NissanUsername, new {
-    @class = "form-control",
-    @placeholder="example@example.com",
-    @requried="required"
-    })
+        @Html.TextBoxFor(m => m.NissanUsername, new
+        {
+            @class = "form-control",
+            placeholder = "example@example.com",
+            requried = "required"
+        })
         <label for="NissanUsername" class="form-label">Email Address</label>
         <div class="form-notch">
             <div class="form-notch-leading" style="width: 9px;"></div>
@@ -19,11 +19,12 @@
     </div>
 
     <div class="input-group form-outline mb-3">
-        @Html.PasswordFor(m => m.NissanPassword, new {
-    @class = "form-control",
-    @placeholder="example123",
-    @requried="required"
-    })
+        @Html.PasswordFor(m => m.NissanPassword, new
+        {
+            @class = "form-control",
+            placeholder = "example123",
+            requried = "required"
+        })
         <label for="NissanPassword" class="form-label">Password</label>
         <div class="form-notch">
             <div class="form-notch-leading" style="width: 9px;"></div>
@@ -33,7 +34,11 @@
 
         @Html.HiddenFor(m => m.Captcha)
 
-        <span class="input-group-text p-0"><button type="submit" class="btn btn-primary rounded-end rounded-0 h-100" aria-label="Login"><i class="bi bi-arrow-bar-right"></i></button></span>
+        <span class="input-group-text p-0">
+            <button type="submit" class="btn btn-primary rounded-end rounded-0 h-100" aria-label="Login">
+                <i class="bi bi-arrow-bar-right"></i>
+            </button>
+        </span>
     </div>
 
     <div id="loginHelp" class="form-text mb-3">Currently we only support a single vehicle, support for multi vehicles is coming soon. Your first vehicle will be selected as default.</div>

@@ -2,27 +2,21 @@
 
 using Microsoft.AspNetCore.Mvc;
 
-namespace Leaf2Google.ViewComponents.Car
+namespace Leaf2Google.ViewComponents.Car;
+
+public class CarSelectorViewComponent : BaseViewComponent
 {
-    public class CarSelectorViewComponent : BaseViewComponent
+    public CarSelectorViewComponent(ICarSessionManager sessionManager)
+        : base(sessionManager)
     {
-        public CarSelectorViewComponent(ICarSessionManager sessionManager)
-            : base (sessionManager)
-        {
-        }
+    }
 
-        public IViewComponentResult Invoke(Guid? sessionId)
-        {
-            var session = SessionManager.VehicleSessions.GetValueOrDefault(sessionId ?? Guid.Empty);
+    public IViewComponentResult Invoke(Guid? sessionId)
+    {
+        var session = SessionManager.VehicleSessions.GetValueOrDefault(sessionId ?? Guid.Empty);
 
-            if (session != null)
-            {
-                return View(session.VINs);
-            }
-            else
-            {
-                return View(new List<string?>());
-            }
-        }
+        if (session != null)
+            return View(session.VINs);
+        return View(new List<string?>());
     }
 }

@@ -11,54 +11,60 @@
         <div class="col col-12 d-flex justify-content-center align-items-end position-relative m-0 p-0">
             <div class="h-100 col-12">
                 @await Component.InvokeAsync("CarInfo",
-            new {
-            viewName = "Location",
-            sessionId = (Guid?)ViewBag?.SessionId,
-            defaultVin = (string?)ViewBag?.SelectedVin
-            })
+                    new
+                    {
+                        viewName = "Location",
+                        sessionId = (Guid?)ViewBag?.SessionId,
+                        defaultVin = (string?)ViewBag?.SelectedVin
+                    })
             </div>
             <div class="chargeContainer mb-5 position-absolute bottom-0">
                 @await Component.InvokeAsync("CarInfo",
-            new {
-            viewName = "Charge",
-            sessionId = (Guid?)ViewBag?.SessionId,
-            defaultVin = (string?)ViewBag?.SelectedVin
-            })
+                    new
+                    {
+                        viewName = "Charge",
+                        sessionId = (Guid?)ViewBag?.SessionId,
+                        defaultVin = (string?)ViewBag?.SelectedVin
+                    })
             </div>
         </div>
         <div class="col col-12 col-xxl-2 col-lg-3 col-md-4 col-sm-5 position-absolute end-0 rounded m-0 m-sm-3 my-3">
             <div class="row gy-2 gx-2 px-1 p-2 m-1 bg-dark bg-gradient shadow-lg border border-secondary border-2 controlContainer">
                 <div class="col col-12">
                     @await Component.InvokeAsync("CarInfo",
-                new {
-                viewName = "CarPicture",
-                sessionId = (Guid?)ViewBag?.SessionId,
-                defaultVin = (string?)ViewBag?.SelectedVin
-                })
+                        new
+                        {
+                            viewName = "CarPicture",
+                            sessionId = (Guid?)ViewBag?.SessionId,
+                            defaultVin = (string?)ViewBag?.SelectedVin
+                        })
                 </div>
                 <div class="col col-4">
                     @await Component.InvokeAsync("CarInfo",
-                new {
-                viewName = "ClimateTarget",
-                sessionId = (Guid?)ViewBag?.SessionId,
-                defaultVin = (string?)ViewBag?.SelectedVin
-                })
+                        new
+                        {
+                            viewName = "ClimateTarget",
+                            sessionId = (Guid?)ViewBag?.SessionId,
+                            defaultVin = (string?)ViewBag?.SelectedVin
+                        })
                 </div>
                 <div class="col col-4">
                     @await Component.InvokeAsync("CarInfo",
-                new {
-                viewName = "ChargeVertical",
-                sessionId = (Guid?)ViewBag?.SessionId,
-                defaultVin = (string?)ViewBag?.SelectedVin
-                })
+                        new
+                        {
+                            viewName = "ChargeVertical",
+                            sessionId = (Guid?)ViewBag?.SessionId,
+                            defaultVin = (string?)ViewBag?.SelectedVin
+                        })
                 </div>
                 <div class="col col-4">
                     @await Component.InvokeAsync("CarInfo",
-                new {
-                viewName = "ClimateCurrent",
-                sessionId = (Guid?)ViewBag?.SessionId,
-                defaultVin = (string?)ViewBag?.SelectedVin
-                })
+                        new
+                        {
+                            viewName = "ClimateCurrent",
+                            sessionId = (Guid?)ViewBag?.SessionId,
+                            defaultVin = (string?)ViewBag?.SelectedVin
+                        })
                 </div>
                 <div class="col col-6">
                     <div class="d-flex flex-column align-items-center justify-content-between h-100 rounded-pill2 bg-warning text-white shadow">

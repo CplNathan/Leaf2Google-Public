@@ -1,16 +1,17 @@
 ﻿@{
     ViewData["Title"] = "Registration";
 }
+@using Leaf2Google.Models.Car
 @model Leaf2Google.Models.Google.AuthFormModel
 
 @{
     <div class="d-flex align-items-center justify-content-center">
         <form method="post" id="registerForm" class="container rounded bg-light p-3 shadow">
-            @await Html.PartialAsync("Authentication/AuthenticationFormPartial", new Leaf2Google.Models.Car.CarModel())
+            @await Html.PartialAsync("Authentication/AuthenticationFormPartial", new CarModel())
 
-            @Html.Hidden("client_id", Model.client_id, new { @id = "client_id" })
-            @Html.Hidden("redirect_uri", Model.redirect_uri, new { @id = "redirect_uri" })
-            @Html.Hidden("state", Model.state, new { @id = "state" })
+            @Html.Hidden("client_id", Model.client_id, new { id = "client_id" })
+            @Html.Hidden("redirect_uri", Model.redirect_uri, new { id = "redirect_uri" })
+            @Html.Hidden("state", Model.state, new { id = "state" })
 
             @Html.AntiForgeryToken()
         </form>

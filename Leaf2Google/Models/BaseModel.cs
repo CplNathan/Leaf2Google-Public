@@ -1,6 +1,5 @@
-﻿namespace Leaf2Google.Models
+﻿namespace Leaf2Google.Models;
+
+public class BaseModel
 {
-    public class BaseModel
-    {
-    }
 }

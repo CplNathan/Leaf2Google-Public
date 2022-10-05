@@ -1,45 +1,38 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. CaptchaVerification.cs
 
-using Leaf2Google.Helpers;
+namespace Leaf2Google.Dependency.Helpers;
 
-namespace Leaf2Google.Dependency.Helpers
+public class Captcha
 {
-    public class Captcha
+    public Captcha(HttpClient client, IConfiguration configuration)
     {
-        private readonly HttpClient _client;
+        Client = client;
+        Configuration = configuration;
+    }
 
-        private readonly IConfiguration _configuration;
+    public HttpClient Client { get; }
 
-        public HttpClient Client => _client;
+    public IConfiguration Configuration { get; }
 
-        public IConfiguration Configuration => _configuration;
-
-        public Captcha(HttpClient client, IConfiguration configuration)
+    public async Task<bool> VerifyCaptcha(string response, string? remoteip)
+    {
+        var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, "recaptcha/api/siteverify")
         {
-            _client = client;
-            _configuration = configuration;
-        }
-
-        public async Task<bool> VerifyCaptcha(string response, string? remoteip)
-        {
-            var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, $"recaptcha/api/siteverify")
+            Headers =
             {
-                Headers =
-                {
-                    { "Accept", "application/x-www-form-urlencoded" }
-                },
-                Content = new FormUrlEncodedContent(new[]
-                {
-                    new KeyValuePair<string, string>("secret", Configuration["Google:captcha:secret_key"]),
-                    new KeyValuePair<string, string>("response", response),
-                    new KeyValuePair<string, string>("remoteip", remoteip ?? "")
-                })
-            };
-            httpRequestMessage.RequestUri = new Uri("https://www.google.com/recaptcha/api/siteverify");
+                { "Accept", "application/x-www-form-urlencoded" }
+            },
+            Content = new FormUrlEncodedContent(new[]
+            {
+                new KeyValuePair<string, string>("secret", Configuration["Google:captcha:secret_key"]),
+                new KeyValuePair<string, string>("response", response),
+                new KeyValuePair<string, string>("remoteip", remoteip ?? "")
+            })
+        };
+        httpRequestMessage.RequestUri = new Uri("https://www.google.com/recaptcha/api/siteverify");
 
-            var responseData = await Client.MakeRequest(httpRequestMessage);
+        var responseData = await Client.MakeRequest(httpRequestMessage);
 
-            return responseData.Data?.success ?? false;
-        }
+        return responseData.Data?.success ?? false;
     }
 }

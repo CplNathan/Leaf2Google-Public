@@ -2,13 +2,9 @@
 
 using Fido2NetLib.Development;
 
-namespace Leaf2Google.Models.Security
+namespace Leaf2Google.Models.Security;
+
+public class StoredCredentialModel : StoredCredential
 {
-    public class StoredCredentialModel : StoredCredential
-    {
-
-        public StoredCredentialModel() { }
-
-        public byte[] CredentialId { get; set; }
-    }
+    public byte[] CredentialId { get; set; }
 }

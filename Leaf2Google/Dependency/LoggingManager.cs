@@ -2,38 +2,37 @@
 
 using Leaf2Google.Models.Generic;
 
-namespace Leaf2Google.Dependency
+namespace Leaf2Google.Dependency;
+
+public class LoggingManager
 {
-    public class LoggingManager
+    protected readonly IServiceScopeFactory _serviceScopeFactory;
+
+    public LoggingManager(IServiceScopeFactory serviceScopeFactory)
     {
-        protected readonly IServiceScopeFactory _serviceScopeFactory;
+        _serviceScopeFactory = serviceScopeFactory;
+    }
 
-        private IServiceScopeFactory ServiceScopeFactory { get => _serviceScopeFactory; }
+    private IServiceScopeFactory ServiceScopeFactory => _serviceScopeFactory;
 
-        public LoggingManager(IServiceScopeFactory serviceScopeFactory)
+    public async Task<string> AddLog(Guid owner, AuditAction action, AuditContext context, string data)
+    {
+        using (var scope = ServiceScopeFactory.CreateScope())
         {
-            _serviceScopeFactory = serviceScopeFactory;
-        }
+            var nissanContext = scope.ServiceProvider.GetRequiredService<LeafContext>();
 
-        public async Task<string> AddLog(Guid owner, AuditAction action, AuditContext context, string data)
-        {
-            using (var scope = ServiceScopeFactory.CreateScope())
+            var audit = new AuditModel
             {
-                var nissanContext = scope.ServiceProvider.GetRequiredService<LeafContext>();
+                Owner = owner,
+                Action = action,
+                Context = context,
+                Data = $"{owner} - {data}"
+            };
 
-                var audit = new AuditModel
-                {
-                    Owner = owner,
-                    Action = action,
-                    Context = context,
-                    Data = $"{owner} - {data}",
-                };
+            await nissanContext.NissanAudits.AddAsync(audit);
+            await nissanContext.SaveChangesAsync();
 
-                await nissanContext.NissanAudits.AddAsync(audit);
-                await nissanContext.SaveChangesAsync();
-
-                return $"{audit.Owner} - {audit.Action.ToString()} - {audit.Context.ToString()} - {data}";
-            }
+            return $"{audit.Owner} - {audit.Action.ToString()} - {audit.Context.ToString()} - {data}";
         }
     }
 }

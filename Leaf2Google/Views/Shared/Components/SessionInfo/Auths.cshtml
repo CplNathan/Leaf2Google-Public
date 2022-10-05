@@ -3,30 +3,32 @@
 @{
     <table class="table table-striped">
         <thead>
-            <tr>
-                <th scope="col">#</th>
-                <th scope="col">Last Execute</th>
-                <th scope="col">Last Query</th>
-                <th scope="col">Deleted</th>
-                <th></th>
-            </tr>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Last Execute</th>
+            <th scope="col">Last Query</th>
+            <th scope="col">Deleted</th>
+            <th></th>
+        </tr>
         </thead>
         <tbody>
-            @foreach (var auth in Model.auths.OrderBy(auth => auth.Deleted))
-            {
-                <tr>
-                    <td>@(auth.AuthId)</td>
-                    <td>@(auth.LastExecute)</td>
-                    <td>@(auth.LastQuery)</td>
-                    <td>@(auth.Deleted.HasValue ? "Yes" : "No")</td>
-                    <td>
-                        @if (!auth.Deleted.HasValue)
-                        {
-                            <button data-itemid="@(auth.AuthId)" type="button" class="btn btn-danger" id="deleteAuth"><i class="bi bi-trash-fill"></i></button>
-                        }
-                    </td>
-                </tr>
-            }
+        @foreach (var auth in Model.auths.OrderBy(auth => auth.Deleted))
+        {
+            <tr>
+                <td>@(auth.AuthId)</td>
+                <td>@(auth.LastExecute)</td>
+                <td>@(auth.LastQuery)</td>
+                <td>@(auth.Deleted.HasValue ? "Yes" : "No")</td>
+                <td>
+                    @if (!auth.Deleted.HasValue)
+                    {
+                        <button data-itemid="@(auth.AuthId)" type="button" class="btn btn-danger" id="deleteAuth">
+                            <i class="bi bi-trash-fill"></i>
+                        </button>
+                    }
+                </td>
+            </tr>
+        }
         </tbody>
     </table>
 }

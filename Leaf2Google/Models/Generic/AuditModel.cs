@@ -1,35 +1,34 @@
-﻿namespace Leaf2Google.Models.Generic
+﻿namespace Leaf2Google.Models.Generic;
+
+public enum AuditContext
 {
-    public enum AuditContext
-    {
-        Leaf,
-        Google,
-        Account
-    }
+    Leaf,
+    Google,
+    Account
+}
 
-    public enum AuditAction
-    {
-        Access,
-        Execute,
-        Delete,
-        Update,
-        Create,
-        Modify,
-        Exception
-    }
+public enum AuditAction
+{
+    Access,
+    Execute,
+    Delete,
+    Update,
+    Create,
+    Modify,
+    Exception
+}
 
-    public class AuditModel : BaseModel
-    {
-        public Guid Id { get; set; }
+public class AuditModel : BaseModel
+{
+    public Guid Id { get; set; }
 
-        public Guid? Owner { get; set; }
+    public Guid? Owner { get; set; }
 
-        public AuditContext Context { get; set; }
+    public AuditContext Context { get; set; }
 
-        public AuditAction Action { get; set; }
+    public AuditAction Action { get; set; }
 
-        public string? Data { get; set; }
+    public string? Data { get; set; }
 
-        public DateTime Time { get; set; } = DateTime.UtcNow;
-    }
+    public DateTime Time { get; set; } = DateTime.UtcNow;
 }

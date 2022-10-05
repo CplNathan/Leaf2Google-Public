@@ -2,36 +2,40 @@
 
 using Newtonsoft.Json.Linq;
 
-namespace Leaf2Google.Models.Google.Devices
-{
-    public class ThermostatModel : BaseDeviceModel
-    {
-        public decimal Target { get; set; } = 21;
-        public decimal LastTemperature { get; set; } = 21;
-        public bool Active { get; set; }
+namespace Leaf2Google.Models.Google.Devices;
 
-        public ThermostatModel(string Id, string Name)
-            : base(Id, Name)
+public class ThermostatModel : BaseDeviceModel
+{
+    public ThermostatModel(string Id, string Name)
+        : base(Id, Name)
+    {
+        type = "THERMOSTAT";
+        traits = new List<string> { "TemperatureSetting" };
+        WillReportState = true;
+        Attributes = new JObject
         {
-            this.type = "THERMOSTAT";
-            this.traits = new List<string>() { "TemperatureSetting" };
-            this.WillReportState = true;
-            this.Attributes = new JObject()
             {
-                { "availableThermostatModes", new JArray() {
+                "availableThermostatModes", new JArray
+                {
                     "off",
                     "heatcool"
-                }},
-                { "thermostatTemperatureRange", new JObject()
+                }
+            },
+            {
+                "thermostatTemperatureRange", new JObject
                 {
                     { "minThresholdCelsius", 16 },
                     { "maxThresholdCelsius", 26 }
-                }},
-                { "thermostatTemperatureUnit", "C" },
-                { "bufferRangeCelsius", 0 }
-            };
+                }
+            },
+            { "thermostatTemperatureUnit", "C" },
+            { "bufferRangeCelsius", 0 }
+        };
 
-            this.SupportedCommands = new List<string>() { "ThermostatTemperatureSetpoint", "ThermostatSetMode" };
-        }
+        SupportedCommands = new List<string> { "ThermostatTemperatureSetpoint", "ThermostatSetMode" };
     }
+
+    public decimal Target { get; set; } = 21;
+    public decimal LastTemperature { get; set; } = 21;
+    public bool Active { get; set; }
 }

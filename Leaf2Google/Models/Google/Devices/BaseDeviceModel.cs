@@ -2,92 +2,82 @@
 
 using Newtonsoft.Json.Linq;
 
-namespace Leaf2Google.Models.Google.Devices
+namespace Leaf2Google.Models.Google.Devices;
+
+public abstract class BaseDeviceModel
 {
-    public abstract class BaseDeviceModel
+    public BaseDeviceModel(string Id, string Name)
     {
-        public string Id { get; set; }
+        this.Id = Id;
+        this.Name = Name;
+    }
 
-        protected string type { get; set; } = string.Empty;
+    public string Id { get; set; }
 
-        public string Type
+    protected string type { get; set; } = string.Empty;
+
+    public string Type
+    {
+        get => $"action.devices.types.{type}";
+        set => type = value;
+    }
+
+    protected List<string> traits { get; set; } = new();
+
+    public JArray Traits
+    {
+        get { return JArray.FromObject(traits.Select(trait => $"action.devices.traits.{trait}")); }
+        set => traits = value.ToObject<List<string>>() ?? traits;
+    }
+
+    public string Name { get; set; } = string.Empty;
+
+    public bool WillReportState { get; set; }
+
+    public JObject Attributes { get; set; } = new();
+
+    public JObject DeviceInfo { get; set; } = new();
+
+    private List<string> _supportedCommands { get; } = new();
+
+    public List<string> SupportedCommands
+    {
+        get { return _supportedCommands.Select(command => $"action.devices.commands.{command}").ToList(); }
+        set
         {
-            get
-            {
-                return $"action.devices.types.{type}";
-            }
-            set
-            {
-                type = value;
-            }
+            _supportedCommands.Clear();
+            _supportedCommands.AddRange(value);
         }
+    }
 
-        protected List<string> traits { get; set; } = new List<string>();
+    public DateTime LastUpdated { get; set; } = DateTime.MinValue;
 
-        public JArray Traits
+    public bool WillFetch => DateTime.UtcNow - LastUpdated > TimeSpan.FromMinutes(1);
+
+    public virtual JObject Sync()
+    {
+        return new JObject
         {
-            get
+            { "id", Id },
+            { "type", Type },
+            { "traits", Traits },
             {
-                return JArray.FromObject(traits.Select(trait => $"action.devices.traits.{trait}"));
-            }
-            set
-            {
-                traits = value.ToObject<List<string>>() ?? traits;
-            }
-        }
-
-        public string Name { get; set; } = string.Empty;
-
-        public bool WillReportState { get; set; }
-
-        public JObject Attributes { get; set; } = new JObject();
-
-        public JObject DeviceInfo { get; set; } = new JObject();
-
-        public BaseDeviceModel(string Id, string Name)
-        {
-            this.Id = Id;
-            this.Name = Name;
-        }
-
-        public virtual JObject Sync()
-        {
-            return new JObject()
-            {
-                { "id", Id },
-                { "type", Type },
-                { "traits", Traits },
-                { "name", new JObject() {
+                "name", new JObject
+                {
                     { "name", Name }
-                }},
-                { "willReportState", WillReportState },
-                { "attributes", Attributes },
-                { "deviceInfo", new JObject() {
+                }
+            },
+            { "willReportState", WillReportState },
+            { "attributes", Attributes },
+            {
+                "deviceInfo", new JObject
+                {
                     { "manufacturer", "Nathan Leaf2Google" },
                     { "model", "Nissan Leaf" },
                     { "hwVersion", "1.0" },
                     { "swVersion", "1.0" }
-                }}
-            };
-        }
-
-        private List<string> _supportedCommands { get; init; } = new List<string>();
-
-        public List<string> SupportedCommands
-        {
-            get
-            {
-                return _supportedCommands.Select(command => $"action.devices.commands.{command}").ToList();
+                }
             }
-            set
-            {
-                _supportedCommands.Clear();
-                _supportedCommands.AddRange(value);
-            }
-        }
-
-        public DateTime LastUpdated { get; set; } = DateTime.MinValue;
-
-        public bool WillFetch { get => DateTime.UtcNow - LastUpdated > TimeSpan.FromMinutes(1); }
+        };
     }
 }

@@ -1,33 +1,31 @@
-﻿using Leaf2Google.Dependency;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 
-namespace Leaf2Google.Controllers.API
+namespace Leaf2Google.Controllers.API;
+
+public class ValidationController : BaseAPIController
 {
-    public class ValidationController : BaseAPIController
+    private readonly LeafContext _leafContext;
+
+    public ValidationController(ICarSessionManager sessionManager, LeafContext leafContext)
+        : base(sessionManager)
     {
-        private readonly LeafContext _leafContext;
+        _leafContext = leafContext;
+    }
 
-        public ValidationController(ICarSessionManager sessionManager, LeafContext leafContext)
-            : base(sessionManager)
-        {
-            _leafContext = leafContext;
-        }
+    public IActionResult Index()
+    {
+        return View();
+    }
 
-        public IActionResult Index()
-        {
-            return View();
-        }
+    [HttpPost]
+    public IActionResult UsernameValid(string Username)
+    {
+        return Json(_leafContext.NissanLeafs.Any(leaf => leaf.NissanUsername == Username && leaf.Deleted == null));
+    }
 
-        [HttpPost]
-        public IActionResult UsernameValid(string Username)
-        {
-            return Json(_leafContext.NissanLeafs.Any(leaf => leaf.NissanUsername == Username && leaf.Deleted == null));
-        }
-
-        [HttpPost]
-        public IActionResult UsernameUnique(string Username)
-        {
-            return Json(!_leafContext.NissanLeafs.Any(leaf => leaf.NissanUsername == Username && leaf.Deleted == null));
-        }
+    [HttpPost]
+    public IActionResult UsernameUnique(string Username)
+    {
+        return Json(!_leafContext.NissanLeafs.Any(leaf => leaf.NissanUsername == Username && leaf.Deleted == null));
     }
 }
