@@ -45,53 +45,46 @@ public class CarController : BaseAPIController
     public async Task<JsonResult> Status([FromForm] string query, [FromForm] string vin)
     {
         var sessionId = SessionId ?? Guid.Empty;
-        if (SessionId != null && query != null && SessionManager.VehicleSessions[sessionId] != null)
+        if (SessionId != null && SessionManager.VehicleSessions.Any(session => session.Key == sessionId))
         {
             var activevin = vin.IsNullOrWhiteSpace() || vin == "null" ? SelectedVin : vin;
 
             if (query == "battery")
             {
                 var carLock = (LockModel)_google.Devices[sessionId][typeof(LockDevice)];
-                if (carLock != null)
+                var deviceData = _devices.FirstOrDefault(x => x.GetType() == typeof(LockDevice));
+
+                if (deviceData != null)
+                    await deviceData.FetchAsync(sessionId, activevin);
+
+                return Json(new
                 {
-                    var deviceData = _devices.FirstOrDefault(x => x.GetType() == typeof(LockDevice));
-
-                    if (deviceData != null)
-                        await deviceData.FetchAsync(sessionId, activevin);
-
-                    return Json(new
-                    {
-                        percentage = carLock.CapacityRemaining,
-                        charging = carLock.IsCharging
-                    });
-                }
+                    percentage = carLock.CapacityRemaining,
+                    charging = carLock.IsCharging
+                });
             }
             else if (query == "location")
             {
                 PointF? carLocation = await SessionManager.VehicleLocation(sessionId, activevin);
-                if (carLocation != null)
-                    return Json(new
-                    {
-                        lat = carLocation?.X,
-                        @long = carLocation?.Y
-                    });
+                return Json(new
+                {
+                    lat = carLocation?.X,
+                    @long = carLocation?.Y
+                });
             }
             else if (query == "climate")
             {
                 var carThermostat = (ThermostatModel)_google.Devices[sessionId][typeof(ThermostatDevice)];
-                if (carThermostat != null)
+                var deviceData = _devices.FirstOrDefault(x => x.GetType() == typeof(ThermostatDevice));
+
+                if (deviceData != null)
+                    await deviceData.FetchAsync(sessionId, activevin);
+
+                return Json(new
                 {
-                    var deviceData = _devices.FirstOrDefault(x => x.GetType() == typeof(ThermostatDevice));
-
-                    if (deviceData != null)
-                        await deviceData.FetchAsync(sessionId, activevin);
-
-                    return Json(new
-                    {
-                        target = carThermostat?.Target,
-                        current = carThermostat?.LastTemperature
-                    });
-                }
+                    target = carThermostat?.Target,
+                    current = carThermostat?.LastTemperature
+                });
             }
         }
 
