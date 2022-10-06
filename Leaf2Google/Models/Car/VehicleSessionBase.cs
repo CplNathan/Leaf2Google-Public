@@ -6,7 +6,6 @@ namespace Leaf2Google.Models.Car;
 public class VehicleSessionBase
 {
     private string? _authenticatedAccessToken = string.Empty;
-    public object _authLock = new();
 
     public VehicleSessionBase(string username, string password, Guid sessionId)
     {
@@ -28,7 +27,6 @@ public class VehicleSessionBase
     }
 
     public DateTime LastAuthenticated { get; private set; } = DateTime.MinValue;
-
 
     public bool Authenticated => !string.IsNullOrEmpty(_authenticatedAccessToken) && LastRequestSuccessful;
 

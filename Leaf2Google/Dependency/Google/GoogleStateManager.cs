@@ -31,10 +31,11 @@ public class GoogleStateManager
 
     private static Dictionary<Type, BaseDeviceModel> MakeDevices()
     {
-        var devices = new Dictionary<Type, BaseDeviceModel>();
-
-        devices.Add(typeof(ThermostatDevice), new ThermostatModel("1-leaf-ac", "Air Conditioner"));
-        devices.Add(typeof(LockDevice), new LockModel("1-leaf-lock", "Leaf"));
+        var devices = new Dictionary<Type, BaseDeviceModel>
+        {
+            { typeof(ThermostatDevice), new ThermostatModel("1-leaf-ac", "Air Conditioner") },
+            { typeof(LockDevice), new LockModel("1-leaf-lock", "Leaf") }
+        };
 
         return devices;
     }
