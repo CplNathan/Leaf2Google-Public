@@ -86,8 +86,8 @@ public class GoogleController : BaseController
 
                 case "QUERY":
                 {
-                    Console.WriteLine(await Logging.AddLog(token.Owner.Owner.CarModelId, AuditAction.Execute,
-                        AuditContext.Google, $"Google executing query for {token.Owner.Owner.NissanUsername}"));
+                    Console.WriteLine(await Logging.AddLog(token?.Owner?.Owner?.CarModelId ?? Guid.Empty, AuditAction.Execute,
+                        AuditContext.Google, $"Google executing query for {token?.Owner?.Owner?.NissanUsername ?? string.Empty}"));
                     auth.LastQuery = DateTime.UtcNow;
                     var requestedDevicesObj =
                         action["payload"]?["devices"]?.ToObject<List<JObject>>() ?? new List<JObject>();
@@ -111,8 +111,8 @@ public class GoogleController : BaseController
                 }
                 case "EXECUTE":
                 {
-                    Console.WriteLine(await Logging.AddLog(token.Owner.Owner.CarModelId, AuditAction.Execute,
-                        AuditContext.Google, $"Google executing command for {token.Owner.Owner.NissanUsername}"));
+                    Console.WriteLine(await Logging.AddLog(token?.Owner?.Owner?.CarModelId ?? Guid.Empty, AuditAction.Execute,
+                        AuditContext.Google, $"Google executing command for {token?.Owner?.Owner?.NissanUsername ?? string.Empty}"));
                     auth.LastExecute = DateTime.UtcNow;
                     var executedCommands = new List<JObject>();
 
@@ -254,8 +254,8 @@ public class GoogleController : BaseController
                 RefreshToken = Guid.NewGuid()
             };
 
-            Console.WriteLine(await Logging.AddLog(token.Owner.Owner.CarModelId, AuditAction.Update,
-                AuditContext.Google, $"Regenerating refresh token for {token.Owner.Owner.NissanUsername}"));
+            Console.WriteLine(await Logging.AddLog(token?.Owner?.Owner?.CarModelId ?? Guid.Empty, AuditAction.Update,
+                AuditContext.Google, $"Regenerating refresh token for {token?.Owner?.Owner?.NissanUsername ?? string.Empty}"));
 
             tokenState = EntityState.Added;
         }
@@ -265,8 +265,8 @@ public class GoogleController : BaseController
                 form["refresh_token"].ToString() == token.RefreshToken.ToString())!;
             tokenState = EntityState.Modified;
 
-            Console.WriteLine(await Logging.AddLog(token.Owner.Owner.CarModelId, AuditAction.Update,
-                AuditContext.Google, $"Regenerating authorization code for {token.Owner.Owner.NissanUsername}"));
+            Console.WriteLine(await Logging.AddLog(token?.Owner?.Owner?.CarModelId ?? Guid.Empty, AuditAction.Update,
+                AuditContext.Google, $"Regenerating authorization code for {token?.Owner?.Owner?.NissanUsername ?? string.Empty}"));
         }
 
         if (token == null || token.Owner == null || token.Owner.Deleted.HasValue)

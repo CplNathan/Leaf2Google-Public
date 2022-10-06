@@ -23,7 +23,7 @@ public class SecurityKeyController : BaseAPIController
         IOptions<Fido2Configuration> fido2Configuration)
         : base(sessionManager)
     {
-        _origin = fido2Configuration.Value.FullyQualifiedOrigins.FirstOrDefault();
+        _origin = fido2Configuration.Value.FullyQualifiedOrigins.First();
 
         _fido2 = new Fido2(new Fido2Configuration
         {
@@ -114,14 +114,14 @@ public class SecurityKeyController : BaseAPIController
 
             await _leafContext.SecurityKeys.AddAsync(new StoredCredentialModel
             {
-                Descriptor = new PublicKeyCredentialDescriptor(success.Result.CredentialId),
+                Descriptor = new PublicKeyCredentialDescriptor(success.Result?.CredentialId ?? throw new NullReferenceException("CredentialId was null when trying to make a new security credential.")),
                 PublicKey = success.Result.PublicKey,
                 UserHandle = success.Result.User.Id,
                 SignatureCounter = success.Result.Counter,
                 CredType = success.Result.CredType,
                 RegDate = DateTime.Now,
                 AaGuid = success.Result.Aaguid,
-                UserId = SessionId.Value.ToByteArray(),
+                UserId = SessionId?.ToByteArray() ?? throw new NullReferenceException("SessionId was null when trying to make a new security credential."),
                 CredentialId = success.Result.CredentialId
             }, cancellationToken);
 
@@ -200,7 +200,7 @@ public class SecurityKeyController : BaseAPIController
                 var storedCreds =
                     await _leafContext.SecurityKeys.FirstOrDefaultAsync(key => key.UserHandle == args.UserHandle,
                         cancellationToken);
-                return new PublicKeyCredentialDescriptor(storedCreds.CredentialId).Id.SequenceEqual(args.CredentialId);
+                return new PublicKeyCredentialDescriptor(storedCreds?.CredentialId ?? throw new NullReferenceException("Stored credential Id was null when attempting to make an assertion.")).Id.SequenceEqual(args.CredentialId);
             };
 
             var res = await _fido2.MakeAssertionAsync(clientResponse, options, creds.PublicKey, storedCounter, callback,
