@@ -34,10 +34,15 @@ builder.Services.AddFido2(options =>
 builder.Services.AddSingleton(x => new Dictionary<Guid, Dictionary<Type, BaseDeviceModel>>());
 builder.Services.AddSingleton(x => new Dictionary<Guid, VehicleSessionBase>());
 
+builder.Services.AddScoped<BaseStorageManager>();
+builder.Services.AddScoped<IUserStorage, UserStorage>();
+
 builder.Services.AddScoped<ICarSessionManager, LeafSessionManager>();
 builder.Services.AddScoped<GoogleStateManager>();
+
 builder.Services.AddScoped<IDevice, LockDevice>();
 builder.Services.AddScoped<IDevice, ThermostatDevice>();
+
 builder.Services.AddTransient<Captcha>();
 builder.Services.AddTransient<LoggingManager>();
 

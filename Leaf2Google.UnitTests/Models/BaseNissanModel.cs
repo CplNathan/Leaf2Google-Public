@@ -6,13 +6,21 @@ using NUnit.Framework;
 namespace Leaf2Google.UnitTests.Models
 {
     [TestFixture]
-    public class VehicleSessionBase_Authenticated
+    public class VehicleSessionBase_Tests
     {
         private VehicleSessionBase _vehicleSession;
 
-        private const string _username = "TestUser";
+        public const string _username = "TestUser";
 
-        private const string _password = "TestPassword";
+        public const string _password = "TestPassword";
+
+        public static IEnumerable<string[]> CredentialsSource()
+        {
+            yield return new string[] { "TestUser", "TestPassword1" };
+            yield return new string[] { "TestUser ", "TestPassword2" };
+            yield return new string[] { "TestUser1", "TestPassword " };
+            yield return new string[] { "TestUser2", "TestPassword$" };
+        }
 
         [SetUp]
         public void SetUp()
@@ -23,35 +31,7 @@ namespace Leaf2Google.UnitTests.Models
         }
 
         [TestCase]
-        public void WhenRequestFails_ThenEnsureAuthenticationFalse()
-        {
-            // Act
-            _vehicleSession.LastRequestSuccessful = false;
-
-            // Assert
-            Assert.IsFalse(_vehicleSession.Authenticated);
-        }
-    }
-
-    [TestFixture]
-    public class VehicleSessionBase_Authenticat
-    {
-        private VehicleSessionBase _vehicleSession;
-
-        private const string _username = "TestUser";
-
-        private const string _password = "TestPassword";
-
-        [SetUp]
-        public void SetUp()
-        {
-            // Arrange
-            _vehicleSession = new VehicleSessionBase(_username, _password, Guid.NewGuid());
-            _vehicleSession.AuthenticatedAccessToken = Guid.NewGuid().ToString();
-        }
-
-        [TestCase]
-        public void WhenRequestFails_ThenEnsureAuthenticationFalse()
+        public void Authenticated_WithLastRequestFailed_ReturnsTrue()
         {
             // Act
             _vehicleSession.LastRequestSuccessful = false;

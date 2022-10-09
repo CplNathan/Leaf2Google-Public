@@ -34,7 +34,7 @@ namespace Leaf2Google.UnitTests.Models
         }
 
         [TestCase]
-        public void WhenMakeDevices_ThenEnsureDevicesExists()
+        public void GetOrCreateDevices_WithValidGuid_ReturnsDevices()
         {
             // Act
             _stateManager.GetOrCreateDevices(_testGuid);
@@ -44,7 +44,7 @@ namespace Leaf2Google.UnitTests.Models
         }
 
         [TestCase]
-        public void WhenMakeDevices_ThenEnsureAllDevicesImplemented()
+        public void GetOrCreateDevices_WithValidGuid_ImplementsAllDevices()
         {
             // Act
             _stateManager.GetOrCreateDevices(_testGuid);

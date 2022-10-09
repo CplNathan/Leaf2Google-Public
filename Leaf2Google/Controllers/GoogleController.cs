@@ -1,4 +1,5 @@
 ﻿using System.Web;
+using Leaf2Google.Dependency;
 using Leaf2Google.Dependency.Google;
 using Leaf2Google.Dependency.Google.Devices;
 using Leaf2Google.Models.Car;
@@ -12,16 +13,19 @@ namespace Leaf2Google.Controllers;
 
 public class GoogleController : BaseController
 {
-    public GoogleController(ICarSessionManager sessionManager, GoogleStateManager googleState, LeafContext leafContext,
+    public GoogleController(ICarSessionManager sessionManager, BaseStorageManager storageManager, GoogleStateManager googleState, LeafContext leafContext,
         LoggingManager logging, IEnumerable<IDevice> activeDevices, IConfiguration configuration)
         : base(sessionManager)
     {
+        StorageManager = storageManager;
         GoogleState = googleState;
         LeafContext = leafContext;
         Logging = logging;
         Devices = activeDevices;
         Configuration = configuration;
     }
+
+    protected BaseStorageManager StorageManager { get; }
 
     protected GoogleStateManager GoogleState { get; }
 
@@ -314,20 +318,14 @@ public class GoogleController : BaseController
         redirect_uri_processed.Query = query.ToString();
 
         CarModel? leaf = null;
-        var leafs = LeafContext.NissanLeafs.AsEnumerable();
 
-        Func<CarModel, bool> authenticationPredicate = leaf =>
+        var leafId = await StorageManager.UserStorage.LoginUser(form.NissanUsername, form.NissanPassword);
+        if (leafId != Guid.Empty)
         {
-            return leaf.NissanUsername == form.NissanUsername && leaf.NissanPassword == form.NissanPassword;
-        };
-
-        if (leafs.Any(authenticationPredicate))
-        {
-            leaf = leafs.First(authenticationPredicate);
-            leaf.Deleted = null;
-            LeafContext.Entry(leaf).State = EntityState.Modified;
+            leaf = await StorageManager.UserStorage.RestoreUser(leafId);
         }
-        else
+        
+        if (leaf == null)
         {
             leaf = new CarModel(form.NissanUsername, form.NissanPassword);
         }

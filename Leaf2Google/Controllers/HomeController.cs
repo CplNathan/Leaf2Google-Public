@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using Leaf2Google.Dependency;
 using Leaf2Google.Dependency.Google;
 using Leaf2Google.Dependency.Google.Devices;
 using Leaf2Google.Dependency.Helpers;
@@ -12,18 +13,21 @@ namespace Leaf2Google.Controllers;
 
 public class HomeController : BaseController
 {
-    private readonly Captcha _captcha;
+    protected Captcha Captcha { get; }
 
-    private readonly LeafContext _leafContext;
+    protected LeafContext LeafContext { get; }
 
-    public HomeController(ICarSessionManager sessionManager, LeafContext leafContext, LoggingManager logging,
+    protected BaseStorageManager StorageManager { get; }
+
+    public HomeController(ICarSessionManager sessionManager, BaseStorageManager storageManager, LeafContext leafContext, LoggingManager logging,
         GoogleStateManager google, Captcha captcha)
         : base(sessionManager)
     {
-        _leafContext = leafContext;
+        LeafContext = leafContext;
+        StorageManager = storageManager;
         Logging = logging;
         Google = google;
-        _captcha = captcha;
+        Captcha = captcha;
     }
 
     protected LoggingManager Logging { get; }
@@ -39,7 +43,7 @@ public class HomeController : BaseController
         if (session == null)
             return View("Index", new CarViewModel
             {
-                car = _leafContext.NissanLeafs.FirstOrDefault(car => car.CarModelId == SessionId) ?? new CarModel()
+                car = LeafContext.NissanLeafs.FirstOrDefault(car => car.CarModelId == SessionId) ?? new CarModel()
             });
 
         var carThermostat = (ThermostatModel?)Google.Devices[session.SessionId][typeof(ThermostatDevice)];
@@ -48,7 +52,7 @@ public class HomeController : BaseController
 
         return View("IndexUser", new CarViewModel
         {
-            car = _leafContext.NissanLeafs.FirstOrDefault(car => car.CarModelId == SessionId),
+            car = LeafContext.NissanLeafs.FirstOrDefault(car => car.CarModelId == SessionId),
             carLock = carLock,
             carThermostat = carThermostat,
             carLocation = location
@@ -59,43 +63,42 @@ public class HomeController : BaseController
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Index([FromForm] AuthPostFormModel authForm)
     {
-        Func<KeyValuePair<Guid, VehicleSessionBase>, bool> authenticationPredicate = session =>
-        {
-            return session.Value.Username == authForm.NissanUsername &&
-                   session.Value.Password == authForm.NissanPassword;
-        };
-
         if (SessionId != null)
             return RedirectToAction("Index", "Home");
 
-        var captchaStatus = await _captcha.VerifyCaptcha(authForm.Captcha, HttpContext.Request.Host.Host);
+        var captchaStatus = await Captcha.VerifyCaptcha(authForm.Captcha, HttpContext.Request.Host.Host);
 
-        if (SessionManager.VehicleSessions.Any(authenticationPredicate) && captchaStatus)
+        var sessionId = await StorageManager.UserStorage.LoginUser(authForm.NissanUsername, authForm.NissanPassword);
+        if (captchaStatus)
         {
-            var session = SessionManager.VehicleSessions.First(authenticationPredicate);
-            SessionId = session.Key;
-            ViewBag.SessionId = SessionId;
-            SelectedVin = session.Value.PrimaryVin;
-            ViewBag.SelectedVin = SelectedVin;
+            if (sessionId != Guid.Empty)
+            {
+                SessionId = sessionId;
+                ViewBag.SessionId = SessionId;
+                SelectedVin = SessionManager.AllSessions[sessionId].PrimaryVin;
+                ViewBag.SelectedVin = SelectedVin;
 
-            AddToast(new ToastViewModel { Title = "Authentication", Message = "Authentication success." });
-            Console.WriteLine(await Logging.AddLog(Guid.Empty, AuditAction.Access, AuditContext.Account,
-                $"Login success for {authForm.NissanUsername}"));
+                AddToast(new ToastViewModel { Title = "Authentication", Message = "Authentication success." });
+                Console.WriteLine(await Logging.AddLog(Guid.Empty, AuditAction.Access, AuditContext.Account,
+                    $"Login success for {authForm.NissanUsername}"));
+            }
+            else
+            {
+                AddToast(new ToastViewModel
+                {
+                    Title = "Authentication",
+                    Message = "Authentication failed with the given credentials.",
+                    Colour = "warning"
+                });
+
+                Console.WriteLine(await Logging.AddLog(Guid.Empty, AuditAction.Access, AuditContext.Account,
+                    $"Login failed for {authForm.NissanUsername}"));
+            }
         }
         else
         {
-            if (captchaStatus)
-                AddToast(new ToastViewModel
-                {
-                    Title = "Authentication", Message = "Authentication failed with the given credentials.",
-                    Colour = "warning"
-                });
-            else
-                AddToast(new ToastViewModel
-                    { Title = "Authentication", Message = "Failed to verify reCaptcha response.", Colour = "warning" });
-
-            Console.WriteLine(await Logging.AddLog(Guid.Empty, AuditAction.Access, AuditContext.Account,
-                $"Login failed for {authForm.NissanUsername}"));
+            AddToast(new ToastViewModel
+            { Title = "Authentication", Message = "Failed to verify reCaptcha response.", Colour = "warning" });
         }
 
         ReloadViewBag();
