@@ -26,6 +26,8 @@ public interface ICarSessionManager
     Task<Response?> SetVehicleLock(Guid sessionId, string? vin, bool locked);
     Task<Response?> FlashLights(Guid sessionId, string? vin, int duration = 5);
     Task<Response?> BeepHorn(Guid sessionId, string? vin, int duration = 5);
+
+    //Task<bool> Login(string username, string password);
 }
 
 public delegate void AuthEventHandler(object sender, Guid sessionId, string? authToken);
@@ -63,9 +65,7 @@ public abstract class BaseSessionManager
 
     public IReadOnlyDictionary<Guid, VehicleSessionBase> AllSessions => VehicleSessions;
 
-
     public event RequestEventHandler OnRequest;
-
 
     public event AuthEventHandler OnAuthenticationAttempt;
 
@@ -78,6 +78,8 @@ public abstract class BaseSessionManager
 
             if (!session.Authenticated)
                 session.LoginFailedCount += 1;
+            else
+                session.LoginFailedCount = 0;
 
             if (!session.Authenticated && session.LoginGivenUp)
             {
@@ -112,11 +114,15 @@ public abstract class BaseSessionManager
 
     private async void BaseSessionManager_OnRequest(object sender, Guid sessionId, bool requestSuccess)
     {
-        if (sender is VehicleSessionBase session && !session.Authenticated && !session.LoginGivenUp &&
-            session.LastAuthenticated > DateTime.MinValue && !requestSuccess)
+        if (sender is VehicleSessionBase session)
         {
             session.LastRequestSuccessful = requestSuccess;
-            await Login(sessionId);
+
+            if (!session.Authenticated && !session.LoginGivenUp &&
+            session.LastAuthenticated > DateTime.MinValue && !requestSuccess)
+            {
+                await Login(sessionId);
+            }
         }
     }
 
