@@ -1,4 +1,6 @@
-﻿using System.Web;
+﻿using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Web;
 using Leaf2Google.Dependency;
 using Leaf2Google.Dependency.Google;
 using Leaf2Google.Dependency.Google.Devices;
@@ -6,10 +8,27 @@ using Leaf2Google.Models.Car;
 using Leaf2Google.Models.Generic;
 using Leaf2Google.Models.Google;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Leaf2Google.Controllers;
+
+public class EnableRequestBodyBufferingMiddleware
+{
+    private readonly RequestDelegate _next;
+
+    public EnableRequestBodyBufferingMiddleware(RequestDelegate next) =>
+        _next = next;
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        context.Request.EnableBuffering();
+
+        await _next(context);
+    }
+}
 
 public class GoogleController : BaseController
 {
@@ -40,8 +59,23 @@ public class GoogleController : BaseController
     // Welcome to hell
     [HttpPost]
     [Consumes("application/json")]
-    public async Task<ActionResult> Fulfillment([FromBody] JObject fulfillment, [FromHeader] string Authorization)
+    public async Task<ActionResult> Fulfillment([FromHeader] string Authorization, [FromBody(EmptyBodyBehavior = Microsoft.AspNetCore.Mvc.ModelBinding.EmptyBodyBehavior.Allow)] string _ = "")
     {
+        // This is a but of a hack, because this was originally written using Newtonsoft.JSON (but I since removed the middleware) I can no longer parse in a JObject, but as of yet don't want to rewrite this
+        // method to use System.Text.JSON's JsonObject. So I have to do some hacks with the body and manually rewind the reader to then stream it to a JObject without using the middleware.
+        // I really need to rewrite this, but for now have left it. I want to move away from Newtonsoft and move to System.Text instead, so when I have time I will rewrite this method so that it can be injected directly from body.
+        var body = string.Empty;
+
+        Request.EnableBuffering();
+        Request.Body.Position = 0;
+
+        using (var reader = new StreamReader(Request.Body))
+        {
+            body = await reader.ReadToEndAsync();
+        }
+
+        JObject fulfillment = JObject.Parse(body);
+
         var accessToken = Authorization?.Split("Bearer ")[1];
 
         var token = await LeafContext.GoogleTokens.FirstOrDefaultAsync(token =>
@@ -203,7 +237,7 @@ public class GoogleController : BaseController
             */
         }
 
-        return Json(response);
+        return Content(response.ToString(), "application/json");
     }
 
     [HttpPost]

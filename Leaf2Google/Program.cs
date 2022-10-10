@@ -76,11 +76,10 @@ if (!app.Environment.IsDevelopment())
 
 app.UseWebOptimizer();
 
-using (var scope = app.Services.CreateScope())
-{
-    scope.ServiceProvider.GetRequiredService<LeafContext>().Database.Migrate();
-    await scope.ServiceProvider.GetRequiredService<ICarSessionManager>().StartAsync();
-}
+app.UseWhen(
+    ctx => ctx.Request.Path.StartsWithSegments("/google"),
+    ab => ab.UseMiddleware<EnableRequestBodyBufferingMiddleware>()
+);
 
 app.UseStaticFiles();
 
@@ -97,5 +96,11 @@ app.UseSession();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+using (var scope = app.Services.CreateScope())
+{
+    scope.ServiceProvider.GetRequiredService<LeafContext>().Database.Migrate();
+    await scope.ServiceProvider.GetRequiredService<ICarSessionManager>().StartAsync();
+}
 
 app.Run();
