@@ -270,7 +270,7 @@ public class GoogleController : BaseController
                 return BadRequest("{\"error\": \"invalid_grant\"}");
         }
 
-        if (form["grant_type"] == "refresh_token" && !await LeafContext.GoogleTokens.AnyAsync(token =>
+        if (form["grant_type"] == "refresh_token" && !await LeafContext.GoogleTokens.Include(token => token.Owner).AnyAsync(token =>
                 form["refresh_token"].ToString() == token.RefreshToken.ToString() &&
                 form["client_id"].ToString() == token.Owner.ClientId))
             return BadRequest("{\"error\": \"invalid_grant\"}");
@@ -287,7 +287,7 @@ public class GoogleController : BaseController
         {
             token = new TokenModel
             {
-                Owner = (await LeafContext.GoogleAuths.FirstOrDefaultAsync(auth =>
+                Owner = (await LeafContext.GoogleAuths.Include(auth => auth.Owner).FirstOrDefaultAsync(auth =>
                     form["code"].ToString() == auth.AuthCode.ToString()))!,
                 RefreshToken = Guid.NewGuid()
             };
@@ -299,7 +299,7 @@ public class GoogleController : BaseController
         }
         else if (form["grant_type"] == "refresh_token")
         {
-            token = await LeafContext.GoogleTokens.FirstOrDefaultAsync(token =>
+            token = await LeafContext.GoogleTokens.Include(token => token.Owner).FirstOrDefaultAsync(token =>
                 form["refresh_token"].ToString() == token.RefreshToken.ToString())!;
             tokenState = EntityState.Modified;
 
