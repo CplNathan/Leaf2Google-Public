@@ -10,7 +10,7 @@ namespace Leaf2Google.Dependency
     {
         Task<bool> CanUserLogin(Guid sessionId);
 
-        Task<Guid?> DoCredentialsMatch(string username, string password);
+        Task<Guid> DoCredentialsMatch(string username, string password);
 
         Task<Guid> LoginUser(string username, string password);
 
@@ -18,7 +18,9 @@ namespace Leaf2Google.Dependency
 
         Task<CarModel?> RestoreUser(Guid sessionId);
 
-        Task<CarModel?> GetUser(Guid sessionId);
+        Task<CarModel?> GetUser(Guid sessionId, bool includeDeleted = false);
+
+        Task<CarModel?> GetUser(string username, string password, bool includeDeleted = false);
 
         Task<bool> CreateUser(string username, string password);
 
@@ -39,14 +41,14 @@ namespace Leaf2Google.Dependency
             return await LeafContext.NissanLeafs.AnyAsync(car => car.Deleted == null && car.CarModelId == sessionId);
         }
 
-        public async Task<Guid?> DoCredentialsMatch(string username, string password)
+        public async Task<Guid> DoCredentialsMatch(string username, string password)
         {
-            return (await LeafContext.NissanLeafs.ToListAsync()).FirstOrDefault(car => car.Deleted == null && car.NissanUsername == username && car.NissanPassword == password)?.CarModelId;
+            return (await GetUser(username, password))?.CarModelId ?? Guid.Empty;
         }
 
         public async Task<Guid> LoginUser(string username, string password)
         {
-            Guid sessionId = await DoCredentialsMatch(username, password) ?? Guid.Empty;
+            Guid sessionId = await DoCredentialsMatch(username, password);
             if (sessionId == Guid.Empty)
                 return Guid.Empty;
 
@@ -73,7 +75,7 @@ namespace Leaf2Google.Dependency
 
         public async Task<CarModel?> RestoreUser(Guid sessionId)
         {
-            var leaf = await GetUser(sessionId);
+            var leaf = await GetUser(sessionId, true);
             if (leaf == null)
                 return leaf;
 
@@ -84,9 +86,19 @@ namespace Leaf2Google.Dependency
             return leaf;
         }
 
-        public async Task<CarModel?> GetUser(Guid sessionId)
+        public async Task<CarModel?> GetUser(string username, string password, bool includeDeleted = false)
         {
-            return await LeafContext.NissanLeafs.FirstOrDefaultAsync(car => car.CarModelId == sessionId);
+            var leafs = includeDeleted ? LeafContext.NissanLeafs.IgnoreQueryFilters() : LeafContext.NissanLeafs;
+
+            return (await leafs.Where(car => car.NissanUsername == username).ToListAsync())
+                .FirstOrDefault(car => car.NissanUsername == username && car.NissanPassword == password);
+        }
+
+        public async Task<CarModel?> GetUser(Guid sessionId, bool includeDeleted = false)
+        {
+            var leafs = includeDeleted ? LeafContext.NissanLeafs.IgnoreQueryFilters() : LeafContext.NissanLeafs;
+
+            return await leafs.FirstOrDefaultAsync(car => car.CarModelId == sessionId);
         }
 
         public Task<bool> CreateUser(string username, string password)

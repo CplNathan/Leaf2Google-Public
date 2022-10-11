@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. APIController.cs
 
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Leaf2Google.Controllers.API;
 
@@ -19,7 +20,7 @@ public class AuthController : BaseAPIController
     [HttpPost]
     public async Task<ViewComponentResult> Delete([FromForm] Guid? authId)
     {
-        if (SessionId != null && authId != null && _googleContext.GoogleAuths.Any(auth =>
+        if (SessionId != null && authId != null && await _googleContext.GoogleAuths.Include(auth => auth.Owner).AnyAsync(auth =>
                 auth.Owner != null && auth.Owner.CarModelId == SessionId && auth.AuthId == authId &&
                 auth.Deleted == null))
         {

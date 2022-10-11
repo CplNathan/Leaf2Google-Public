@@ -78,7 +78,7 @@ public class GoogleController : BaseController
 
         var accessToken = Authorization?.Split("Bearer ")[1];
 
-        var token = await LeafContext.GoogleTokens.FirstOrDefaultAsync(token =>
+        var token = await LeafContext.GoogleTokens.Include(token => token.Owner).Include(token => token.Owner.Owner).FirstOrDefaultAsync(token =>
             accessToken == token.AccessToken.ToString() && token.TokenExpires > DateTime.UtcNow);
         if (token is null)
             return Unauthorized("{\"error\": \"invalid_grant\"}");
@@ -338,7 +338,7 @@ public class GoogleController : BaseController
             return await Auth(model);
         }
 
-        var auth = await LeafContext.GoogleAuths.FirstOrDefaultAsync(auth => auth.AuthState == form.state);
+        var auth = await LeafContext.GoogleAuths.Include(auth => auth.Owner).FirstOrDefaultAsync(auth => auth.AuthState == form.state);
         if (auth == null)
             return BadRequest();
 
