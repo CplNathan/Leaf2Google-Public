@@ -78,7 +78,7 @@ public class GoogleController : BaseController
 
         var accessToken = Authorization?.Split("Bearer ")[1];
 
-        var token = await LeafContext.GoogleTokens.Include(token => token.Owner).Include(token => token.Owner.Owner).FirstOrDefaultAsync(token =>
+        var token = await LeafContext.GoogleTokens.Include(token => token.Owner).ThenInclude(auth => auth.Owner).FirstOrDefaultAsync(token =>
             accessToken == token.AccessToken.ToString() && token.TokenExpires > DateTime.UtcNow);
         if (token is null)
             return Unauthorized("{\"error\": \"invalid_grant\"}");
