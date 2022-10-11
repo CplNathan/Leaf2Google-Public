@@ -184,7 +184,7 @@ public abstract class BaseSessionManager
     public async Task StartAsync()
     {
         // Queue saved sessions into memory.
-        foreach (var leaf in LeafContext.NissanLeafs.Where(leaf => leaf.Deleted == null))
+        foreach (var leaf in LeafContext.NissanLeafs)
             await AddAsync(new CarModel(leaf.NissanUsername, leaf.NissanPassword) { CarModelId = leaf.CarModelId });
 
         await LeafContext.SaveChangesAsync();

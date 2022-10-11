@@ -39,7 +39,8 @@ public class LeafContext : DbContext
 
         modelBuilder
             .Entity<CarModel>()
-            .ToTable("t_leafs_leaf");
+            .ToTable("t_leafs_leaf")
+            .HasQueryFilter(q => q.Deleted == null);
 
         modelBuilder
             .Entity<StoredCredentialModel>()

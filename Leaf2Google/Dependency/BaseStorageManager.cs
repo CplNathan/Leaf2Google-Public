@@ -36,12 +36,12 @@ namespace Leaf2Google.Dependency
 
         public async Task<bool> CanUserLogin(Guid sessionId)
         {
-            return await LeafContext.NissanLeafs.AnyAsync(car => car.CarModelId == sessionId && car.Deleted == null);
+            return await LeafContext.NissanLeafs.AnyAsync(car => car.Deleted == null && car.CarModelId == sessionId);
         }
 
         public async Task<Guid?> DoCredentialsMatch(string username, string password)
         {
-            return (await LeafContext.NissanLeafs.ToListAsync()).FirstOrDefault(car => car.NissanUsername == username && car.NissanPassword == password)?.CarModelId;
+            return (await LeafContext.NissanLeafs.ToListAsync()).FirstOrDefault(car => car.Deleted == null && car.NissanUsername == username && car.NissanPassword == password)?.CarModelId;
         }
 
         public async Task<Guid> LoginUser(string username, string password)
