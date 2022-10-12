@@ -161,7 +161,9 @@ public abstract class BaseSessionManager
 
     protected async Task<bool> Login(Guid sessionId) // make abstract/interface
     {
-        var session = AllSessions[sessionId];
+        var session = AllSessions.FirstOrDefault(session => session.Key == sessionId).Value;
+        if (session is null)
+            return false;
 
         if (!session.LoginGivenUp && !session.Authenticated)
         {
