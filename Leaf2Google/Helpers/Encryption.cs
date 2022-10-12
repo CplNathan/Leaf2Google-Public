@@ -4,21 +4,21 @@ namespace Leaf2Google.Helpers;
 
 public static class AesEncryption
 {
-    public static Tuple<byte[], byte[], byte[]> EncryptStringToBytes(string plainText)
+    public static List<Tuple<byte[], byte[], byte[]>> EncryptStringToBytes(string plainText)
     {
         using (var aes = Aes.Create())
         {
             // Encrypt the string to an array of bytes.
-            var encrypted = EncryptStringToBytes(plainText, aes.Key, aes.IV);
+            var encrypted = EncryptStringToBytes(aes.Key, aes.IV, plainText);
 
             // Decrypt the bytes to a string.
             //string roundtrip = DecryptStringFromBytes_Aes(encrypted, myAes.Key, myAes.IV);
 
-            return new Tuple<byte[], byte[], byte[]>(aes.Key, aes.IV, encrypted);
+            return new List<Tuple<byte[], byte[], byte[]>> { Tuple.Create(aes.Key, aes.IV, encrypted) };
         }
     }
 
-    public static byte[] EncryptStringToBytes(string plainText, byte[] Key, byte[] IV)
+    public static byte[] EncryptStringToBytes(byte[] Key, byte[] IV, string plainText)
     {
         // Check arguments.
         if (plainText == null || plainText.Length <= 0)
@@ -59,7 +59,7 @@ public static class AesEncryption
         return encrypted;
     }
 
-    public static string DecryptStringFromBytes(byte[] cipherText, byte[] Key, byte[] IV)
+    public static string DecryptStringFromBytes(byte[] Key, byte[] IV, byte[] cipherText)
     {
         // Check arguments.
         if (cipherText == null || cipherText.Length <= 0)

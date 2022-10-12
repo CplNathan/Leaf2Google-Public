@@ -4,6 +4,7 @@ using Leaf2Google.Models.Generic;
 using Leaf2Google.Models.Google;
 using Leaf2Google.Models.Security;
 using Microsoft.EntityFrameworkCore;
+using WebOptimizer;
 
 namespace Leaf2Google.Contexts;
 
@@ -28,19 +29,15 @@ public class LeafContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        /*
-        modelBuilder
-            .Entity<Leaf>()
-            .Property(e => e.NissanPassword)
-            .HasConversion(
-                v => v.ToString(),
-                v => (EquineBeast)Enum.Parse(typeof(EquineBeast), v));
-        */
-
         modelBuilder
             .Entity<CarModel>()
             .ToTable("t_leafs_leaf")
-            .HasQueryFilter(q => q.Deleted == null);
+            .HasQueryFilter(q => q.Deleted == null)
+            .Property(e => e.NissanPassword)
+            .HasConversion(
+                v => AesEncryption.EncryptStringToBytes(v).Select(e => $"{Convert.ToBase64String(e.Item1)}|{Convert.ToBase64String(e.Item2)}|{Convert.ToBase64String(e.Item3)}").First(),
+                v => v.Split('|', StringSplitOptions.RemoveEmptyEntries).Length >= 3 ? AesEncryption.DecryptStringFromBytes(Convert.FromBase64String(v.Split('|', StringSplitOptions.RemoveEmptyEntries)[0]), Convert.FromBase64String(v.Split('|', StringSplitOptions.RemoveEmptyEntries)[1]), Convert.FromBase64String(v.Split('|', StringSplitOptions.RemoveEmptyEntries)[2])) : ""
+            );
 
         modelBuilder
             .Entity<StoredCredentialModel>()

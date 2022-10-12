@@ -31,6 +31,8 @@ namespace Leaf2Google.UnitTests.Models
             _carModel = new CarModel(_username, _password);
         }
 
+        // This test now may be redundant as the DbSet has a property converter assigned to it instead - the StorageManager test replaces this.
+
         [Description("When CarModel is constructed it takes the password, transforms it to bytes, then encrypts it. This test proves the reverse through the NissanPassword getter.")]
         [TestCase(_username, _password)]
         public void NissanPassword_WithValidCredentials_IsEqual(string username, string password)
