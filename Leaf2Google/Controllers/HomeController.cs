@@ -15,15 +15,12 @@ public class HomeController : BaseController
 {
     protected Captcha Captcha { get; }
 
-    protected LeafContext LeafContext { get; }
-
     protected BaseStorageManager StorageManager { get; }
 
-    public HomeController(ICarSessionManager sessionManager, BaseStorageManager storageManager, LeafContext leafContext, LoggingManager logging,
+    public HomeController(ICarSessionManager sessionManager, BaseStorageManager storageManager, LoggingManager logging,
         GoogleStateManager google, Captcha captcha)
         : base(sessionManager)
     {
-        LeafContext = leafContext;
         StorageManager = storageManager;
         Logging = logging;
         Google = google;
@@ -43,7 +40,7 @@ public class HomeController : BaseController
         if (session == null)
             return View("Index", new CarViewModel
             {
-                car = LeafContext.NissanLeafs.FirstOrDefault(car => car.CarModelId == SessionId) ?? new CarModel()
+                car = await StorageManager.UserStorage.GetUser(SessionId ?? Guid.Empty) ?? new CarModel()
             });
 
         var carThermostat = (ThermostatModel?)Google.Devices[session.SessionId][typeof(ThermostatDevice)];
@@ -52,7 +49,7 @@ public class HomeController : BaseController
 
         return View("IndexUser", new CarViewModel
         {
-            car = LeafContext.NissanLeafs.FirstOrDefault(car => car.CarModelId == SessionId),
+            car = await StorageManager.UserStorage.GetUser(SessionId ?? Guid.Empty) ?? new CarModel(),
             carLock = carLock,
             carThermostat = carThermostat,
             carLocation = location
@@ -68,9 +65,10 @@ public class HomeController : BaseController
 
         var captchaStatus = await Captcha.VerifyCaptcha(authForm.Captcha, HttpContext.Request.Host.Host);
 
-        var sessionId = await StorageManager.UserStorage.LoginUser(authForm.NissanUsername, authForm.NissanPassword);
         if (captchaStatus)
         {
+            var sessionId = await StorageManager.UserStorage.LoginUser(authForm.NissanUsername, authForm.NissanPassword);
+
             if (sessionId != Guid.Empty)
             {
                 SessionId = sessionId;

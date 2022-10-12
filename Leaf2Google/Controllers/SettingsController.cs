@@ -9,16 +9,13 @@ namespace Leaf2Google.Controllers;
 
 public class SettingsController : BaseController
 {
-    private readonly LeafContext _leafContext;
+    public GoogleStateManager Google { get; }
 
-    public SettingsController(ICarSessionManager sessionManager, LeafContext leafContext, GoogleStateManager google)
+    public SettingsController(ICarSessionManager sessionManager, GoogleStateManager google)
         : base(sessionManager)
     {
-        _leafContext = leafContext;
         Google = google;
     }
-
-    public GoogleStateManager Google { get; }
 
     public async Task<IActionResult> Index()
     {
