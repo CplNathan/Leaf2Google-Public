@@ -7,6 +7,8 @@ public class VehicleSessionBase
 {
     private string? _authenticatedAccessToken = string.Empty;
 
+    private bool _loginAuthenticationAttempting = false;
+
     public VehicleSessionBase(string username, string password, Guid sessionId)
     {
         Username = username;
@@ -45,7 +47,19 @@ public class VehicleSessionBase
 
     public bool LastRequestSuccessful { get; set; } = true;
 
-    public bool LoginAuthenticationAttempting { get; set; } = false;
+    public bool LoginAuthenticationAttempting
+    {
+        get => _loginAuthenticationAttempting;
+        set
+        {
+            if (value != _loginAuthenticationAttempting && value == false)
+                LastLoginAuthenticaionAttempted = DateTime.UtcNow;
+
+            _loginAuthenticationAttempting = value;
+        }
+    }
+
+    public DateTime LastLoginAuthenticaionAttempted { get; private set; } = DateTime.MinValue;
 
     public int LoginFailedCount { get; set; }
 

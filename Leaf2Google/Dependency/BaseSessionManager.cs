@@ -165,6 +165,14 @@ public abstract class BaseSessionManager
         if (session is null)
             return false;
 
+        // If this is called concurrently we could add it to a queue/task where we can await the result of the previous authentication attempt although I am unsure of the benifit of this.
+        if (session.LoginAuthenticationAttempting)
+            return false;
+
+        // Add cooldown to authentication attempts in-case multiple requests hit at once.
+        if (DateTime.UtcNow - session.LastLoginAuthenticaionAttempted <= TimeSpan.FromSeconds(5))
+            return false;
+
         if (!session.LoginGivenUp && !session.Authenticated)
         {
             session.LoginAuthenticationAttempting = true;
