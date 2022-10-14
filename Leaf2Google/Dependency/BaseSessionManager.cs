@@ -119,7 +119,7 @@ public abstract class BaseSessionManager
             session.LastRequestSuccessful = requestSuccess;
 
             if (!session.Authenticated && !session.LoginGivenUp &&
-            session.LastAuthenticated > DateTime.MinValue && !requestSuccess)
+            session.LastAuthenticated > DateTime.MinValue && !requestSuccess && !session.LoginAuthenticationAttempting)
             {
                 await Login(sessionId);
             }
@@ -167,14 +167,19 @@ public abstract class BaseSessionManager
 
         if (!session.LoginGivenUp && !session.Authenticated)
         {
+            session.LoginAuthenticationAttempting = true;
+
             Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
                 "Authentication Attempting"));
             session = VehicleSessions[session.SessionId] = await LoginImplementation(session);
+
+            session.LoginAuthenticationAttempting = false;
         }
         else
         {
             Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
                 "Authentication Attempted - But Given Up"));
+
             return false;
         }
 

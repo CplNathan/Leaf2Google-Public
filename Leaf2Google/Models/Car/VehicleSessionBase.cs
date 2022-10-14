@@ -45,6 +45,8 @@ public class VehicleSessionBase
 
     public bool LastRequestSuccessful { get; set; } = true;
 
+    public bool LoginAuthenticationAttempting { get; set; } = false;
+
     public int LoginFailedCount { get; set; }
 
     public bool LoginGivenUp => LoginFailedCount >= 5;
