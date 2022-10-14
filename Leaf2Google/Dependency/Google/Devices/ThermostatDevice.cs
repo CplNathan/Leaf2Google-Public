@@ -45,6 +45,23 @@ public class ThermostatDevice : BaseDevice, IDevice
 
     public async Task<JObject> QueryAsync(Guid sessionId, string? vin)
     {
+        if (!SessionManager.AllSessions[sessionId].Authenticated)
+        {
+            return new JObject
+            {
+                { "online", false },
+
+                /* Custom Syntax, also need to implement */
+                {
+                    "errors", new JObject
+                    {
+                        { "status", "FAILURE" },
+                        { "errorCode", "authFailure" }
+                    }
+                }
+            };
+        }
+
         var success = await FetchAsync(sessionId, vin);
 
         var vehicleThermostat = (ThermostatModel)GoogleState.Devices[sessionId][typeof(ThermostatDevice)];
@@ -61,6 +78,23 @@ public class ThermostatDevice : BaseDevice, IDevice
 
     public async Task<JObject> ExecuteAsync(Guid sessionId, string? vin, JObject data)
     {
+        if (!SessionManager.AllSessions[sessionId].Authenticated)
+        {
+            return new JObject
+            {
+                { "online", false },
+
+                /* Custom Syntax, also need to implement */
+                {
+                    "errors", new JObject
+                    {
+                        { "status", "FAILURE" },
+                        { "errorCode", "authFailure" }
+                    }
+                }
+            };
+        }
+
         var vehicleThermostat = (ThermostatModel)GoogleState.Devices[sessionId][typeof(ThermostatDevice)];
 
         vehicleThermostat.Target = data.ContainsKey("thermostatTemperatureSetpoint")

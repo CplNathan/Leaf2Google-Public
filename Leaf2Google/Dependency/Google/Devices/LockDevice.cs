@@ -54,6 +54,23 @@ public class LockDevice : BaseDevice, IDevice
 
     public async Task<JObject> QueryAsync(Guid sessionId, string? vin)
     {
+        if (!SessionManager.AllSessions[sessionId].Authenticated)
+        {
+            return new JObject
+            {
+                { "online", false },
+
+                /* Custom Syntax, also need to implement */
+                {
+                    "errors", new JObject
+                    {
+                        { "status", "FAILURE" },
+                        { "errorCode", "authFailure" }
+                    }
+                }
+            };
+        }
+
         var success = await FetchAsync(sessionId, vin);
 
         var vehicleLock = (LockModel)GoogleState.Devices[sessionId][typeof(LockDevice)];
@@ -128,6 +145,23 @@ public class LockDevice : BaseDevice, IDevice
     public async Task<JObject> ExecuteAsync(Guid sessionId, string? vin, JObject data)
     {
         var vehicleLock = (LockModel)GoogleState.Devices[sessionId][typeof(LockDevice)];
+
+        if (!SessionManager.AllSessions[sessionId].Authenticated)
+        {
+            return new JObject
+            {
+                { "online", false },
+
+                /* Custom Syntax, also need to implement */
+                {
+                    "errors", new JObject
+                    {
+                        { "status", "FAILURE" },
+                        { "errorCode", "authFailure" }
+                    }
+                }
+            };
+        }
 
         if ((string?)data.Root["command"] == "action.devices.commands.Locate" &&
             ((bool?)data["silence"] ?? false) == false)

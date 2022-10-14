@@ -197,13 +197,6 @@ public class GoogleController : BaseController
 
                             if (mergedStates.ContainsKey("errors")) mergedStates.Merge(mergedStates["errors"]!);
 
-                            var executedCommand = new JObject
-                            {
-                                { "ids", JArray.FromObject(updatedIds) },
-                                { "status", "SUCCESS" }, // ??
-                                { "states", mergedStates }
-                            };
-
                             executedCommands.Add(new JObject
                             {
                                 { "ids", JArray.FromObject(updatedIds) },
