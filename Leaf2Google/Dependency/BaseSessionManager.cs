@@ -112,7 +112,7 @@ public abstract class BaseSessionManager
         }
     }
 
-    private async void BaseSessionManager_OnRequest(object sender, Guid sessionId, bool requestSuccess)
+    private void BaseSessionManager_OnRequest(object sender, Guid sessionId, bool requestSuccess)
     {
         if (sender is VehicleSessionBase session)
         {
@@ -121,7 +121,7 @@ public abstract class BaseSessionManager
             if (!session.Authenticated && !session.LoginGivenUp &&
             session.LastAuthenticated > DateTime.MinValue && !requestSuccess && !session.LoginAuthenticationAttempting)
             {
-                await Login(sessionId);
+                _ = Login(sessionId);
             }
         }
     }
@@ -207,7 +207,7 @@ public abstract class BaseSessionManager
     {
         // Queue saved sessions into memory.
         foreach (var leaf in LeafContext.NissanLeafs)
-            await AddAsync(new CarModel(leaf.NissanUsername, leaf.NissanPassword) { CarModelId = leaf.CarModelId });
+            _ = AddAsync(new CarModel(leaf.NissanUsername, leaf.NissanPassword) { CarModelId = leaf.CarModelId });
 
         await LeafContext.SaveChangesAsync();
     }

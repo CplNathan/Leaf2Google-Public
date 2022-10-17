@@ -36,7 +36,7 @@ public class SettingsController : BaseController
 
         var thermostat = (ThermostatModel?)Google.Devices[session.SessionId][typeof(ThermostatDevice)];
         var carlock = (LockModel?)Google.Devices[session.SessionId][typeof(LockDevice)];
-        PointF? location = await SessionManager.VehicleLocation(session.SessionId, session.PrimaryVin);
+        //PointF? location = await SessionManager.VehicleLocation(session.SessionId, session.PrimaryVin);
 
         return View("IndexUser");
     }

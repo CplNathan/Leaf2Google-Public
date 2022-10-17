@@ -21,9 +21,11 @@ public class LockDevice : BaseDevice, IDevice
 
         if (vehicleLock.WillFetch || forceFetch)
         {
-            var lockStatus = await SessionManager.VehicleLock(sessionId, vin);
+            var lockStatusTask = SessionManager.VehicleLock(sessionId, vin);
+            var batteryStatusTask = SessionManager.VehicleBattery(sessionId, vin);
 
-            var batteryStatus = await SessionManager.VehicleBattery(sessionId, vin);
+            var lockStatus = await lockStatusTask;
+            var batteryStatus = await batteryStatusTask;
 
             if (lockStatus is not null && lockStatus.Success && batteryStatus is not null && batteryStatus.Success)
             {
@@ -166,7 +168,7 @@ public class LockDevice : BaseDevice, IDevice
         if ((string?)data.Root["command"] == "action.devices.commands.Locate" &&
             ((bool?)data["silence"] ?? false) == false)
         {
-            var flashStatus = await SessionManager.FlashLights(sessionId, vin);
+            _ = SessionManager.FlashLights(sessionId, vin);
         }
         else if ((string?)data.Root["command"] == "action.devices.commands.LockUnlock")
         {

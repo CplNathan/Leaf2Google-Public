@@ -108,7 +108,7 @@ public class ThermostatDevice : BaseDevice, IDevice
         var success = false;
         if (climateStatus is not null && climateStatus.Success) success = climateStatus.Success;
 
-        await QueryAsync(sessionId, vin);
+        _ = QueryAsync(sessionId, vin);
 
         return new JObject
         {

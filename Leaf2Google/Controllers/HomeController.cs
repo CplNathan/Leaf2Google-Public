@@ -45,7 +45,9 @@ public class HomeController : BaseController
 
         var carThermostat = (ThermostatModel?)Google.Devices[session.SessionId][typeof(ThermostatDevice)];
         var carLock = (LockModel?)Google.Devices[session.SessionId][typeof(LockDevice)];
-        PointF? location = await SessionManager.VehicleLocation(session.SessionId, session.PrimaryVin);
+        PointF? location = SessionManager.AllSessions[session.SessionId].LastLocation.Item2;
+
+        _ = SessionManager.VehicleLocation(session.SessionId, session.PrimaryVin);
 
         return View("IndexUser", new CarViewModel
         {
@@ -64,10 +66,11 @@ public class HomeController : BaseController
             return RedirectToAction("Index", "Home");
 
         var captchaStatus = await Captcha.VerifyCaptcha(authForm.Captcha, HttpContext.Request.Host.Host);
+        var sessionIdTask = StorageManager.UserStorage.LoginUser(authForm.NissanUsername, authForm.NissanPassword);
 
         if (captchaStatus)
         {
-            var sessionId = await StorageManager.UserStorage.LoginUser(authForm.NissanUsername, authForm.NissanPassword);
+            var sessionId = await sessionIdTask;
 
             if (sessionId != Guid.Empty)
             {
@@ -107,38 +110,6 @@ public class HomeController : BaseController
     {
         return View();
     }
-
-    /*
-    public async Task<IActionResult> FlashAll()
-    {
-        List<string> result = new List<string>();
-
-        foreach (var session in Sessions.LeafSessions)
-        {
-            var response = await session.FlashLights(session.PrimaryVin);
-            result.Add(JsonConvert.SerializeObject(response!.Data));
-        }
-
-        ViewBag.result = result;
-
-        return View("Index");
-    }
-
-    public async Task<IActionResult> HvacStatus()
-    {
-        List<string> result = new List<string>();
-
-        foreach (var session in Sessions.LeafSessions)
-        {
-            var response = await session.VehicleClimate(session.PrimaryVin);
-            result.Add(JsonConvert.SerializeObject(response!.Data));
-        }
-
-        ViewBag.result = result;
-
-        return View("Index");
-    }
-    */
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public Task<IActionResult> Error()

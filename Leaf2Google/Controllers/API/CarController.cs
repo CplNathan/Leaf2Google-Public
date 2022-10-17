@@ -24,7 +24,7 @@ public class CarController : BaseAPIController
     }
 
     [HttpPost]
-    public async Task<JsonResult> Action([FromForm] string action, [FromForm] int? duration)
+    public JsonResult Action([FromForm] string action, [FromForm] int? duration)
     {
         var sessionId = SessionId ?? Guid.Empty;
         if (SessionId != null && action != null && duration != null &&
@@ -33,9 +33,9 @@ public class CarController : BaseAPIController
             var clampedDuration = duration.Value > 15 ? 15 : duration.Value < 5 ? 5 : duration.Value;
 
             if (action == "flash")
-                await SessionManager.FlashLights(sessionId, SelectedVin, clampedDuration);
+                _ = SessionManager.FlashLights(sessionId, SelectedVin, clampedDuration);
             else if (action == "horn")
-                await SessionManager.BeepHorn(sessionId, SelectedVin, clampedDuration);
+                _ = SessionManager.BeepHorn(sessionId, SelectedVin, clampedDuration);
         }
 
         return Json(null);

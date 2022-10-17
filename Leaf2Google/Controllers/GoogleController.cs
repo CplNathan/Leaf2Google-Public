@@ -64,17 +64,15 @@ public class GoogleController : BaseController
         // This is a but of a hack, because this was originally written using Newtonsoft.JSON (but I since removed the middleware) I can no longer parse in a JObject, but as of yet don't want to rewrite this
         // method to use System.Text.JSON's JsonObject. So I have to do some hacks with the body and manually rewind the reader to then stream it to a JObject without using the middleware.
         // I really need to rewrite this, but for now have left it. I want to move away from Newtonsoft and move to System.Text instead, so when I have time I will rewrite this method so that it can be injected directly from body.
-        var body = string.Empty;
+        Task<string> bodyTask;
 
         Request.EnableBuffering();
         Request.Body.Position = 0;
 
         using (var reader = new StreamReader(Request.Body))
         {
-            body = await reader.ReadToEndAsync();
+            bodyTask = reader.ReadToEndAsync();
         }
-
-        JObject fulfillment = JObject.Parse(body);
 
         var accessToken = Authorization?.Split("Bearer ")[1];
 
@@ -86,6 +84,8 @@ public class GoogleController : BaseController
         var auth = token.Owner;
         if (auth.Owner is null || auth.Deleted.HasValue)
             return Unauthorized("{\"error\": \"invalid_grant\"}");
+
+        JObject fulfillment = JObject.Parse(await bodyTask);
 
         var response = new JObject
         {
@@ -116,118 +116,121 @@ public class GoogleController : BaseController
             switch (intent[1])
             {
                 case "SYNC":
-                {
-                    ((JObject)response["payload"]!).Add("devices",
-                        JArray.FromObject(userDevices.Select(device => device.Value.Sync())));
-                    break;
-                }
-
-                case "QUERY":
-                {
-                    Console.WriteLine(await Logging.AddLog(token?.Owner?.Owner?.CarModelId ?? Guid.Empty, AuditAction.Execute,
-                        AuditContext.Google, $"Google executing query for {token?.Owner?.Owner?.NissanUsername ?? string.Empty}"));
-                    auth.LastQuery = DateTime.UtcNow;
-                    var requestedDevicesObj =
-                        action["payload"]?["devices"]?.ToObject<List<JObject>>() ?? new List<JObject>();
-                    var requestedDevices =
-                        requestedDevicesObj.Select(device => (string?)device["id"])
-                            .Where(device => device is not null) ?? new List<string>();
-
-                    var deviceQuery = new JObject();
-                    foreach (var device in userDevices.Where(device => requestedDevices.Contains(device.Value.Id)))
                     {
-                        var deviceType = device.Key;
-                        var deviceData = Devices.FirstOrDefault(x => x.GetType() == deviceType);
-
-                        if (deviceData != null)
-                            deviceQuery.Add(new JProperty($"{device.Value.Id}",
-                                await deviceData.QueryAsync(leafSession.SessionId, leafSession.PrimaryVin)));
+                        ((JObject)response["payload"]!).Add("devices",
+                            JArray.FromObject(userDevices.Select(device => device.Value.Sync())));
+                        break;
                     }
 
-                    ((JObject)response["payload"]!).Add("devices", deviceQuery);
-                    break;
-                }
-                case "EXECUTE":
-                {
-                    Console.WriteLine(await Logging.AddLog(token?.Owner?.Owner?.CarModelId ?? Guid.Empty, AuditAction.Execute,
-                        AuditContext.Google, $"Google executing command for {token?.Owner?.Owner?.NissanUsername ?? string.Empty}"));
-                    auth.LastExecute = DateTime.UtcNow;
-                    var executedCommands = new List<JObject>();
-
-                    var requestedCommands =
-                        action["payload"]?["commands"]?.ToObject<List<JObject>>() ?? new List<JObject>();
-                    foreach (var command in requestedCommands)
+                case "QUERY":
                     {
-                        var requestedDevicesObj = command?["devices"]?.ToObject<List<JObject>>() ?? new List<JObject>();
+                        Console.WriteLine(await Logging.AddLog(token?.Owner?.Owner?.CarModelId ?? Guid.Empty, AuditAction.Execute,
+                            AuditContext.Google, $"Google executing query for {token?.Owner?.Owner?.NissanUsername ?? string.Empty}"));
+                        auth.LastQuery = DateTime.UtcNow;
+                        var requestedDevicesObj =
+                            action["payload"]?["devices"]?.ToObject<List<JObject>>() ?? new List<JObject>();
                         var requestedDevices =
                             requestedDevicesObj.Select(device => (string?)device["id"])
                                 .Where(device => device is not null) ?? new List<string>();
 
-                        var requestedExecution =
-                            command?["execution"]?.ToObject<List<JObject>>() ?? new List<JObject>();
+                        var deviceQuery = new JObject();
+                        Dictionary<string, Task<JObject>> deviceQueryTask = new Dictionary<string, Task<JObject>>();
 
-                        foreach (var execution in requestedExecution)
+                        foreach (var device in userDevices.Where(device => requestedDevices.Contains(device.Value.Id)))
                         {
-                            var updatedIds = new List<string>();
-                            var updatedStates = new List<JObject>();
+                            var deviceType = device.Key;
+                            var deviceData = Devices.FirstOrDefault(x => x.GetType() == deviceType);
 
-                            foreach (var device in userDevices.Where(device =>
-                                         requestedDevices.Contains(device.Value.Id) &&
-                                         device.Value.SupportedCommands.Contains((string?)execution["command"] ??
-                                             string.Empty)))
+                            if (deviceData != null)
+                                deviceQueryTask.Add(device.Value.Id, deviceData.QueryAsync(leafSession.SessionId, leafSession.PrimaryVin));
+                        }
+
+                        foreach (var deviceTask in deviceQueryTask)
+                        {
+                            deviceQuery.Add(new JProperty($"{deviceTask.Key}", deviceTask.Value.Result));
+                        }
+
+                        ((JObject)response["payload"]!).Add("devices", deviceQuery);
+                        break;
+                    }
+                case "EXECUTE":
+                    {
+                        Console.WriteLine(await Logging.AddLog(token?.Owner?.Owner?.CarModelId ?? Guid.Empty, AuditAction.Execute,
+                            AuditContext.Google, $"Google executing command for {token?.Owner?.Owner?.NissanUsername ?? string.Empty}"));
+                        auth.LastExecute = DateTime.UtcNow;
+                        var executedCommands = new List<JObject>();
+
+                        var requestedCommands =
+                            action["payload"]?["commands"]?.ToObject<List<JObject>>() ?? new List<JObject>();
+                        foreach (var command in requestedCommands)
+                        {
+                            var requestedDevicesObj = command?["devices"]?.ToObject<List<JObject>>() ?? new List<JObject>();
+                            var requestedDevices =
+                                requestedDevicesObj.Select(device => (string?)device["id"])
+                                    .Where(device => device is not null) ?? new List<string>();
+
+                            var requestedExecution =
+                                command?["execution"]?.ToObject<List<JObject>>() ?? new List<JObject>();
+
+                            foreach (var execution in requestedExecution)
                             {
-                                var deviceType = device.Key;
-                                var deviceData = Devices.FirstOrDefault(x => x.GetType() == deviceType);
+                                var updatedIds = new List<string>();
+                                var updatedStates = new List<JObject>();
 
-                                if (deviceData != null)
+                                List<Task<JObject>> updatedStatesTask = new List<Task<JObject>>();
+
+                                foreach (var device in userDevices.Where(device =>
+                                             requestedDevices.Contains(device.Value.Id) &&
+                                             device.Value.SupportedCommands.Contains((string?)execution["command"] ??
+                                                 string.Empty)))
                                 {
-                                    updatedIds.Add(device.Value.Id);
-                                    updatedStates.Add(await deviceData.ExecuteAsync(leafSession.SessionId,
-                                        leafSession.PrimaryVin, (JObject)execution["params"]!));
+                                    var deviceType = device.Key;
+                                    var deviceData = Devices.FirstOrDefault(x => x.GetType() == deviceType);
+
+                                    if (deviceData != null)
+                                    {
+                                        updatedIds.Add(device.Value.Id);
+                                        updatedStatesTask.Add(deviceData.ExecuteAsync(leafSession.SessionId,
+                                            leafSession.PrimaryVin, (JObject)execution["params"]!));
+                                    }
                                 }
-                            }
 
-                            var mergedStates = new JObject();
-                            foreach (var state in updatedStates)
-                                mergedStates.Merge(state, new JsonMergeSettings
-                                {
-                                    // union array values together to avoid duplicates
-                                    MergeArrayHandling = MergeArrayHandling.Union
-                                });
+                                updatedStates.AddRange(updatedStatesTask.Select(deviceData => deviceData.Result));
 
-                            if (mergedStates.ContainsKey("errors")) mergedStates.Merge(mergedStates["errors"]!);
+                                var mergedStates = new JObject();
+                                foreach (var state in updatedStates)
+                                    mergedStates.Merge(state, new JsonMergeSettings
+                                    {
+                                        // union array values together to avoid duplicates
+                                        MergeArrayHandling = MergeArrayHandling.Union
+                                    });
 
-                            executedCommands.Add(new JObject
+                                if (mergedStates.ContainsKey("errors")) mergedStates.Merge(mergedStates["errors"]!);
+
+                                executedCommands.Add(new JObject
                             {
                                 { "ids", JArray.FromObject(updatedIds) },
                                 { "status", "SUCCESS" }, // ??
                                 { "states", mergedStates }
                             });
+                            }
                         }
-                    }
 
                     ((JObject)response["payload"]!).Add("commands", JArray.FromObject(executedCommands));
 
-                    break;
-                }
+                        break;
+                    }
 
                 case "DISCONNECT":
-                {
-                    // Todo: handle
-                    break;
-                }
+                    {
+                        // Todo: handle
+                        break;
+                    }
             }
 
             LeafContext.GoogleAuths.Update(auth);
             await LeafContext.SaveChangesAsync();
             GoogleState.Devices[leafSession.SessionId] = userDevices;
-
-            /*
-             * ????
-            var user = _googleContext.GoogleAuths.FirstOrDefault(user => user.Auth == token.Auth);
-            if (user == null)
-                return Unauthorized("{\"error\": \"invalid_grant\"}");
-            */
         }
 
         return Content(response.ToString(), "application/json");
@@ -351,7 +354,7 @@ public class GoogleController : BaseController
         {
             leaf = await StorageManager.UserStorage.RestoreUser(leafId);
         }
-        
+
         if (leaf == null)
         {
             leaf = new CarModel(form.NissanUsername, form.NissanPassword);
