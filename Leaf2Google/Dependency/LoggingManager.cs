@@ -4,7 +4,7 @@ using Leaf2Google.Models.Generic;
 
 namespace Leaf2Google.Dependency;
 
-public class LoggingManager
+public class LoggingManager : IDisposable
 {
     protected readonly IServiceScopeFactory _serviceScopeFactory;
 
@@ -30,9 +30,17 @@ public class LoggingManager
             };
 
             await nissanContext.NissanAudits.AddAsync(audit);
-            await nissanContext.SaveChangesAsync();
 
             return $"{audit.Owner} - {audit.Action.ToString()} - {audit.Context.ToString()} - {data}";
+        }
+    }
+
+    public async void Dispose()
+    {
+        using (var scope = ServiceScopeFactory.CreateScope())
+        {
+            var nissanContext = scope.ServiceProvider.GetRequiredService<LeafContext>();
+            await nissanContext.SaveChangesAsync();
         }
     }
 }
