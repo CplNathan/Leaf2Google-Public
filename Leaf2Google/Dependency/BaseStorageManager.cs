@@ -10,7 +10,7 @@ namespace Leaf2Google.Dependency
     {
         Task<bool> CanUserLogin(Guid sessionId);
 
-        Task<Guid> DoCredentialsMatch(string username, string password);
+        Task<Guid> DoCredentialsMatch(string username, string password, bool includeDeleted = false);
 
         Task<Guid> LoginUser(string username, string password);
 
@@ -41,9 +41,9 @@ namespace Leaf2Google.Dependency
             return await LeafContext.NissanLeafs.AnyAsync(car => car.Deleted == null && car.CarModelId == sessionId);
         }
 
-        public async Task<Guid> DoCredentialsMatch(string username, string password)
+        public async Task<Guid> DoCredentialsMatch(string username, string password, bool includeDeleted = false)
         {
-            return (await GetUser(username, password))?.CarModelId ?? Guid.Empty;
+            return (await GetUser(username, password, includeDeleted))?.CarModelId ?? Guid.Empty;
         }
 
         public async Task<Guid> LoginUser(string username, string password)

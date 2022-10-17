@@ -349,7 +349,7 @@ public class GoogleController : BaseController
 
         CarModel? leaf = null;
 
-        var leafId = await StorageManager.UserStorage.LoginUser(form.NissanUsername, form.NissanPassword);
+        var leafId = await StorageManager.UserStorage.DoCredentialsMatch(form.NissanUsername, form.NissanPassword, true);
         if (leafId != Guid.Empty)
         {
             leaf = await StorageManager.UserStorage.RestoreUser(leafId);

@@ -172,11 +172,9 @@ public abstract class BaseSessionManager
         if (session.LoginAuthenticationAttempting)
             return false;
 
-        /*
         // Add cooldown to authentication attempts in-case multiple requests hit at once.
         if (DateTime.UtcNow - session.LastLoginAuthenticaionAttempted <= TimeSpan.FromSeconds(5) && !session.LoginAuthenticationAttempting)
             return false;
-        */
 
         if (!session.LoginGivenUp && !session.Authenticated)
         {
