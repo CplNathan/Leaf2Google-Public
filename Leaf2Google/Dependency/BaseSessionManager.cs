@@ -178,7 +178,7 @@ public abstract class BaseSessionManager
 
         if (!session.LoginGivenUp && !session.Authenticated)
         {
-            session.LoginAuthenticationAttempting = true;
+            VehicleSessions[session.SessionId].LoginAuthenticationAttempting = true;
 
             Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
                 "Authentication Attempting"));

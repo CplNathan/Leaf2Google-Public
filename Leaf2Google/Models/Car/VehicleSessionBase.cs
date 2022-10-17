@@ -63,7 +63,7 @@ public class VehicleSessionBase
 
     public int LoginFailedCount { get; set; }
 
-    public bool LoginGivenUp => LoginFailedCount >= 5;
+    public bool LoginGivenUp => LoginFailedCount >= 10;
 }
 
 public class NissanConnectSession : VehicleSessionBase
