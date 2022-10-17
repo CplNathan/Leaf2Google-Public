@@ -105,7 +105,7 @@ public abstract class BaseSessionManager
             {
                 Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
                     "Authentication Failed"));
-                await Login(session.SessionId);
+                _ = Login(session.SessionId);
             }
 
             await nissanContext.SaveChangesAsync();
@@ -159,7 +159,7 @@ public abstract class BaseSessionManager
         return result;
     }
 
-    protected async Task<bool> Login(Guid sessionId) // make abstract/interface
+    protected async Task<bool> Login(Guid sessionId)
     {
         var session = AllSessions.FirstOrDefault(session => session.Key == sessionId).Value;
         if (session is null)
@@ -173,12 +173,12 @@ public abstract class BaseSessionManager
             return false;
 
         // Add cooldown to authentication attempts in-case multiple requests hit at once.
-        if (DateTime.UtcNow - session.LastLoginAuthenticaionAttempted <= TimeSpan.FromSeconds(5) && !session.LoginAuthenticationAttempting)
+        if (DateTime.UtcNow - session.LastLoginAuthenticaionAttempted <= TimeSpan.FromSeconds(5))
             return false;
 
         if (!session.LoginGivenUp && !session.Authenticated)
         {
-            VehicleSessions[session.SessionId].LoginAuthenticationAttempting = true;
+            session.LoginAuthenticationAttempting = true;
 
             Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
                 "Authentication Attempting"));
