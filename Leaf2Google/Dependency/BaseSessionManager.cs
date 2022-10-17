@@ -165,13 +165,18 @@ public abstract class BaseSessionManager
         if (session is null)
             return false;
 
+        Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
+    "Authentication Method Invoked"));
+
         // If this is called concurrently we could add it to a queue/task where we can await the result of the previous authentication attempt although I am unsure of the benifit of this.
         if (session.LoginAuthenticationAttempting)
             return false;
 
+        /*
         // Add cooldown to authentication attempts in-case multiple requests hit at once.
-        if (DateTime.UtcNow - session.LastLoginAuthenticaionAttempted <= TimeSpan.FromSeconds(5))
+        if (DateTime.UtcNow - session.LastLoginAuthenticaionAttempted <= TimeSpan.FromSeconds(5) && !session.LoginAuthenticationAttempting)
             return false;
+        */
 
         if (!session.LoginGivenUp && !session.Authenticated)
         {
@@ -179,9 +184,11 @@ public abstract class BaseSessionManager
 
             Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
                 "Authentication Attempting"));
-            session = VehicleSessions[session.SessionId] = await LoginImplementation(session);
+            session = await LoginImplementation(session);
 
             session.LoginAuthenticationAttempting = false;
+
+            VehicleSessions[session.SessionId] = session;
         }
         else
         {
