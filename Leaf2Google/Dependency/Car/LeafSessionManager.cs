@@ -287,7 +287,7 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
             return null;
 
         var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get,
-            $"oauth2{authenticateResult.Data.realm}/authorize?client_id={Configuration["Nissan:EU:client_id"]}&redirect_uri={Configuration["Nissan:EU:redirect_uri"]}&response_type=code&scope={Configuration["Nissan:EU:scope"]}&nonce=sdfdsfez")
+            $"oauth2{authenticateResult.Data.realm}/authorize?client_id={Configuration["Nissan:EU:client_id"]}&redirect_uri={Configuration["Nissan:EU:redirect_uri"]}&response_type=code&scope={Configuration["Nissan:EU:scope"]}&nonce=sdfdsfez&state=af0ifjsldkj")
         {
             Headers =
             {
@@ -346,7 +346,7 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
 
     private async Task<Response?> VehiclesResult(Guid sessionId, string userId)
     {
-        var session = AllSessions[sessionId];
+        var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, $"v5/users/{userId}/cars")
 
         var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, $"v4/users/{userId}/cars")
         {
