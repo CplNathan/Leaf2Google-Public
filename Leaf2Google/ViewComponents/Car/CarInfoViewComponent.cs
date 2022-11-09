@@ -4,48 +4,46 @@ using Leaf2Google.Dependency.Google;
 using Leaf2Google.Dependency.Google.Devices;
 using Leaf2Google.Models.Car;
 using Leaf2Google.Models.Google.Devices;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Leaf2Google.ViewComponents.Car;
 
 public class CarInfoViewComponent : BaseViewComponent
 {
-    private readonly IEnumerable<IDevice> _devices;
+    protected IEnumerable<IDevice> Devices { get; }
 
-    public CarInfoViewComponent(ICarSessionManager sessionManager, GoogleStateManager google,
+    public CarInfoViewComponent(BaseStorageManager storageManager, GoogleStateManager google,
         IEnumerable<IDevice> devices)
-        : base(sessionManager)
+        : base(storageManager)
     {
         Google = google;
-        _devices = devices;
+        Devices = devices;
     }
 
     protected GoogleStateManager Google { get; }
 
     public async Task<IViewComponentResult> InvokeAsync(string viewName, Guid? sessionId, string? defaultVin)
     {
-        var session = SessionManager.VehicleSessions[sessionId ?? Guid.Empty];
+        var session = StorageManager.VehicleSessions.GetValueOrDefault(sessionId ?? Guid.Empty);
 
         if (session != null && defaultVin != null)
         {
-            var carThermostat = (ThermostatModel?)Google.Devices[session.SessionId][typeof(ThermostatDevice)];
-            var carLock = (LockModel?)Google.Devices[session.SessionId][typeof(LockDevice)];
+            var thermostatDeviceData = Devices.FirstOrDefault(x => x.GetType() == typeof(ThermostatDevice));
+            if (thermostatDeviceData != null) await thermostatDeviceData.FetchAsync(session, defaultVin);
 
-            var thermostatDeviceData = _devices.FirstOrDefault(x => x.GetType() == typeof(ThermostatDevice));
-            if (thermostatDeviceData != null) await thermostatDeviceData.FetchAsync(session.SessionId, defaultVin);
+            var lockDeviceData = Devices.FirstOrDefault(x => x.GetType() == typeof(LockDevice));
+            if (lockDeviceData != null) await lockDeviceData.FetchAsync(session, defaultVin);
 
-            var lockDeviceData = _devices.FirstOrDefault(x => x.GetType() == typeof(LockDevice));
-            if (lockDeviceData != null) await lockDeviceData.FetchAsync(session.SessionId, defaultVin);
-
-            carThermostat = (ThermostatModel?)Google.Devices[session.SessionId][typeof(ThermostatDevice)];
-            carLock = (LockModel?)Google.Devices[session.SessionId][typeof(LockDevice)];
+            var carThermostat = (ThermostatModel?)(StorageManager.GoogleSessions)[session.SessionId][typeof(ThermostatDevice)];
+            var carLock = (LockModel?)(StorageManager.GoogleSessions)[session.SessionId][typeof(LockDevice)];
 
             var carInfo = new CarViewModel
             {
                 carThermostat = carThermostat, //new Models.Google.Devices.Thermostat("1-leaf-ac", "Air Conditioner"),
                 carLock = carLock, //new Models.Google.Devices.Charger("1-leaf-lock", "Leaf"),
-                carLocation = await SessionManager.VehicleLocation(session.SessionId, defaultVin),
-                carPicture = SessionManager.AllSessions[session.SessionId].CarPictureUrl
+                carLocation = carLock?.Location,
+                carPicture = session.CarPictureUrl
             };
 
             return View(viewName, carInfo);

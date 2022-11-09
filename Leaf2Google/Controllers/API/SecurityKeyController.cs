@@ -19,9 +19,9 @@ public class SecurityKeyController : BaseAPIController
     private readonly LeafContext _leafContext;
     private readonly string _origin;
 
-    public SecurityKeyController(ICarSessionManager sessionManager, LeafContext leafContext,
+    public SecurityKeyController(BaseStorageManager storageManager, ICarSessionManager sessionManager, LeafContext leafContext,
         IOptions<Fido2Configuration> fido2Configuration)
-        : base(sessionManager)
+        : base(storageManager, sessionManager)
     {
         _origin = fido2Configuration.Value.FullyQualifiedOrigins.First();
 

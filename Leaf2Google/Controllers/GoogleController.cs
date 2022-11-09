@@ -32,11 +32,11 @@ public class EnableRequestBodyBufferingMiddleware
 
 public class GoogleController : BaseController
 {
-    public GoogleController(ICarSessionManager sessionManager, BaseStorageManager storageManager, GoogleStateManager googleState, LeafContext leafContext,
+    public GoogleController(BaseStorageManager storageManager, ICarSessionManager sessionManager, GoogleStateManager googleState, LeafContext leafContext,
         LoggingManager logging, IEnumerable<IDevice> activeDevices, IConfiguration configuration)
-        : base(sessionManager)
+        : base(storageManager)
     {
-        StorageManager = storageManager;
+        SessionManager = sessionManager;
         GoogleState = googleState;
         LeafContext = leafContext;
         Logging = logging;
@@ -44,7 +44,7 @@ public class GoogleController : BaseController
         Configuration = configuration;
     }
 
-    protected BaseStorageManager StorageManager { get; }
+    protected ICarSessionManager SessionManager { get; }
 
     protected GoogleStateManager GoogleState { get; }
 
@@ -98,7 +98,7 @@ public class GoogleController : BaseController
             }
         };
 
-        var leafSession = SessionManager.VehicleSessions.FirstOrDefault(session => session.Key == auth.Owner.CarModelId)
+        var leafSession = StorageManager.VehicleSessions.FirstOrDefault(session => session.Key == auth.Owner.CarModelId)
             .Value;
         if (leafSession is null)
             return Unauthorized("{\"error\": \"invalid_grant\"}");
@@ -142,12 +142,12 @@ public class GoogleController : BaseController
                             var deviceData = Devices.FirstOrDefault(x => x.GetType() == deviceType);
 
                             if (deviceData != null)
-                                deviceQueryTask.Add(device.Value.Id, deviceData.QueryAsync(leafSession.SessionId, leafSession.PrimaryVin));
+                                deviceQueryTask.Add(device.Value.Id, deviceData.QueryAsync(leafSession, leafSession.PrimaryVin));
                         }
 
                         foreach (var deviceTask in deviceQueryTask)
                         {
-                            deviceQuery.Add(new JProperty($"{deviceTask.Key}", deviceTask.Value.Result));
+                            deviceQuery.Add(new JProperty($"{deviceTask.Key}", await deviceTask.Value));
                         }
 
                         ((JObject)response["payload"]!).Add("devices", deviceQuery);
@@ -190,12 +190,15 @@ public class GoogleController : BaseController
                                     if (deviceData != null)
                                     {
                                         updatedIds.Add(device.Value.Id);
-                                        updatedStatesTask.Add(deviceData.ExecuteAsync(leafSession.SessionId,
+                                        updatedStatesTask.Add(deviceData.ExecuteAsync(leafSession,
                                             leafSession.PrimaryVin, (JObject)execution["params"]!));
                                     }
                                 }
 
-                                updatedStates.AddRange(updatedStatesTask.Select(deviceData => deviceData.Result));
+                                foreach (var state in updatedStatesTask)
+                                {
+                                    updatedStates.Add(await state);
+                                }
 
                                 var mergedStates = new JObject();
                                 foreach (var state in updatedStates)
@@ -230,7 +233,6 @@ public class GoogleController : BaseController
 
             LeafContext.GoogleAuths.Update(auth);
             await LeafContext.SaveChangesAsync();
-            GoogleState.Devices[leafSession.SessionId] = userDevices;
         }
 
         return Content(response.ToString(), "application/json");

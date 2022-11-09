@@ -6,8 +6,8 @@ public class ValidationController : BaseAPIController
 {
     private readonly LeafContext _leafContext;
 
-    public ValidationController(ICarSessionManager sessionManager, LeafContext leafContext)
-        : base(sessionManager)
+    public ValidationController(BaseStorageManager storageManager, ICarSessionManager sessionManager, LeafContext leafContext)
+        : base(storageManager, sessionManager)
     {
         _leafContext = leafContext;
     }

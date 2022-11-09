@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. BaseStorageManager.cs
 
 using Leaf2Google.Models.Car;
+using Leaf2Google.Models.Google.Devices;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 
@@ -107,15 +108,37 @@ namespace Leaf2Google.Dependency
         }
     }
 
+    public class SessionStorageContainer
+    {
+        public Dictionary<Guid, VehicleSessionBase> VehicleSessions { get; init; }
+
+        public Dictionary<Guid, Dictionary<Type, BaseDeviceModel>> GoogleSessions { get; init; }
+
+        public SessionStorageContainer()
+        {
+            VehicleSessions = new Dictionary<Guid, VehicleSessionBase>();
+            GoogleSessions = new Dictionary<Guid, Dictionary<Type, BaseDeviceModel>>();
+        }
+    }
+
     public class BaseStorageManager
     {
         protected LeafContext LeafContext { get; }
+
+        protected SessionStorageContainer StorageContainer { get; }
+
         public IUserStorage UserStorage { get; }
 
-        public BaseStorageManager(LeafContext leafContext, IUserStorage userStorage)
+        public Dictionary<Guid, VehicleSessionBase> VehicleSessions { get => StorageContainer.VehicleSessions; }
+
+        public Dictionary<Guid, Dictionary<Type, BaseDeviceModel>> GoogleSessions { get => StorageContainer.GoogleSessions; }
+
+        public BaseStorageManager(LeafContext leafContext, IUserStorage userStorage, SessionStorageContainer sessionStorageContainer)
         {
             LeafContext = leafContext;
             UserStorage = userStorage;
+
+            StorageContainer = sessionStorageContainer;
         }
     }
 }

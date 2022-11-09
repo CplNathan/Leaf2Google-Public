@@ -6,14 +6,14 @@ namespace Leaf2Google.ViewComponents.Car;
 
 public class CarSelectorViewComponent : BaseViewComponent
 {
-    public CarSelectorViewComponent(ICarSessionManager sessionManager)
-        : base(sessionManager)
+    public CarSelectorViewComponent(BaseStorageManager storageManager)
+        : base(storageManager)
     {
     }
 
     public IViewComponentResult Invoke(Guid? sessionId)
     {
-        var session = SessionManager.VehicleSessions.GetValueOrDefault(sessionId ?? Guid.Empty);
+        var session = StorageManager.VehicleSessions.GetValueOrDefault(sessionId ?? Guid.Empty);
 
         if (session != null)
             return View(session.VINs);

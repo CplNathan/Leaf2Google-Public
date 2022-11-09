@@ -283,18 +283,14 @@ select {
     border-radius: 17.5px;
 }
 
-    .controlContainer .col-4 {
-        height: 100px;
-    }
+.row.m-0 .col-4 {
+    height: 200px;
+}
 
-    .controlContainer i {
-        font-size: 17.5px;
-    }
+.container {
+    width: 100%;
+}
 
-    .container {
-        width: 100%;
-    }
-
-    hr {
-        margin: 0 !important;
-    }
+hr {
+    margin: 0 !important;
+}

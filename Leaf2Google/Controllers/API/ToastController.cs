@@ -9,8 +9,8 @@ namespace Leaf2Google.Controllers.API;
 [ApiController]
 public class ToastController : BaseAPIController
 {
-    public ToastController(ICarSessionManager sessionManager)
-        : base(sessionManager)
+    public ToastController(BaseStorageManager storageManager, ICarSessionManager sessionManager)
+        : base(storageManager, sessionManager)
     {
     }
 

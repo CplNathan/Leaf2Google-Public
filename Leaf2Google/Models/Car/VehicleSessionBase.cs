@@ -30,7 +30,7 @@ public class VehicleSessionBase
 
     public DateTime LastAuthenticated { get; private set; } = DateTime.MinValue;
 
-    public bool Authenticated => !string.IsNullOrEmpty(_authenticatedAccessToken) && LastRequestSuccessful;
+    public bool Authenticated => !string.IsNullOrEmpty(_authenticatedAccessToken) && LastRequestSuccessful && !string.IsNullOrEmpty(PrimaryVin);
 
     public string Username { get; init; }
     public string Password { get; init; }
@@ -63,7 +63,7 @@ public class VehicleSessionBase
 
     public int LoginFailedCount { get; set; }
 
-    public bool LoginGivenUp => LoginFailedCount >= 10;
+    public bool LoginGivenUp => false;//LoginFailedCount >= 10;
 }
 
 public class NissanConnectSession : VehicleSessionBase

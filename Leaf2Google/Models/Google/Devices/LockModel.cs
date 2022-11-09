@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. Lock.cs
 
 using Newtonsoft.Json.Linq;
+using System.Drawing;
 
 namespace Leaf2Google.Models.Google.Devices;
 
@@ -35,4 +36,6 @@ public class LockModel : BaseDeviceModel
     public bool IsCharging { get; set; }
 
     public bool IsPluggedIn { get; set; }
+
+    public PointF? Location { get; set; }
 }

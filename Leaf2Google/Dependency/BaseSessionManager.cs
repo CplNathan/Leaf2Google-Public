@@ -11,39 +11,35 @@ namespace Leaf2Google.Dependency;
 
 public interface ICarSessionManager
 {
-    Dictionary<Guid, VehicleSessionBase> VehicleSessions { get; }
-
-    IReadOnlyDictionary<Guid, VehicleSessionBase> AllSessions { get; }
     Task StartAsync();
 
     Task<bool> AddAsync(CarModel NewLeaf);
 
-    Task<PointF> VehicleLocation(Guid sessionId, string? vin);
-    Task<Response?> VehicleClimate(Guid sessionId, string? vin, bool forceUpdate = true);
-    Task<Response?> VehicleLock(Guid sessionId, string? vin);
-    Task<Response?> VehicleBattery(Guid sessionId, string? vin);
-    Task<Response?> SetVehicleClimate(Guid sessionId, string? vin, decimal targetTemp, bool active);
-    Task<Response?> SetVehicleLock(Guid sessionId, string? vin, bool locked);
-    Task<Response?> FlashLights(Guid sessionId, string? vin, int duration = 5);
-    Task<Response?> BeepHorn(Guid sessionId, string? vin, int duration = 5);
+    Task<PointF> VehicleLocation(VehicleSessionBase session, string? vin);
+    Task<Response?> VehicleClimate(VehicleSessionBase session, string? vin, bool forceUpdate = true);
+    Task<Response?> VehicleLock(VehicleSessionBase session, string? vin);
+    Task<Response?> VehicleBattery(VehicleSessionBase session, string? vin);
+    Task<Response?> SetVehicleClimate(VehicleSessionBase session, string? vin, decimal targetTemp, bool active);
+    Task<Response?> SetVehicleLock(VehicleSessionBase session, string? vin, bool locked);
+    Task<Response?> FlashLights(VehicleSessionBase session, string? vin, int duration = 5);
+    Task<Response?> BeepHorn(VehicleSessionBase session, string? vin, int duration = 5);
 
-    //Task<bool> Login(string username, string password);
+    Task<bool> Login(VehicleSessionBase session);
 }
 
-public delegate void AuthEventHandler(object sender, Guid sessionId, string? authToken);
+public delegate void AuthEventHandler(object sender, string? authToken);
 
-public delegate void RequestEventHandler(object sender, Guid sessionId, bool requestSuccess);
+public delegate void RequestEventHandler(object sender, bool requestSuccess);
 
 public abstract class BaseSessionManager
 {
-    public BaseSessionManager(HttpClient client, LeafContext leafContext, LoggingManager logging,
-        Dictionary<Guid, VehicleSessionBase> vehicleSessions, IServiceScopeFactory serviceScopeFactory,
+    public BaseSessionManager(HttpClient client, LeafContext leafContext, BaseStorageManager storageManager, LoggingManager logging, IServiceScopeFactory serviceScopeFactory,
         IConfiguration configuration)
     {
         Client = client;
         LeafContext = leafContext;
+        StorageManager = storageManager;
         Logging = logging;
-        VehicleSessions = vehicleSessions;
         ServiceScopeFactory = serviceScopeFactory;
         Configuration = configuration;
 
@@ -55,21 +51,19 @@ public abstract class BaseSessionManager
 
     protected LeafContext LeafContext { get; }
 
+    protected BaseStorageManager StorageManager { get; }
+
     protected LoggingManager Logging { get; }
 
     private IServiceScopeFactory ServiceScopeFactory { get; }
 
     protected IConfiguration Configuration { get; }
 
-    public Dictionary<Guid, VehicleSessionBase> VehicleSessions { get; } = new();
+    public static event RequestEventHandler OnRequest;
 
-    public IReadOnlyDictionary<Guid, VehicleSessionBase> AllSessions => VehicleSessions;
+    public static event AuthEventHandler OnAuthenticationAttempt;
 
-    public event RequestEventHandler OnRequest;
-
-    public event AuthEventHandler OnAuthenticationAttempt;
-
-    private async void BaseSessionManager_OnAuthenticationAttempt(object sender, Guid sessionId, string? authToken)
+    private async void BaseSessionManager_OnAuthenticationAttempt(object sender, string? authToken)
     {
         if (sender is VehicleSessionBase session)
         {
@@ -94,7 +88,7 @@ public abstract class BaseSessionManager
                 Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Delete, AuditContext.Leaf,
                     "Deleting Stale Leaf"));
 
-                VehicleSessions.Remove(session.SessionId);
+                StorageManager.VehicleSessions.Remove(session.SessionId);
             }
             else if (session.Authenticated)
             {
@@ -105,14 +99,14 @@ public abstract class BaseSessionManager
             {
                 Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
                     "Authentication Failed"));
-                _ = Login(session.SessionId);
+                await Login(session).ConfigureAwait(false);
             }
 
             await nissanContext.SaveChangesAsync();
         }
     }
 
-    private void BaseSessionManager_OnRequest(object sender, Guid sessionId, bool requestSuccess)
+    private async void BaseSessionManager_OnRequest(object sender, bool requestSuccess)
     {
         if (sender is VehicleSessionBase session)
         {
@@ -121,12 +115,12 @@ public abstract class BaseSessionManager
             if (!session.Authenticated && !session.LoginGivenUp &&
             session.LastAuthenticated > DateTime.MinValue && !requestSuccess && !session.LoginAuthenticationAttempting)
             {
-                _ = Login(sessionId);
+                await Login(session).ConfigureAwait(false);
             }
         }
     }
 
-    protected async Task<Response?> MakeRequest(Guid sessionId, HttpRequestMessage httpRequestMessage,
+    protected async Task<Response?> MakeRequest(VehicleSessionBase session, HttpRequestMessage httpRequestMessage,
         string baseUri = "")
     {
         var success = true;
@@ -148,20 +142,21 @@ public abstract class BaseSessionManager
         {
             if (ex.Source != "Newtonsoft.Json")
                 success = false;
+#if DEBUG
+            throw;
+#endif
         }
 
         if (result != null)
             result.Success = success;
 
-        OnRequest?.Invoke(AllSessions.FirstOrDefault(session => session.Key == sessionId).Value, sessionId,
-            result?.Success ?? false);
+        OnRequest?.Invoke(session, result?.Success ?? false);
 
         return result;
     }
 
-    protected async Task<bool> Login(Guid sessionId)
+    public async Task<bool> Login(VehicleSessionBase session)
     {
-        var session = AllSessions.FirstOrDefault(session => session.Key == sessionId).Value;
         if (session is null)
             return false;
 
@@ -182,11 +177,9 @@ public abstract class BaseSessionManager
 
             Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
                 "Authentication Attempting"));
-            session = await LoginImplementation(session);
+            await LoginImplementation(session);
 
             session.LoginAuthenticationAttempting = false;
-
-            VehicleSessions[session.SessionId] = session;
         }
         else
         {
@@ -196,7 +189,7 @@ public abstract class BaseSessionManager
             return false;
         }
 
-        OnAuthenticationAttempt?.Invoke(session, sessionId, session.AuthenticatedAccessToken);
+        OnAuthenticationAttempt?.Invoke(session, session.AuthenticatedAccessToken);
 
         return session.Authenticated;
     }
@@ -205,7 +198,7 @@ public abstract class BaseSessionManager
     {
         // Queue saved sessions into memory.
         foreach (var leaf in LeafContext.NissanLeafs)
-            _ = AddAsync(new CarModel(leaf.NissanUsername, leaf.NissanPassword) { CarModelId = leaf.CarModelId });
+            await AddAsync(new CarModel(leaf.NissanUsername, leaf.NissanPassword) { CarModelId = leaf.CarModelId }).ConfigureAwait(false);
 
         await LeafContext.SaveChangesAsync();
     }
@@ -217,8 +210,8 @@ public abstract class BaseSessionManager
         var success = false;
         try
         {
-            VehicleSessions[session.SessionId] = session;
-            success = await Login(session.SessionId);
+            StorageManager.VehicleSessions.TryAdd(session.SessionId, session);
+            success = await Login(session);
         }
         catch (Exception ex)
         {
@@ -239,29 +232,29 @@ public abstract class BaseSessionManager
         return success;
     }
 
-    protected abstract Task<VehicleSessionBase> LoginImplementation(VehicleSessionBase session);
+    protected abstract Task<bool> LoginImplementation(VehicleSessionBase session);
 
-    protected async Task<Response?> PerformAction(Guid sessionId, string? vin, string action, string type,
+    protected async Task<Response?> PerformAction(VehicleSessionBase session, string? vin, string action, string type,
         JObject attributes)
     {
-        Console.WriteLine(await Logging.AddLog(sessionId, AuditAction.Execute, AuditContext.Leaf,
+        Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Execute, AuditContext.Leaf,
             $"Performing action {action} on {vin}"));
-        var response = await PerformActionImplementation(sessionId, vin, action, type, attributes);
+        var response = await PerformActionImplementation(session, vin, action, type, attributes);
 
         return response;
     }
 
-    protected abstract Task<Response?> PerformActionImplementation(Guid sessionId, string? vin, string action,
+    protected abstract Task<Response?> PerformActionImplementation(VehicleSessionBase session, string? vin, string action,
         string type, JObject attributes);
 
-    protected async Task<Response?> GetStatus(Guid sessionId, string? vin, string action)
+    protected async Task<Response?> GetStatus(VehicleSessionBase session, string? vin, string action)
     {
-        Console.WriteLine(await Logging.AddLog(sessionId, AuditAction.Execute, AuditContext.Leaf,
+        Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Execute, AuditContext.Leaf,
             $"Getting status {action} on {vin}"));
-        var response = await GetStatusImplementation(sessionId, vin, action);
+        var response = await GetStatusImplementation(session, vin, action);
 
         return response;
     }
 
-    protected abstract Task<Response?> GetStatusImplementation(Guid sessionId, string? vin, string action);
+    protected abstract Task<Response?> GetStatusImplementation(VehicleSessionBase session, string? vin, string action);
 }

@@ -7,26 +7,26 @@ namespace Leaf2Google.Dependency.Google;
 
 public class GoogleStateManager
 {
-    public GoogleStateManager(Dictionary<Guid, Dictionary<Type, BaseDeviceModel>> devices,
+    public GoogleStateManager(BaseStorageManager storageManager,
         ICarSessionManager sessionManager)
     {
-        Devices = devices;
+        StorageManager = storageManager;
 
         if (sessionManager is BaseSessionManager baseSessionManager)
         {
-            baseSessionManager.OnAuthenticationAttempt += BaseSessionManager_OnAuthenticationAttempt;
+            BaseSessionManager.OnAuthenticationAttempt += BaseSessionManager_OnAuthenticationAttempt;
 
-            if (devices.Count <= 0)
-                baseSessionManager.VehicleSessions.Where(session => session.Value.Authenticated)
+            if (storageManager.GoogleSessions.Count <= 0)
+                storageManager.VehicleSessions.Where(session => session.Value.Authenticated)
                     .ForEach(session => GetOrCreateDevices(session.Key));
         }
     }
 
-    public Dictionary<Guid, Dictionary<Type, BaseDeviceModel>> Devices { get; }
+    protected BaseStorageManager StorageManager { get; }
 
-    private void BaseSessionManager_OnAuthenticationAttempt(object sender, Guid sessionId, string? authToken)
+    private void BaseSessionManager_OnAuthenticationAttempt(object sender, string? authToken)
     {
-        if (sender is VehicleSessionBase session) _ = GetOrCreateDevices(sessionId);
+        if (sender is VehicleSessionBase session) GetOrCreateDevices(session.SessionId);
     }
 
     private static Dictionary<Type, BaseDeviceModel> MakeDevices()
@@ -42,8 +42,10 @@ public class GoogleStateManager
 
     public Dictionary<Type, BaseDeviceModel> GetOrCreateDevices(Guid sessionId)
     {
-        if (Devices.ContainsKey(sessionId))
-            return Devices[sessionId];
-        return Devices[sessionId] = MakeDevices();
+        if (StorageManager.GoogleSessions.ContainsKey(sessionId))
+            return StorageManager.GoogleSessions[sessionId];
+
+        StorageManager.GoogleSessions.TryAdd(sessionId, MakeDevices());
+        return StorageManager.GoogleSessions[sessionId];
     }
 }

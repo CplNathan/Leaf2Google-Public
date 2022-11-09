@@ -11,12 +11,12 @@ namespace Leaf2Google.Controllers;
 
 public class BaseController : Controller
 {
-    public BaseController(ICarSessionManager sessionManager)
+    public BaseController(BaseStorageManager storageManager)
     {
-        SessionManager = sessionManager;
+        StorageManager = storageManager;
     }
 
-    protected ICarSessionManager SessionManager { get; }
+    protected BaseStorageManager StorageManager { get; }
 
     protected Guid? SessionId
     {
@@ -33,7 +33,7 @@ public class BaseController : Controller
     }
 
     protected VehicleSessionBase? Session =>
-        SessionManager.AllSessions.FirstOrDefault(session => session.Key == SessionId).Value;
+        StorageManager.VehicleSessions.FirstOrDefault(session => session.Key == SessionId).Value;
 
     protected string? SelectedVin
     {

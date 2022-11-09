@@ -9,8 +9,8 @@ public class SessionInfoViewComponent : BaseViewComponent
 {
     private readonly LeafContext _googleContext;
 
-    public SessionInfoViewComponent(ICarSessionManager sessionManager, LeafContext googleContext)
-        : base(sessionManager)
+    public SessionInfoViewComponent(BaseStorageManager storageManager, LeafContext googleContext)
+        : base(storageManager)
     {
         _googleContext = googleContext;
     }

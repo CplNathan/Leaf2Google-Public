@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. Lock.cs
 
+using Leaf2Google.Models.Car;
 using Leaf2Google.Models.Google.Devices;
 using Newtonsoft.Json.Linq;
 
@@ -7,21 +8,21 @@ namespace Leaf2Google.Dependency.Google.Devices;
 
 public class ThermostatDevice : BaseDevice, IDevice
 {
-    public ThermostatDevice(GoogleStateManager googleState, ICarSessionManager sessionManager)
-        : base(googleState, sessionManager)
+    public ThermostatDevice(GoogleStateManager googleState, ICarSessionManager sessionManager, BaseStorageManager storageManager)
+        : base(googleState, sessionManager, storageManager)
     {
         // Use here, have as per request object not a singleton!
     }
 
-    public async Task<bool> FetchAsync(Guid sessionId, string? vin, bool forceFetch = false)
+    public async Task<bool> FetchAsync(VehicleSessionBase session, string? vin, bool forceFetch = false)
     {
-        var vehicleThermostat = (ThermostatModel)GoogleState.Devices[sessionId][typeof(ThermostatDevice)];
+        var vehicleThermostat = (ThermostatModel)(StorageManager.GoogleSessions)[session.SessionId][typeof(ThermostatDevice)];
 
         var success = false;
 
         if (vehicleThermostat.WillFetch || forceFetch)
         {
-            var climateStatus = await SessionManager.VehicleClimate(sessionId, vin,
+            var climateStatus = await SessionManager.VehicleClimate(session, vin,
                 DateTime.UtcNow - vehicleThermostat.LastUpdated > TimeSpan.FromSeconds(10));
 
             if (climateStatus is not null && climateStatus.Success)
@@ -32,8 +33,6 @@ public class ThermostatDevice : BaseDevice, IDevice
                 vehicleThermostat.Active = climateStatus.Data?.data.attributes.hvacStatus != "off";
                 vehicleThermostat.LastUpdated = DateTime.UtcNow; //climateStatus.Data?.data.attributes.lastUpdateTime;
             }
-
-            GoogleState.Devices[sessionId][typeof(ThermostatDevice)] = vehicleThermostat;
         }
         else
         {
@@ -43,9 +42,9 @@ public class ThermostatDevice : BaseDevice, IDevice
         return success;
     }
 
-    public async Task<JObject> QueryAsync(Guid sessionId, string? vin)
+    public async Task<JObject> QueryAsync(VehicleSessionBase session, string? vin)
     {
-        if (!SessionManager.AllSessions[sessionId].Authenticated)
+        if (!session.Authenticated)
         {
             return new JObject
             {
@@ -62,9 +61,9 @@ public class ThermostatDevice : BaseDevice, IDevice
             };
         }
 
-        var success = await FetchAsync(sessionId, vin);
+        var success = await FetchAsync(session, vin);
 
-        var vehicleThermostat = (ThermostatModel)GoogleState.Devices[sessionId][typeof(ThermostatDevice)];
+        var vehicleThermostat = (ThermostatModel)(StorageManager.GoogleSessions)[session.SessionId][typeof(ThermostatDevice)];
 
         return new JObject
         {
@@ -76,9 +75,9 @@ public class ThermostatDevice : BaseDevice, IDevice
         };
     }
 
-    public async Task<JObject> ExecuteAsync(Guid sessionId, string? vin, JObject data)
+    public async Task<JObject> ExecuteAsync(VehicleSessionBase session, string? vin, JObject data)
     {
-        if (!SessionManager.AllSessions[sessionId].Authenticated)
+        if (!session.Authenticated)
         {
             return new JObject
             {
@@ -95,7 +94,7 @@ public class ThermostatDevice : BaseDevice, IDevice
             };
         }
 
-        var vehicleThermostat = (ThermostatModel)GoogleState.Devices[sessionId][typeof(ThermostatDevice)];
+        var vehicleThermostat = (ThermostatModel)(StorageManager.GoogleSessions)[session.SessionId][typeof(ThermostatDevice)];
 
         vehicleThermostat.Target = data.ContainsKey("thermostatTemperatureSetpoint")
             ? (decimal)data["thermostatTemperatureSetpoint"]!
@@ -103,12 +102,12 @@ public class ThermostatDevice : BaseDevice, IDevice
         vehicleThermostat.Active = data.ContainsKey("thermostatMode") ? (string)data["thermostatMode"]! == "heatcool" :
             data.ContainsKey("thermostatTemperatureSetpoint") ? true : vehicleThermostat.Active;
         var climateStatus =
-            await SessionManager.SetVehicleClimate(sessionId, vin, vehicleThermostat.Target, vehicleThermostat.Active);
+            await SessionManager.SetVehicleClimate(session, vin, vehicleThermostat.Target, vehicleThermostat.Active);
 
         var success = false;
         if (climateStatus is not null && climateStatus.Success) success = climateStatus.Success;
 
-        _ = QueryAsync(sessionId, vin);
+        await QueryAsync(session, vin).ConfigureAwait(false);
 
         return new JObject
         {

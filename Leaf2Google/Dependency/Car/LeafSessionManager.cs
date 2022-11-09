@@ -10,69 +10,67 @@ namespace Leaf2Google.Dependency.Car;
 public class LeafSessionManager : BaseSessionManager, ICarSessionManager
 {
     public LeafSessionManager(HttpClient client, LeafContext leafContext, LoggingManager logging,
-        Dictionary<Guid, VehicleSessionBase> vehicleSessions, IServiceScopeFactory serviceScopeFactory,
+        BaseStorageManager storageManager, IServiceScopeFactory serviceScopeFactory,
         IConfiguration configuration)
-        : base(client, leafContext, logging, vehicleSessions, serviceScopeFactory, configuration)
+        : base(client, leafContext, storageManager, logging, serviceScopeFactory, configuration)
     {
     }
 
-    public async Task<PointF> VehicleLocation(Guid sessionId, string? vin)
+    public async Task<PointF> VehicleLocation(VehicleSessionBase session, string? vin)
     {
-        if (DateTime.UtcNow - VehicleSessions[sessionId].LastLocation.Item1 > TimeSpan.FromMinutes(1))
+        if (DateTime.UtcNow - session.LastLocation.Item1 > TimeSpan.FromMinutes(1))
         {
-            var location = await GetStatus(sessionId, vin, "location");
+            var location = await GetStatus(session, vin, "location");
 
             if (location != null)
             {
-                VehicleSessions[sessionId].LastLocation = Tuple.Create(DateTime.UtcNow,
+                session.LastLocation = Tuple.Create(DateTime.UtcNow,
                     (PointF?)new PointF((float?)location?.Data?.data?.attributes.gpsLatitude ?? 0,
                         (float?)location?.Data?.data?.attributes.gpsLongitude ?? 0));
-                return VehicleSessions[sessionId].LastLocation?.Item2 ?? new PointF(0f, 0f);
+                return session.LastLocation?.Item2 ?? new PointF(0f, 0f);
             }
         }
 
-        return VehicleSessions[sessionId].LastLocation?.Item2 ?? new PointF(0f, 0f);
+        return session.LastLocation?.Item2 ?? new PointF(0f, 0f);
     }
 
-    public async Task<Response?> VehicleClimate(Guid sessionId, string? vin, bool forceUpdate = true)
+    public async Task<Response?> VehicleClimate(VehicleSessionBase session, string? vin, bool forceUpdate = true)
     {
-        var session = VehicleSessions[sessionId];
-
         if (forceUpdate)
-            await PerformAction(sessionId, vin, "refresh-hvac-status", "RefreshHvacStatus", new JObject());
+            await PerformAction(session, vin, "refresh-hvac-status", "RefreshHvacStatus", new JObject());
 
-        return await GetStatus(sessionId, vin, "hvac-status");
+        return await GetStatus(session, vin, "hvac-status");
     }
 
-    public async Task<Response?> VehicleLock(Guid sessionId, string? vin)
+    public async Task<Response?> VehicleLock(VehicleSessionBase session, string? vin)
     {
-        return await GetStatus(sessionId, vin, "lock-status");
+        return await GetStatus(session, vin, "lock-status");
     }
 
-    public async Task<Response?> VehicleBattery(Guid sessionId, string? vin)
+    public async Task<Response?> VehicleBattery(VehicleSessionBase session, string? vin)
     {
-        return await GetStatus(sessionId, vin, "battery-status");
+        return await GetStatus(session, vin, "battery-status");
     }
 
-    public async Task<Response?> SetVehicleClimate(Guid sessionId, string? vin, decimal targetTemp, bool active)
+    public async Task<Response?> SetVehicleClimate(VehicleSessionBase session, string? vin, decimal targetTemp, bool active)
     {
         if (!active)
-            await PerformAction(sessionId, vin, "hvac-start", "HvacStart", new JObject
+            await PerformAction(session, vin, "hvac-start", "HvacStart", new JObject
             {
                 { "action", "cancel" },
                 { "targetTemperature", targetTemp }
             });
 
-        return await PerformAction(sessionId, vin, "hvac-start", "HvacStart", new JObject
+        return await PerformAction(session, vin, "hvac-start", "HvacStart", new JObject
         {
             { "action", active ? "start" : "stop" },
             { "targetTemperature", targetTemp }
         });
     }
 
-    public async Task<Response?> SetVehicleLock(Guid sessionId, string? vin, bool locked)
+    public async Task<Response?> SetVehicleLock(VehicleSessionBase session, string? vin, bool locked)
     {
-        return await PerformAction(sessionId, vin, "lock-unlock", "LockUnlock", new JObject
+        return await PerformAction(session, vin, "lock-unlock", "LockUnlock", new JObject
         {
             { "action", locked ? "lock" : "unlock" },
             { "target", "doors_hatch" }, // 'driver_s_door' : 'doors_hatch'
@@ -80,9 +78,9 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
         });
     }
 
-    public async Task<Response?> FlashLights(Guid sessionId, string? vin, int duration = 5)
+    public async Task<Response?> FlashLights(VehicleSessionBase session, string? vin, int duration = 5)
     {
-        return await PerformAction(sessionId, vin, "horn-lights", "HornLights", new JObject
+        return await PerformAction(session, vin, "horn-lights", "HornLights", new JObject
         {
             { "action", "start" },
             { "duration", duration },
@@ -90,9 +88,9 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
         });
     }
 
-    public async Task<Response?> BeepHorn(Guid sessionId, string? vin, int duration = 5)
+    public async Task<Response?> BeepHorn(VehicleSessionBase session, string? vin, int duration = 5)
     {
-        return await PerformAction(sessionId, vin, "horn-lights", "HornLights", new JObject
+        return await PerformAction(session, vin, "horn-lights", "HornLights", new JObject
         {
             { "action", "start" },
             { "duration", duration },
@@ -100,11 +98,9 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
         });
     }
 
-    protected override async Task<Response?> PerformActionImplementation(Guid sessionId, string? vin, string action,
+    protected override async Task<Response?> PerformActionImplementation(VehicleSessionBase session, string? vin, string action,
         string type, JObject attributes)
     {
-        var session = VehicleSessions[sessionId];
-
         dynamic httpRequestData = new JObject
         {
             {
@@ -127,16 +123,14 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
                 "application/vnd.api+json")
         };
 
-        var response = await MakeRequest(session.SessionId, httpRequestMessage,
+        var response = await MakeRequest(session, httpRequestMessage,
             Configuration["Nissan:EU:car_adapter_base_url"]);
 
         return response;
     }
 
-    protected override async Task<Response?> GetStatusImplementation(Guid sessionId, string? vin, string action)
+    protected override async Task<Response?> GetStatusImplementation(VehicleSessionBase session, string? vin, string action)
     {
-        var session = VehicleSessions[sessionId];
-
         var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, $"v1/cars/{vin}/{action}")
         {
             Headers =
@@ -146,29 +140,29 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
         };
 
         var response =
-            await MakeRequest(sessionId, httpRequestMessage, Configuration["Nissan:EU:car_adapter_base_url"]);
+            await MakeRequest(session, httpRequestMessage, Configuration["Nissan:EU:car_adapter_base_url"]);
 
         return response;
     }
 
-    protected override async Task<VehicleSessionBase> LoginImplementation(VehicleSessionBase session)
+    protected override async Task<bool> LoginImplementation(VehicleSessionBase session)
     {
-        var authenticateResult = await Authenticate(session.SessionId);
+        var authenticateResult = await Authenticate(session);
         Response? authenticationResult = null;
 
         authenticationResult =
-            await Authenticate(session.SessionId, session.Username, session.Password, authenticateResult);
-        var authorizeResult = await Authorize(session.SessionId, authenticationResult);
-        var accessTokenResult = await AccessToken(session.SessionId, authorizeResult);
+            await Authenticate(session, session.Username, session.Password, authenticateResult);
+        var authorizeResult = await Authorize(session, authenticationResult);
+        var accessTokenResult = await AccessToken(session, authorizeResult);
 
         if (accessTokenResult?.Success == true)
         {
             session.AuthenticatedAccessToken = (string?)accessTokenResult?.Data?.access_token;
 
             // TODO add dropdown select on register
-            var usersResult = await UsersResult(session.SessionId);
+            var usersResult = await UsersResult(session);
 
-            var vehiclesResult = await VehiclesResult(session.SessionId, (string)usersResult!.Data.userId);
+            var vehiclesResult = await VehiclesResult(session, (string)usersResult!.Data.userId);
 
             session.VINs.AddRange(((JArray)vehiclesResult!.Data.data)
                 .Select(vehicle => (string?)((JObject)vehicle)["vin"])
@@ -181,10 +175,10 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
             session.AuthenticatedAccessToken = null;
         }
 
-        return session;
+        return session.Authenticated;
     }
 
-    private async Task<Response?> Authenticate(Guid sessionId)
+    private async Task<Response?> Authenticate(VehicleSessionBase session)
     {
         var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post,
             $"json/realms/root/realms/{Configuration["Nissan:EU:realm"]}/authenticate")
@@ -198,10 +192,12 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
             }
         };
 
-        return await MakeRequest(sessionId, httpRequestMessage);
+        var response = await MakeRequest(session, httpRequestMessage);
+
+        return response;
     }
 
-    private async Task<Response?> Authenticate(Guid sessionId, string username, string password,
+    private async Task<Response?> Authenticate(VehicleSessionBase session, string username, string password,
         Response? authenticateResult)
     {
         if (authenticateResult?.Success != true)
@@ -276,12 +272,12 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
             Content = new StringContent(JsonConvert.SerializeObject(httpRequestData), Encoding.UTF8, "application/json")
         };
 
-        var response = await MakeRequest(sessionId, httpRequestMessage);
+        var response = await MakeRequest(session, httpRequestMessage);
 
         return response;
     }
 
-    private async Task<Response?> Authorize(Guid sessionId, Response? authenticateResult)
+    private async Task<Response?> Authorize(VehicleSessionBase session, Response? authenticateResult)
     {
         if (authenticateResult?.Success != true)
             return null;
@@ -295,7 +291,7 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
             }
         };
 
-        var response = await MakeRequest(sessionId, httpRequestMessage);
+        var response = await MakeRequest(session, httpRequestMessage);
 
         if (response != null)
             response.Data = authenticateResult!.Data;
@@ -303,7 +299,7 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
         return response;
     }
 
-    private async Task<Response?> AccessToken(Guid sessionId, Response? authenticateResult)
+    private async Task<Response?> AccessToken(VehicleSessionBase session, Response? authenticateResult)
     {
         if (authenticateResult?.Code != (int)HttpStatusCode.Found)
             return null;
@@ -321,15 +317,13 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
             Content = new StringContent(string.Empty, Encoding.UTF8, "application/x-www-form-urlencoded")
         };
 
-        var response = await MakeRequest(sessionId, httpRequestMessage);
+        var response = await MakeRequest(session, httpRequestMessage);
 
         return response;
     }
 
-    private async Task<Response?> UsersResult(Guid sessionId)
+    private async Task<Response?> UsersResult(VehicleSessionBase session)
     {
-        var session = AllSessions[sessionId];
-
         var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, "v1/users/current")
         {
             Headers =
@@ -339,16 +333,14 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
         };
 
         var response =
-            await MakeRequest(sessionId, httpRequestMessage, Configuration["Nissan:EU:user_adapter_base_url"]);
+            await MakeRequest(session, httpRequestMessage, Configuration["Nissan:EU:user_adapter_base_url"]);
 
         return response;
     }
 
-    private async Task<Response?> VehiclesResult(Guid sessionId, string userId)
+    private async Task<Response?> VehiclesResult(VehicleSessionBase session, string userId)
     {
         var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, $"v5/users/{userId}/cars")
-
-        var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, $"v4/users/{userId}/cars")
         {
             Headers =
             {
@@ -356,7 +348,7 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
             }
         };
 
-        var response = await MakeRequest(sessionId, httpRequestMessage, Configuration["Nissan:EU:user_base_url"]);
+        var response = await MakeRequest(session, httpRequestMessage, Configuration["Nissan:EU:user_base_url"]);
 
         return response;
     }

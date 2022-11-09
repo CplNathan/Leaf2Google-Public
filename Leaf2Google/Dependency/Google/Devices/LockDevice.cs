@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. Lock.cs
 
+using Leaf2Google.Models.Car;
 using Leaf2Google.Models.Google.Devices;
 using Newtonsoft.Json.Linq;
 
@@ -7,25 +8,27 @@ namespace Leaf2Google.Dependency.Google.Devices;
 
 public class LockDevice : BaseDevice, IDevice
 {
-    public LockDevice(GoogleStateManager googleState, ICarSessionManager sessionManager)
-        : base(googleState, sessionManager)
+    public LockDevice(GoogleStateManager googleState, ICarSessionManager sessionManager, BaseStorageManager storageManager)
+        : base(googleState, sessionManager, storageManager)
     {
         // Use here, have as per request object not a singleton!
     }
 
-    public async Task<bool> FetchAsync(Guid sessionId, string? vin, bool forceFetch = false)
+    public async Task<bool> FetchAsync(VehicleSessionBase session, string? vin, bool forceFetch = false)
     {
-        var vehicleLock = (LockModel)GoogleState.Devices[sessionId][typeof(LockDevice)];
+        var vehicleLock = (LockModel)(StorageManager.GoogleSessions)[session.SessionId][typeof(LockDevice)];
 
         var success = false;
 
         if (vehicleLock.WillFetch || forceFetch)
         {
-            var lockStatusTask = SessionManager.VehicleLock(sessionId, vin);
-            var batteryStatusTask = SessionManager.VehicleBattery(sessionId, vin);
+            var lockStatusTask = SessionManager.VehicleLock(session, vin);
+            var batteryStatusTask = SessionManager.VehicleBattery(session, vin);
+            var locationFetchTask = SessionManager.VehicleLocation(session, vin);
 
             var lockStatus = await lockStatusTask;
             var batteryStatus = await batteryStatusTask;
+            var location = await locationFetchTask;
 
             if (lockStatus is not null && lockStatus.Success && batteryStatus is not null && batteryStatus.Success)
             {
@@ -42,9 +45,8 @@ public class LockDevice : BaseDevice, IDevice
                 vehicleLock.IsCharging = (bool?)batteryStatus.Data?.data.attributes.chargeStatus ?? false;
                 vehicleLock.IsPluggedIn = (bool?)batteryStatus.Data?.data.attributes.plugStatus ?? false;
                 vehicleLock.LastUpdated = DateTime.UtcNow;
+                vehicleLock.Location = location.IsEmpty ? null : location;
             }
-
-            GoogleState.Devices[sessionId][typeof(LockDevice)] = vehicleLock;
         }
         else
         {
@@ -54,9 +56,9 @@ public class LockDevice : BaseDevice, IDevice
         return success;
     }
 
-    public async Task<JObject> QueryAsync(Guid sessionId, string? vin)
+    public async Task<JObject> QueryAsync(VehicleSessionBase session, string? vin)
     {
-        if (!SessionManager.AllSessions[sessionId].Authenticated)
+        if (!session.Authenticated)
         {
             return new JObject
             {
@@ -73,9 +75,9 @@ public class LockDevice : BaseDevice, IDevice
             };
         }
 
-        var success = await FetchAsync(sessionId, vin);
+        var success = await FetchAsync(session, vin);
 
-        var vehicleLock = (LockModel)GoogleState.Devices[sessionId][typeof(LockDevice)];
+        var vehicleLock = (LockModel)(StorageManager.GoogleSessions)[session.SessionId][typeof(LockDevice)];
 
         var descriptiveCapacity = "FULL";
 
@@ -144,11 +146,11 @@ public class LockDevice : BaseDevice, IDevice
         };
     }
 
-    public async Task<JObject> ExecuteAsync(Guid sessionId, string? vin, JObject data)
+    public async Task<JObject> ExecuteAsync(VehicleSessionBase session, string? vin, JObject data)
     {
-        var vehicleLock = (LockModel)GoogleState.Devices[sessionId][typeof(LockDevice)];
+        var vehicleLock = (LockModel)(StorageManager.GoogleSessions)[session.SessionId][typeof(LockDevice)];
 
-        if (!SessionManager.AllSessions[sessionId].Authenticated)
+        if (!session.Authenticated)
         {
             return new JObject
             {
@@ -168,7 +170,7 @@ public class LockDevice : BaseDevice, IDevice
         if ((string?)data.Root["command"] == "action.devices.commands.Locate" &&
             ((bool?)data["silence"] ?? false) == false)
         {
-            _ = SessionManager.FlashLights(sessionId, vin);
+            await SessionManager.FlashLights(session, vin).ConfigureAwait(false);
         }
         else if ((string?)data.Root["command"] == "action.devices.commands.LockUnlock")
         {
@@ -176,12 +178,10 @@ public class LockDevice : BaseDevice, IDevice
                 ? (bool?)data["lock"] ?? vehicleLock.Locked
                 : vehicleLock.Locked;
 
-            var lockStatus = await SessionManager.SetVehicleLock(sessionId, vin, vehicleLock.Locked);
+            var lockStatus = await SessionManager.SetVehicleLock(session, vin, vehicleLock.Locked);
 
             var success = false;
             if (lockStatus is not null && lockStatus.Success) success = lockStatus.Success;
-
-            GoogleState.Devices[sessionId][typeof(LockDevice)] = vehicleLock;
 
             return new JObject
             {

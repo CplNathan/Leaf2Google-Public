@@ -13,29 +13,31 @@ namespace Leaf2Google.Controllers.API;
 [ApiController]
 public class CarController : BaseAPIController
 {
-    private readonly IEnumerable<IDevice> _devices;
-    private readonly GoogleStateManager _google;
+    private IEnumerable<IDevice> Devices { get; }
+    private GoogleStateManager Google { get; }
 
-    public CarController(ICarSessionManager sessionManager, GoogleStateManager google, IEnumerable<IDevice> devices)
-        : base(sessionManager)
+    public CarController(BaseStorageManager storageManager, ICarSessionManager sessionManager, GoogleStateManager google, IEnumerable<IDevice> devices)
+        : base(storageManager, sessionManager)
     {
-        _google = google;
-        _devices = devices;
+        Google = google;
+        Devices = devices;
     }
 
     [HttpPost]
-    public JsonResult Action([FromForm] string action, [FromForm] int? duration)
+    public async Task<JsonResult> Action([FromForm] string action, [FromForm] int? duration)
     {
         var sessionId = SessionId ?? Guid.Empty;
-        if (SessionId != null && action != null && duration != null &&
-            SessionManager.VehicleSessions[sessionId] != null)
+        var session = StorageManager.VehicleSessions.GetValueOrDefault(sessionId);
+
+        if (sessionId != Guid.Empty && session != null && action != null && duration != null &&
+        StorageManager.VehicleSessions[sessionId] != null)
         {
             var clampedDuration = duration.Value > 15 ? 15 : duration.Value < 5 ? 5 : duration.Value;
 
             if (action == "flash")
-                _ = SessionManager.FlashLights(sessionId, SelectedVin, clampedDuration);
+                await SessionManager.FlashLights(session, SelectedVin, clampedDuration).ConfigureAwait(false);
             else if (action == "horn")
-                _ = SessionManager.BeepHorn(sessionId, SelectedVin, clampedDuration);
+                await SessionManager.BeepHorn(session, SelectedVin, clampedDuration).ConfigureAwait(false);
         }
 
         return Json(null);
@@ -45,17 +47,19 @@ public class CarController : BaseAPIController
     public async Task<JsonResult> Status([FromForm] string query, [FromForm] string vin)
     {
         var sessionId = SessionId ?? Guid.Empty;
-        if (SessionId != null && SessionManager.VehicleSessions.Any(session => session.Key == sessionId))
+        var session = StorageManager.VehicleSessions.GetValueOrDefault(sessionId);
+
+        if (sessionId != Guid.Empty && session != null)
         {
             var activevin = vin.IsNullOrWhiteSpace() || vin == "null" ? SelectedVin : vin;
 
             if (query == "battery")
             {
-                var carLock = (LockModel)_google.Devices[sessionId][typeof(LockDevice)];
-                var deviceData = _devices.FirstOrDefault(x => x.GetType() == typeof(LockDevice));
+                var carLock = (LockModel)(StorageManager.GoogleSessions)[sessionId][typeof(LockDevice)];
+                var deviceData = Devices.FirstOrDefault(x => x.GetType() == typeof(LockDevice));
 
                 if (deviceData != null)
-                    await deviceData.FetchAsync(sessionId, activevin);
+                    await deviceData.FetchAsync(session, activevin);
 
                 return Json(new
                 {
@@ -65,20 +69,22 @@ public class CarController : BaseAPIController
             }
             else if (query == "location")
             {
-                PointF? carLocation = await SessionManager.VehicleLocation(sessionId, activevin);
+                var carLock = (LockModel)(StorageManager.GoogleSessions)[sessionId][typeof(LockDevice)];
+                var deviceData = Devices.FirstOrDefault(x => x.GetType() == typeof(LockDevice));
+
                 return Json(new
                 {
-                    lat = carLocation?.X,
-                    @long = carLocation?.Y
+                    lat = carLock.Location?.X,
+                    @long = carLock.Location?.Y
                 });
             }
             else if (query == "climate")
             {
-                var carThermostat = (ThermostatModel)_google.Devices[sessionId][typeof(ThermostatDevice)];
-                var deviceData = _devices.FirstOrDefault(x => x.GetType() == typeof(ThermostatDevice));
+                var carThermostat = (ThermostatModel)(StorageManager.GoogleSessions)[session.SessionId][typeof(ThermostatDevice)];
+                var deviceData = Devices.FirstOrDefault(x => x.GetType() == typeof(ThermostatDevice));
 
                 if (deviceData != null)
-                    await deviceData.FetchAsync(sessionId, activevin);
+                    await deviceData.FetchAsync(session, activevin);
 
                 return Json(new
                 {

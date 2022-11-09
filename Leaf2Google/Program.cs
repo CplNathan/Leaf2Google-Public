@@ -31,8 +31,7 @@ builder.Services.AddFido2(options =>
     options.MDSCacheDirPath = builder.Configuration["fido2:MDSCacheDirPath"];
 });
 
-builder.Services.AddSingleton(x => new Dictionary<Guid, Dictionary<Type, BaseDeviceModel>>());
-builder.Services.AddSingleton(x => new Dictionary<Guid, VehicleSessionBase>());
+builder.Services.AddSingleton<SessionStorageContainer>();
 
 builder.Services.AddScoped<BaseStorageManager>();
 builder.Services.AddScoped<IUserStorage, UserStorage>();
@@ -100,7 +99,7 @@ app.MapControllerRoute(
 using (var scope = app.Services.CreateScope())
 {
     scope.ServiceProvider.GetRequiredService<LeafContext>().Database.Migrate();
-    await scope.ServiceProvider.GetRequiredService<ICarSessionManager>().StartAsync();
+    await scope.ServiceProvider.GetRequiredService<ICarSessionManager>().StartAsync().ConfigureAwait(false);
 }
 
 app.Run();

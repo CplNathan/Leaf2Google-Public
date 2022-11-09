@@ -11,8 +11,8 @@ public class AuthController : BaseAPIController
 {
     private readonly LeafContext _googleContext;
 
-    public AuthController(ICarSessionManager sessionManager, LeafContext googleContext)
-        : base(sessionManager)
+    public AuthController(BaseStorageManager storageManager, ICarSessionManager sessionManager, LeafContext googleContext)
+        : base(storageManager, sessionManager)
     {
         _googleContext = googleContext;
     }

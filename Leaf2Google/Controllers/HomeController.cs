@@ -13,15 +13,18 @@ namespace Leaf2Google.Controllers;
 
 public class HomeController : BaseController
 {
+    protected ICarSessionManager SessionManager { get; }
+
+    protected IEnumerable<IDevice> Devices { get; }
+
     protected Captcha Captcha { get; }
 
-    protected BaseStorageManager StorageManager { get; }
-
-    public HomeController(ICarSessionManager sessionManager, BaseStorageManager storageManager, LoggingManager logging,
+    public HomeController(BaseStorageManager storageManager, ICarSessionManager sessionManager, IEnumerable<IDevice> devices, LoggingManager logging,
         GoogleStateManager google, Captcha captcha)
-        : base(sessionManager)
+        : base(storageManager)
     {
-        StorageManager = storageManager;
+        SessionManager = sessionManager;
+        Devices = devices;
         Logging = logging;
         Google = google;
         Captcha = captcha;
@@ -35,19 +38,28 @@ public class HomeController : BaseController
     {
         ReloadViewBag();
 
-        var session = SessionManager.VehicleSessions.GetValueOrDefault(SessionId ?? Guid.Empty);
+        var session = StorageManager.VehicleSessions.GetValueOrDefault(SessionId ?? Guid.Empty);
 
-        if (session == null)
+        if (session == null || !StorageManager.GoogleSessions.ContainsKey(session.SessionId))
+        {
             return View("Index", new CarViewModel
             {
                 car = await StorageManager.UserStorage.GetUser(SessionId ?? Guid.Empty) ?? new CarModel()
             });
+        }
 
-        var carThermostat = (ThermostatModel?)Google.Devices[session.SessionId][typeof(ThermostatDevice)];
-        var carLock = (LockModel?)Google.Devices[session.SessionId][typeof(LockDevice)];
-        PointF? location = SessionManager.AllSessions[session.SessionId].LastLocation.Item2;
+        if (!session?.Authenticated ?? false)
+            await SessionManager.Login(session);
 
-        _ = SessionManager.VehicleLocation(session.SessionId, session.PrimaryVin);
+
+        foreach (var device in Devices)
+        {
+            await device.FetchAsync(session, session.PrimaryVin);
+        }
+
+        var carThermostat = (ThermostatModel?)(StorageManager.GoogleSessions)[session.SessionId][typeof(ThermostatDevice)];
+        var carLock = (LockModel?)(StorageManager.GoogleSessions)[session.SessionId][typeof(LockDevice)];
+        PointF? location = StorageManager.VehicleSessions[session.SessionId].LastLocation.Item2;
 
         return View("IndexUser", new CarViewModel
         {
@@ -75,8 +87,8 @@ public class HomeController : BaseController
             if (sessionId != Guid.Empty)
             {
                 SessionId = sessionId;
-                ViewBag.SessionId = SessionId;
-                SelectedVin = SessionManager.AllSessions[sessionId].PrimaryVin;
+                ViewBag.SessionId = sessionId;
+                SelectedVin = StorageManager.VehicleSessions.GetValueOrDefault(sessionId)?.PrimaryVin;
                 ViewBag.SelectedVin = SelectedVin;
 
                 AddToast(new ToastViewModel { Title = "Authentication", Message = "Authentication success." });

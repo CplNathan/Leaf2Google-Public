@@ -11,17 +11,17 @@ public class SettingsController : BaseController
 {
     public GoogleStateManager Google { get; }
 
-    public SettingsController(ICarSessionManager sessionManager, GoogleStateManager google)
-        : base(sessionManager)
+    public SettingsController(BaseStorageManager storageManager, GoogleStateManager google)
+        : base(storageManager)
     {
         Google = google;
     }
 
-    public async Task<IActionResult> Index()
+    public IActionResult Index()
     {
         ReloadViewBag();
 
-        var session = SessionManager.VehicleSessions.FirstOrDefault(session => session.Key == SessionId).Value;
+        var session = StorageManager.VehicleSessions.FirstOrDefault(session => session.Key == SessionId).Value;
 
         if (session == null)
         {
@@ -34,9 +34,8 @@ public class SettingsController : BaseController
             return RedirectToAction("Index", "Home");
         }
 
-        var thermostat = (ThermostatModel?)Google.Devices[session.SessionId][typeof(ThermostatDevice)];
-        var carlock = (LockModel?)Google.Devices[session.SessionId][typeof(LockDevice)];
-        //PointF? location = await SessionManager.VehicleLocation(session.SessionId, session.PrimaryVin);
+        var thermostat = (ThermostatModel?)(StorageManager.GoogleSessions)[session.SessionId][typeof(ThermostatDevice)];
+        var carlock = (LockModel?)(StorageManager.GoogleSessions)[session.SessionId][typeof(LockDevice)];
 
         return View("IndexUser");
     }

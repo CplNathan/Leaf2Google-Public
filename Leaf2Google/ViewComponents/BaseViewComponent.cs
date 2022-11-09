@@ -6,12 +6,12 @@ namespace Leaf2Google.ViewComponents;
 
 public abstract class BaseViewComponent : ViewComponent
 {
-    public BaseViewComponent(ICarSessionManager sessionManager)
+    public BaseViewComponent(BaseStorageManager storageManager)
     {
-        SessionManager = sessionManager;
+        StorageManager = storageManager;
     }
 
-    protected ICarSessionManager SessionManager { get; }
+    protected BaseStorageManager StorageManager { get; }
 
     public bool RegisterViewComponentScript(string scriptPath)
     {

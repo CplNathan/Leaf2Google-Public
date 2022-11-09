@@ -21,7 +21,7 @@
 
         const map = $('<div>', {
             id: 'map',
-            class: 'rounded h-100'
+            class: 'h-100'
         }).appendTo(shadow);
     }
 
