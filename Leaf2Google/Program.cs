@@ -1,3 +1,4 @@
+using Fido2NetLib.Development;
 using Leaf2Google.Controllers;
 using Leaf2Google.Dependency;
 using Leaf2Google.Dependency.Car;
@@ -103,3 +104,12 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+
+namespace Leaf2Google.Models.Security
+{
+
+    public class StoredCredentialModel : StoredCredential
+    {
+        public byte[] CredentialId { get; set; }
+    }
+}

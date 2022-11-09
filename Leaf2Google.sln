@@ -10,7 +10,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Leaf2Google.UnitTests", "Leaf2Google.UnitTests\Leaf2Google.UnitTests.csproj", "{1E073144-438C-4D44-BA7A-FFDA24222139}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Leaf2Google.UnitTests", "Leaf2Google.UnitTests\Leaf2Google.UnitTests.csproj", "{1E073144-438C-4D44-BA7A-FFDA24222139}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Leaf2Google.Models", "Leaf2Google.Models\Leaf2Google.Models.csproj", "{6045B689-3E5C-4BF2-A997-2517857729F5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -26,6 +28,10 @@ Global
 		{1E073144-438C-4D44-BA7A-FFDA24222139}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1E073144-438C-4D44-BA7A-FFDA24222139}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1E073144-438C-4D44-BA7A-FFDA24222139}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6045B689-3E5C-4BF2-A997-2517857729F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6045B689-3E5C-4BF2-A997-2517857729F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6045B689-3E5C-4BF2-A997-2517857729F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6045B689-3E5C-4BF2-A997-2517857729F5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
