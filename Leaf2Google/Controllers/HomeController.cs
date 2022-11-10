@@ -1,8 +1,9 @@
 ﻿using System.Drawing;
-using Leaf2Google.Dependency;
 using Leaf2Google.Dependency.Google;
 using Leaf2Google.Dependency.Google.Devices;
 using Leaf2Google.Dependency.Helpers;
+using Leaf2Google.Entities.Generic;
+using Leaf2Google.Entities.Car;
 using Leaf2Google.Models.Car;
 using Leaf2Google.Models.Generic;
 using Leaf2Google.Models.Google;

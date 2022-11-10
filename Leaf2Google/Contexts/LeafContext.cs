@@ -1,9 +1,8 @@
-﻿using Leaf2Google.Models.Car;
-using Leaf2Google.Models.Generic;
-using Leaf2Google.Models.Google;
-using Leaf2Google.Models.Security;
+﻿using Leaf2Google.Entities.Car;
+using Leaf2Google.Entities.Generic;
+using Leaf2Google.Entities.Google;
+using Leaf2Google.Entities.Security;
 using Microsoft.EntityFrameworkCore;
-using WebOptimizer;
 
 namespace Leaf2Google.Contexts;
 

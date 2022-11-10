@@ -1,8 +1,9 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
-using Leaf2Google.Models.Car;
+using Leaf2Google.Models;
+using Leaf2Google.Entities.Car;
 
-namespace Leaf2Google.Models.Google
+namespace Leaf2Google.Entities.Google
 {
 
     // Database Object

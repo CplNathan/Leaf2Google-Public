@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. LoggingManager.cs
 
-using Leaf2Google.Models.Generic;
+using Leaf2Google.Entities.Generic;
 
 namespace Leaf2Google.Dependency;
 

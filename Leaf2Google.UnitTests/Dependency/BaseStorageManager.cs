@@ -2,6 +2,7 @@
 
 using Leaf2Google.Contexts;
 using Leaf2Google.Dependency;
+using Leaf2Google.Entities.Car;
 using Leaf2Google.Models.Car;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -49,7 +50,7 @@ namespace Leaf2Google.UnitTests.Dependency
 
             _leafContext = new LeafContext(_options);
             var _userStorage = new UserStorage(_leafContext);
-            _storageManager = new BaseStorageManager(_leafContext, _userStorage);
+            _storageManager = new BaseStorageManager(_leafContext, _userStorage, null);
         }
 
         [TearDown]

@@ -4,7 +4,9 @@ using System.Web;
 using Leaf2Google.Dependency;
 using Leaf2Google.Dependency.Google;
 using Leaf2Google.Dependency.Google.Devices;
-using Leaf2Google.Models.Car;
+using Leaf2Google.Entities.Car;
+using Leaf2Google.Entities.Generic;
+using Leaf2Google.Entities.Google;
 using Leaf2Google.Models.Generic;
 using Leaf2Google.Models.Google;
 using Microsoft.AspNetCore.Mvc;
@@ -327,7 +329,7 @@ public class GoogleController : BaseController
     {
         if (form == null)
         {
-            var model = new AuthFormModel
+            var model = new AuthViewModel
             {
                 client_id = form?.client_id ?? "",
                 redirect_uri = form?.redirect_uri,
@@ -382,7 +384,7 @@ public class GoogleController : BaseController
                 Message = "Unable to authenticate to Nissan Services using the supplied credentials."
             });
 
-            var model = new AuthFormModel
+            var model = new AuthViewModel
             {
                 client_id = form.client_id,
                 redirect_uri = form.redirect_uri,
@@ -395,7 +397,7 @@ public class GoogleController : BaseController
     }
 
     [HttpGet]
-    public async Task<ActionResult> Auth([FromQuery] AuthFormModel form)
+    public async Task<ActionResult> Auth([FromQuery] AuthViewModel form)
     {
         if (form.client_id != Configuration["Google:client_id"])
             return BadRequest();

@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. Class1.cs
 
-using Leaf2Google.Models.Car;
+using Leaf2Google.Models.Car.Sessions;
 using NUnit.Framework;
 
 namespace Leaf2Google.UnitTests.Models

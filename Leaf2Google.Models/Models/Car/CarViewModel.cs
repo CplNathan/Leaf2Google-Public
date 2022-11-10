@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. CarInfoModel.cs
 
 using System.Drawing;
+using Leaf2Google.Entities.Car;
 using Leaf2Google.Models.Google.Devices;
 
 namespace Leaf2Google.Models.Car

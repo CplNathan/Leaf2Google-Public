@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. Class1.cs
 
-using Leaf2Google.Models.Car;
+using Leaf2Google.Entities.Car;
 using Leaf2Google.UnitTests;
 using NUnit.Framework;
 

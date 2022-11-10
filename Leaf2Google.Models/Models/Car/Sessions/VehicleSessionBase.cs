@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 
-namespace Leaf2Google.Models.Car
+namespace Leaf2Google.Models.Car.Sessions
 {
 
     public class VehicleSessionBase
