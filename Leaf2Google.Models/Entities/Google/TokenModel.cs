@@ -1,7 +1,8 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
+using Leaf2Google.Models;
 
-namespace Leaf2Google.Models.Google
+namespace Leaf2Google.Entities.Google
 {
 
     public class TokenModel : BaseModel

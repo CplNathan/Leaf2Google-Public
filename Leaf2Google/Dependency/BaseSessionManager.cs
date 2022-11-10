@@ -2,8 +2,9 @@
 
 using System.Drawing;
 using System.Net;
-using Leaf2Google.Models.Car;
-using Leaf2Google.Models.Generic;
+using Leaf2Google.Entities.Car;
+using Leaf2Google.Entities.Generic;
+using Leaf2Google.Models.Car.Sessions;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 

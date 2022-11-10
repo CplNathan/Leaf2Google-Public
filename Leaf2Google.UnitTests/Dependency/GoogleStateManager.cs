@@ -22,7 +22,7 @@ namespace Leaf2Google.UnitTests.Models
         public void SetUp()
         {
             // Arrange
-            _stateManager = new GoogleStateManager(new BaseStorageManager((LeafContext)null, (IUserStorage)null), (ICarSessionManager)null);
+            _stateManager = new GoogleStateManager(new BaseStorageManager((LeafContext)null, (IUserStorage)null, null), (ICarSessionManager)null);
             _testGuid = Guid.NewGuid();
 
             // Get all devices, to later ensure they are assigned.

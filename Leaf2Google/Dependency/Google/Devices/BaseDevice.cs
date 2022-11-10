@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. BaseDevice.cs
 
-using Leaf2Google.Models.Car;
+using Leaf2Google.Models.Car.Sessions;
 using Newtonsoft.Json.Linq;
 
 namespace Leaf2Google.Dependency.Google.Devices;

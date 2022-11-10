@@ -1,12 +1,9 @@
-using Fido2NetLib.Development;
 using Leaf2Google.Controllers;
-using Leaf2Google.Dependency;
 using Leaf2Google.Dependency.Car;
 using Leaf2Google.Dependency.Google;
 using Leaf2Google.Dependency.Google.Devices;
 using Leaf2Google.Dependency.Helpers;
-using Leaf2Google.Models.Car;
-using Leaf2Google.Models.Google.Devices;
+using Leaf2Google.Entities.Security;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 

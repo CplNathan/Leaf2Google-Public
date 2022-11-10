@@ -1,6 +1,6 @@
 ﻿using Leaf2Google.Dependency.Google.Devices;
-using Leaf2Google.Models.Car;
 using Leaf2Google.Models.Google.Devices;
+using Leaf2Google.Models.Car.Sessions;
 using NUglify.Helpers;
 
 namespace Leaf2Google.Dependency.Google;

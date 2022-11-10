@@ -112,7 +112,7 @@ public class SecurityKeyController : BaseAPIController
             var success = await _fido2.MakeNewCredentialAsync(attestationResponse, options, callback,
                 cancellationToken: cancellationToken);
 
-            await _leafContext.SecurityKeys.AddAsync(new StoredCredentialModel
+            await _leafContext.SecurityKeys.AddAsync(new Leaf2Google.Entities.Security.StoredCredentialModel
             {
                 Descriptor = new PublicKeyCredentialDescriptor(success.Result?.CredentialId ?? throw new NullReferenceException("CredentialId was null when trying to make a new security credential.")),
                 PublicKey = success.Result.PublicKey,

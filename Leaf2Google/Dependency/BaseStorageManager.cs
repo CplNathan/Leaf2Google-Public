@@ -1,7 +1,8 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. BaseStorageManager.cs
 
-using Leaf2Google.Models.Car;
+using Leaf2Google.Entities.Car;
 using Leaf2Google.Models.Google.Devices;
+using Leaf2Google.Models.Car.Sessions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 

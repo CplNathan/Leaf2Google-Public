@@ -1,6 +1,7 @@
 ﻿using System;
+using Leaf2Google.Models;
 
-namespace Leaf2Google.Models.Generic
+namespace Leaf2Google.Entities.Generic
 {
 
     public enum AuditContext

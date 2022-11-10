@@ -25,7 +25,7 @@ namespace Leaf2Google.Models.Google.Devices {
             set => type = value;
         }
 
-        protected IEnumerable<string> traits { get; set; }
+        protected List<string> traits { get; set; }
 
         public JArray Traits
         {

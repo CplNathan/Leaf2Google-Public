@@ -2,8 +2,9 @@
 using System.Text;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Leaf2Google.Models;
 
-namespace Leaf2Google.Models.Car
+namespace Leaf2Google.Entities.Car
 {
     public class CarModel : BaseModel
     {

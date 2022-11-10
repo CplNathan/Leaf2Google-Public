@@ -3,7 +3,7 @@
 using System;
 using Fido2NetLib.Objects;
 
-namespace Leaf2Google.Models.Security
+namespace Leaf2Google.Entities.Security
 {
     public class StoredCredential
     {
