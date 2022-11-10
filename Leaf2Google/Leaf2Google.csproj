@@ -16,10 +16,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <Optimize>False</Optimize>
     <WarningLevel>7</WarningLevel>
+    <NoWarn>1701;1702;1707;CA1707</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <WarningLevel>7</WarningLevel>
+    <NoWarn>1701;1702;1707;CA1707</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -42,9 +44,6 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.9" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.0" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.17.0" />
-    <PackageReference Include="NUnit.Console" Version="3.15.2" />
-    <PackageReference Include="NUnit.ConsoleRunner" Version="3.15.2" />
-    <PackageReference Include="NUnit3TestAdapter" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup>
