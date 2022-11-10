@@ -19,9 +19,9 @@ namespace Leaf2Google.Controllers;
 
 public class EnableRequestBodyBufferingMiddleware
 {
-    private readonly RequestDelegate _next;
+    private readonly Microsoft.AspNetCore.Http.RequestDelegate _next;
 
-    public EnableRequestBodyBufferingMiddleware(RequestDelegate next) =>
+    public EnableRequestBodyBufferingMiddleware(Microsoft.AspNetCore.Http.RequestDelegate next) =>
         _next = next;
 
     public async Task InvokeAsync(HttpContext context)

@@ -6,6 +6,7 @@ using Leaf2Google.Entities.Car;
 using Leaf2Google.Entities.Generic;
 using Leaf2Google.Models.Car.Sessions;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Leaf2Google.Dependency;
@@ -28,9 +29,9 @@ public interface ICarSessionManager
     Task<bool> Login(VehicleSessionBase session);
 }
 
-public delegate void AuthEventHandler(object sender, string? authToken);
+public delegate void AuthDelegate(object sender, string? authToken);
 
-public delegate void RequestEventHandler(object sender, bool requestSuccess);
+public delegate void RequestDelegate(object sender, bool requestSuccess);
 
 public abstract class BaseSessionManager
 {
@@ -60,9 +61,9 @@ public abstract class BaseSessionManager
 
     protected IConfiguration Configuration { get; }
 
-    public static event RequestEventHandler OnRequest;
+    public static event RequestDelegate OnRequest;
 
-    public static event AuthEventHandler OnAuthenticationAttempt;
+    public static event AuthDelegate OnAuthenticationAttempt;
 
     private async void BaseSessionManager_OnAuthenticationAttempt(object sender, string? authToken)
     {
@@ -139,14 +140,13 @@ public abstract class BaseSessionManager
             if (result?.Code != (int)HttpStatusCode.OK && result?.Code != (int)HttpStatusCode.Found)
                 success = false;
         }
-        catch (Exception ex)
+        catch (JsonException) { }
+        catch (Exception)
         {
-            if (ex.Source != "Newtonsoft.Json")
-                success = false;
-#if DEBUG
+            success = false;
             throw;
-#endif
         }
+
 
         if (result != null)
             result.Success = success;
