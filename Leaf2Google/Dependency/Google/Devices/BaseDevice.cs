@@ -1,15 +1,16 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. BaseDevice.cs
 
+using Leaf2Google.Json.Google;
 using Leaf2Google.Models.Car.Sessions;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Leaf2Google.Dependency.Google.Devices;
 
 public interface IDevice
 {
-    public Task<JObject> QueryAsync(VehicleSessionBase session, string? vin);
-    public Task<JObject> ExecuteAsync(VehicleSessionBase session, string? vin, JObject data);
-
+    public Task<QueryDeviceData> QueryAsync(VehicleSessionBase session, string? vin);
+    public Task<ExecuteDeviceData> ExecuteAsync(VehicleSessionBase session, string? vin, JsonObject data);
     public Task<bool> FetchAsync(VehicleSessionBase session, string? vin, bool forceFetch = false);
 }
 
