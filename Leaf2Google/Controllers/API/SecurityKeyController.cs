@@ -80,8 +80,6 @@ public class SecurityKeyController : BaseAPIController
             // 4. Temporarily store options, session/in-memory cache/redis/db
             HttpContext.Session.SetString("fido2.attestationOptions", options.ToJson());
 
-            //settings.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());
-
             return Json(options);
         }
         catch (Exception e)

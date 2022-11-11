@@ -1,6 +1,5 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. Lock.cs
 
-using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Text.Json.Nodes;

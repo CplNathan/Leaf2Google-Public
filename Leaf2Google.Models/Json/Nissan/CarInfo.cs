@@ -9,7 +9,7 @@ namespace Leaf2Google.Models.Json.Nissan
 
     public class Nissan
     {
-        public object data { get; set; }
+        public CarInfo[] data { get; set; }
     }
 
     public class CarInfo

@@ -35,6 +35,6 @@ public class Captcha
 
         var responseData = await Client.MakeRequest<JsonObject>(httpRequestMessage);
 
-        return responseData.Data?.success ?? false;
+        return responseData.Data["success"].GetValue<bool?>() ?? false;
     }
 }

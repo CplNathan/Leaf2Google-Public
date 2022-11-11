@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Nodes;
 using Leaf2Google.Json.Google;
-using Newtonsoft.Json.Linq;
 
 namespace Leaf2Google.Models.Google.Devices
 {

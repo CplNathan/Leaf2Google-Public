@@ -3,8 +3,8 @@ using System.Net;
 using System.Text;
 using Leaf2Google.Models.Car.Sessions;
 using Leaf2Google.Models.Json.Nissan;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Leaf2Google.Dependency.Car;
 
@@ -26,8 +26,8 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
             if (location != null)
             {
                 session.LastLocation = Tuple.Create(DateTime.UtcNow,
-                    (PointF?)new PointF((float?)location?.Data?.data?.attributes.gpsLatitude ?? 0,
-                        (float?)location?.Data?.data?.attributes.gpsLongitude ?? 0));
+                    (PointF?)new PointF((float?)location?.Data["data"]["attributes"]["gpsLatitude"].GetValue<float?>() ?? 0,
+                        (float?)location?.Data["data"]["attributes"]["gpsLongitude"].GetValue<float?>() ?? 0));
                 return session.LastLocation?.Item2 ?? new PointF(0f, 0f);
             }
         }
@@ -35,43 +35,43 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
         return session.LastLocation?.Item2 ?? new PointF(0f, 0f);
     }
 
-    public async Task<Response?> VehicleClimate(VehicleSessionBase session, string? vin, bool forceUpdate = true)
+    public async Task<Response<JsonObject>?> VehicleClimate(VehicleSessionBase session, string? vin, bool forceUpdate = true)
     {
         if (forceUpdate)
-            await PerformAction(session, vin, "refresh-hvac-status", "RefreshHvacStatus", new JObject());
+            await PerformAction(session, vin, "refresh-hvac-status", "RefreshHvacStatus", new JsonObject());
 
         return await GetStatus(session, vin, "hvac-status");
     }
 
-    public async Task<Response?> VehicleLock(VehicleSessionBase session, string? vin)
+    public async Task<Response<JsonObject>?> VehicleLock(VehicleSessionBase session, string? vin)
     {
         return await GetStatus(session, vin, "lock-status");
     }
 
-    public async Task<Response?> VehicleBattery(VehicleSessionBase session, string? vin)
+    public async Task<Response<JsonObject>?> VehicleBattery(VehicleSessionBase session, string? vin)
     {
         return await GetStatus(session, vin, "battery-status");
     }
 
-    public async Task<Response?> SetVehicleClimate(VehicleSessionBase session, string? vin, decimal targetTemp, bool active)
+    public async Task<Response<JsonObject>?> SetVehicleClimate(VehicleSessionBase session, string? vin, decimal targetTemp, bool active)
     {
         if (!active)
-            await PerformAction(session, vin, "hvac-start", "HvacStart", new JObject
+            await PerformAction(session, vin, "hvac-start", "HvacStart", new JsonObject
             {
                 { "action", "cancel" },
                 { "targetTemperature", targetTemp }
             });
 
-        return await PerformAction(session, vin, "hvac-start", "HvacStart", new JObject
+        return await PerformAction(session, vin, "hvac-start", "HvacStart", new JsonObject
         {
             { "action", active ? "start" : "stop" },
             { "targetTemperature", targetTemp }
         });
     }
 
-    public async Task<Response?> SetVehicleLock(VehicleSessionBase session, string? vin, bool locked)
+    public async Task<Response<JsonObject>?> SetVehicleLock(VehicleSessionBase session, string? vin, bool locked)
     {
-        return await PerformAction(session, vin, "lock-unlock", "LockUnlock", new JObject
+        return await PerformAction(session, vin, "lock-unlock", "LockUnlock", new JsonObject
         {
             { "action", locked ? "lock" : "unlock" },
             { "target", "doors_hatch" }, // 'driver_s_door' : 'doors_hatch'
@@ -79,9 +79,9 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
         });
     }
 
-    public async Task<Response?> FlashLights(VehicleSessionBase session, string? vin, int duration = 5)
+    public async Task<Response<JsonObject>?> FlashLights(VehicleSessionBase session, string? vin, int duration = 5)
     {
-        return await PerformAction(session, vin, "horn-lights", "HornLights", new JObject
+        return await PerformAction(session, vin, "horn-lights", "HornLights", new JsonObject
         {
             { "action", "start" },
             { "duration", duration },
@@ -89,9 +89,9 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
         });
     }
 
-    public async Task<Response?> BeepHorn(VehicleSessionBase session, string? vin, int duration = 5)
+    public async Task<Response<JsonObject>?> BeepHorn(VehicleSessionBase session, string? vin, int duration = 5)
     {
-        return await PerformAction(session, vin, "horn-lights", "HornLights", new JObject
+        return await PerformAction(session, vin, "horn-lights", "HornLights", new JsonObject
         {
             { "action", "start" },
             { "duration", duration },
@@ -99,13 +99,13 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
         });
     }
 
-    protected override async Task<Response?> PerformActionImplementation(VehicleSessionBase session, string? vin, string action,
-        string type, JObject attributes)
+    protected override async Task<Response<JsonObject>?> PerformActionImplementation(VehicleSessionBase session, string? vin, string action,
+        string type, JsonObject attributes)
     {
-        dynamic httpRequestData = new JObject
+        object httpRequestData = new JsonObject
         {
             {
-                "data", new JObject
+                "data", new JsonObject
                 {
                     { "type", $"{type}" },
                     { "attributes", attributes }
@@ -120,7 +120,7 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
                 { "Authorization", $"Bearer {session.AuthenticatedAccessToken}" },
                 { "Accept", "*/*" }
             },
-            Content = new StringContent(JsonConvert.SerializeObject(httpRequestData), Encoding.UTF8,
+            Content = new StringContent(JsonSerializer.Serialize(httpRequestData), Encoding.UTF8,
                 "application/vnd.api+json")
         };
 
@@ -130,7 +130,7 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
         return response;
     }
 
-    protected override async Task<Response?> GetStatusImplementation(VehicleSessionBase session, string? vin, string action)
+    protected override async Task<Response<JsonObject>?> GetStatusImplementation(VehicleSessionBase session, string? vin, string action)
     {
         var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, $"v1/cars/{vin}/{action}")
         {
@@ -149,27 +149,22 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
     protected override async Task<bool> LoginImplementation(VehicleSessionBase session)
     {
         var authenticateResult = await Authenticate(session);
-        Response? authenticationResult = null;
+        Response<JsonObject>? authenticationResult = null;
 
-        authenticationResult =
-            await Authenticate(session, session.Username, session.Password, authenticateResult);
+        authenticationResult = await Authenticate(session, session.Username, session.Password, authenticateResult);
         var authorizeResult = await Authorize(session, authenticationResult);
         var accessTokenResult = await AccessToken(session, authorizeResult);
 
         if (accessTokenResult?.Success == true)
         {
-            session.AuthenticatedAccessToken = (string?)accessTokenResult?.Data?.access_token;
+            session.AuthenticatedAccessToken = accessTokenResult.Data["access_token"].GetValue<string>();
 
-            // TODO add dropdown select on register
             var usersResult = await UsersResult(session);
 
-            var vehiclesResult = await VehiclesResult(session, (string)usersResult!.Data.userId);
+            var vehiclesResult = await VehiclesResult(session, usersResult.Data["userId"].GetValue<string>());
 
-            session.VINs.AddRange(((JArray)vehiclesResult!.Data.data)
-                .Select(vehicle => (string?)((JObject)vehicle)["vin"])
-                .Where(vehicle => !string.IsNullOrEmpty(vehicle)));
-            session.CarPictureUrl = ((JArray)vehiclesResult!.Data.data)
-                .Select(vehicle => (string?)((JObject)vehicle)["pictureURL"]).FirstOrDefault();
+            session.VINs.Add(vehiclesResult.Data.data[0].vin);
+            session.CarPictureUrl = vehiclesResult.Data.data[0].pictureURL;
         }
         else
         {
@@ -179,7 +174,7 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
         return session.Authenticated;
     }
 
-    private async Task<Response?> Authenticate(VehicleSessionBase session)
+    private async Task<Response<JsonObject>?> Authenticate(VehicleSessionBase session)
     {
         var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post,
             $"json/realms/root/realms/{Configuration["Nissan:EU:realm"]}/authenticate")
@@ -198,64 +193,60 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
         return response;
     }
 
-    private async Task<Response?> Authenticate(VehicleSessionBase session, string username, string password,
-        Response? authenticateResult)
+    private async Task<Response<JsonObject>?> Authenticate(VehicleSessionBase session, string username, string password, Response<JsonObject>? authenticateResult)
     {
         if (authenticateResult?.Success != true)
             return null;
 
         // Because this data is so 'hand-crafted' I have left it as a simple JObject instead of creating a bespoke object to control this.
-        dynamic httpRequestData = new JObject
+        dynamic httpRequestData = new JsonObject
         {
-            { "authId", authenticateResult.Data.authId },
+            { "authId", authenticateResult.Data["authId"].GetValue<string>() },
             { "template", string.Empty },
             { "stage", "LDAP1" },
             { "header", "Sign in" },
             {
-                "callbacks", new JArray(
-                    new JObject
+                "callbacks", JsonValue.Create(new List<JsonObject>() {
+                    new JsonObject
                     {
                         { "type", "NameCallback" },
                         {
-                            "output", new JArray(
-                                new JObject
-                                {
-                                    { "name", "prompt" },
-                                    { "value", "User Name:" }
+                            "output", JsonValue.Create(new List <JsonObject>() {
+                                new JsonObject {
+                                    { "name", "prompt" }, { "value", "User Name:" }
                                 }
-                            )
+                            })
                         },
                         {
-                            "input", new JArray(
-                                new JObject
-                                {
-                                    { "name", "IDToken1" },
-                                    { "value", username }
+                            "input", JsonValue.Create(new List <JsonObject>() {
+                                new JsonObject {
+                                    { "name", "IDToken1" }, { "value", username }
                                 }
-                            )
+                            })
                         }
                     },
-                    new JObject
+                    new JsonObject
                     {
                         { "type", "PasswordCallback" },
                         {
-                            "output", new JArray(
-                                new JObject
+                            "output", JsonValue.Create(new List<JsonObject>() {
+                                new JsonObject
                                 {
                                     { "name", "prompt" },
                                     { "value", "Password:" }
                                 }
-                            )
+                            })
                         },
                         {
-                            "input", new JArray(
-                                new JObject
+                            "input", JsonValue.Create(new List<JsonObject>() {
+                                new JsonObject
                                 {
                                     { "name", "IDToken2" },
                                     { "value", password }
                                 }
-                            )
+                            })
                         }
+                    }
                     })
             }
         };
@@ -270,7 +261,7 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
                 { "X-Password", "anonymous" },
                 { "Accept", "application/json" }
             },
-            Content = new StringContent(JsonConvert.SerializeObject(httpRequestData), Encoding.UTF8, "application/json")
+            Content = new StringContent(JsonSerializer.Serialize(httpRequestData), Encoding.UTF8, "application/json")
         };
 
         var response = await MakeRequest(session, httpRequestMessage);
@@ -278,17 +269,16 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
         return response;
     }
 
-    private async Task<Response?> Authorize(VehicleSessionBase session, Response? authenticateResult)
+    private async Task<Response<JsonObject>?> Authorize(VehicleSessionBase session, Response<JsonObject>? authenticateResult)
     {
         if (authenticateResult?.Success != true)
             return null;
 
-        var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get,
-            $"oauth2{authenticateResult.Data.realm}/authorize?client_id={Configuration["Nissan:EU:client_id"]}&redirect_uri={Configuration["Nissan:EU:redirect_uri"]}&response_type=code&scope={Configuration["Nissan:EU:scope"]}&nonce=sdfdsfez&state=af0ifjsldkj")
+        var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, $"oauth2{authenticateResult.Data["realm"].GetValue<string>()}/authorize?client_id={Configuration["Nissan:EU:client_id"]}&redirect_uri={Configuration["Nissan:EU:redirect_uri"]}&response_type=code&scope={Configuration["Nissan:EU:scope"]}&nonce=sdfdsfez&state=af0ifjsldkj")
         {
             Headers =
             {
-                { "Cookie", $"i18next=en-UK; amlbcookie=05; kauthSession=\"{authenticateResult.Data.tokenId}\"" }
+                { "Cookie", $"i18next=en-UK; amlbcookie=05; kauthSession=\"{authenticateResult.Data["tokenId"].GetValue<string>()}\"" }
             }
         };
 
@@ -300,13 +290,13 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
         return response;
     }
 
-    private async Task<Response?> AccessToken(VehicleSessionBase session, Response? authenticateResult)
+    private async Task<Response<JsonObject>?> AccessToken(VehicleSessionBase session, Response<JsonObject>? authenticateResult)
     {
         if (authenticateResult?.Code != (int)HttpStatusCode.Found)
             return null;
 
         var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post,
-            $"oauth2{authenticateResult.Data.realm}/access_token?code={authenticateResult!.Headers.Location?.ToString().Split('=')[1].Split('&')[0]}&client_id={Configuration["Nissan:EU:client_id"]}&client_secret={Configuration["Nissan:EU:client_secret"]}&redirect_uri={Configuration["Nissan:EU:redirect_uri"]}&grant_type=authorization_code")
+            $"oauth2{authenticateResult.Data["realm"].GetValue<string>()}/access_token?code={authenticateResult!.Headers.Location?.ToString().Split('=')[1].Split('&')[0]}&client_id={Configuration["Nissan:EU:client_id"]}&client_secret={Configuration["Nissan:EU:client_secret"]}&redirect_uri={Configuration["Nissan:EU:redirect_uri"]}&grant_type=authorization_code")
         {
             Headers =
             {
@@ -323,7 +313,7 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
         return response;
     }
 
-    private async Task<Response?> UsersResult(VehicleSessionBase session)
+    private async Task<Response<JsonObject>?> UsersResult(VehicleSessionBase session)
     {
         var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, "v1/users/current")
         {
@@ -339,7 +329,7 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
         return response;
     }
 
-    private async Task<Response?> VehiclesResult(VehicleSessionBase session, string userId)
+    private async Task<Response<Nissan>?> VehiclesResult(VehicleSessionBase session, string userId)
     {
         var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, $"v5/users/{userId}/cars")
         {
@@ -349,7 +339,7 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
             }
         };
 
-        var response = await MakeRequest<CarInfo>(session, httpRequestMessage, Configuration["Nissan:EU:user_base_url"]);
+        var response = await MakeRequest<Nissan>(session, httpRequestMessage, Configuration["Nissan:EU:user_base_url"]);
 
         return response;
     }
