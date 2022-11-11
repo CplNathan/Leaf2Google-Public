@@ -14,6 +14,11 @@
 appsettings.json
 appsettings.*.json
 
+# Ignore Migrations
+Migrations/*
+/Migrations/*
+Migrations/
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
@@ -367,3 +372,30 @@ MigrationBackup/
 FodyWeavers.xsd
 /Leaf2Google/appsettings.json
 /Leaf2Google/appsettings.Development.json
+/Leaf2Google/Migrations/LeafContextModelSnapshot.cs
+/Leaf2Google/Migrations/20221012142435_Update-25.cs
+/Leaf2Google/Migrations/20221012133114_Update-24.cs
+/Leaf2Google/Migrations/20221003194103_Update-23.cs
+/Leaf2Google/Migrations/20221003192944_Update-22.cs
+/Leaf2Google/Migrations/20221003192527_Update-21.cs
+/Leaf2Google/Migrations/20221002220459_Update-20.cs
+/Leaf2Google/Migrations/20221002194456_Update-19.cs
+/Leaf2Google/Migrations/20221002170043_Update-18.cs
+/Leaf2Google/Migrations/20221001172525_Update-17.cs
+/Leaf2Google/Migrations/20220927212029_Update-16.cs
+/Leaf2Google/Migrations/20220922223206_Update_15-Refactor.cs
+/Leaf2Google/Migrations/20220917214258_Update_14.cs
+/Leaf2Google/Migrations/20220901010341_Update_13.cs
+/Leaf2Google/Migrations/20220830204719_Update_12.cs
+/Leaf2Google/Migrations/20220829011137_Update_11.cs
+/Leaf2Google/Migrations/20220829001934_Update_10.cs
+/Leaf2Google/Migrations/20220828232639_Update_9.cs
+/Leaf2Google/Migrations/20220828232335_Update_8.cs
+/Leaf2Google/Migrations/20220828184825_Update_7.cs
+/Leaf2Google/Migrations/20220828171216_Update_6.cs
+/Leaf2Google/Migrations/20220827181934_Update_5.cs
+/Leaf2Google/Migrations/20220827181208_Update_4.cs
+/Leaf2Google/Migrations/20220827180624_Update_3.cs
+/Leaf2Google/Migrations/20220827180530_Update_2.cs
+/Leaf2Google/Migrations/20220827013057_Update_1.cs
+/Leaf2Google/Migrations/20220826230417_InitialCreate.cs

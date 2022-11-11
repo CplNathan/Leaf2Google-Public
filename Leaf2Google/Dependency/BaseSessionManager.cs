@@ -6,7 +6,8 @@ using Leaf2Google.Entities.Car;
 using Leaf2Google.Entities.Generic;
 using Leaf2Google.Models.Car.Sessions;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Leaf2Google.Dependency;
 
@@ -17,20 +18,20 @@ public interface ICarSessionManager
     Task<bool> AddAsync(CarModel NewLeaf);
 
     Task<PointF> VehicleLocation(VehicleSessionBase session, string? vin);
-    Task<Response?> VehicleClimate(VehicleSessionBase session, string? vin, bool forceUpdate = true);
-    Task<Response?> VehicleLock(VehicleSessionBase session, string? vin);
-    Task<Response?> VehicleBattery(VehicleSessionBase session, string? vin);
-    Task<Response?> SetVehicleClimate(VehicleSessionBase session, string? vin, decimal targetTemp, bool active);
-    Task<Response?> SetVehicleLock(VehicleSessionBase session, string? vin, bool locked);
-    Task<Response?> FlashLights(VehicleSessionBase session, string? vin, int duration = 5);
-    Task<Response?> BeepHorn(VehicleSessionBase session, string? vin, int duration = 5);
+    Task<Response<JsonObject>?> VehicleClimate(VehicleSessionBase session, string? vin, bool forceUpdate = true);
+    Task<Response<JsonObject>?> VehicleLock(VehicleSessionBase session, string? vin);
+    Task<Response<JsonObject>?> VehicleBattery(VehicleSessionBase session, string? vin);
+    Task<Response<JsonObject>?> SetVehicleClimate(VehicleSessionBase session, string? vin, decimal targetTemp, bool active);
+    Task<Response<JsonObject>?> SetVehicleLock(VehicleSessionBase session, string? vin, bool locked);
+    Task<Response<JsonObject>?> FlashLights(VehicleSessionBase session, string? vin, int duration = 5);
+    Task<Response<JsonObject>?> BeepHorn(VehicleSessionBase session, string? vin, int duration = 5);
 
     Task<bool> Login(VehicleSessionBase session);
 }
 
-public delegate void AuthEventHandler(object sender, string? authToken);
+public delegate void AuthDelegate(object sender, string? authToken);
 
-public delegate void RequestEventHandler(object sender, bool requestSuccess);
+public delegate void RequestDelegate(object sender, bool requestSuccess);
 
 public abstract class BaseSessionManager
 {
@@ -60,9 +61,9 @@ public abstract class BaseSessionManager
 
     protected IConfiguration Configuration { get; }
 
-    public static event RequestEventHandler OnRequest;
+    public static event RequestDelegate OnRequest;
 
-    public static event AuthEventHandler OnAuthenticationAttempt;
+    public static event AuthDelegate OnAuthenticationAttempt;
 
     private async void BaseSessionManager_OnAuthenticationAttempt(object sender, string? authToken)
     {
@@ -121,11 +122,18 @@ public abstract class BaseSessionManager
         }
     }
 
-    protected async Task<Response?> MakeRequest(VehicleSessionBase session, HttpRequestMessage httpRequestMessage,
+    [Obsolete]
+    protected async Task<Response<JsonObject>?> MakeRequest(VehicleSessionBase session, HttpRequestMessage httpRequestMessage,
+        string baseUri = "")
+    {
+        return await MakeRequest<JsonObject>(session, httpRequestMessage, baseUri);
+    }
+
+    protected async Task<Response<T>?> MakeRequest<T>(VehicleSessionBase session, HttpRequestMessage httpRequestMessage,
         string baseUri = "")
     {
         var success = true;
-        Response? result = null;
+        Response<T>? result = null;
 
         try
         {
@@ -134,19 +142,17 @@ public abstract class BaseSessionManager
                     $"{(string.IsNullOrEmpty(baseUri) ? Configuration["Nissan:EU:auth_base_url"] : baseUri)}{httpRequestMessage.RequestUri?.ToString() ?? ""}");
             httpRequestMessage.Headers.Add("User-Agent", "NissanConnect/2 CFNetwork/978.0.7 Darwin/18.7.0");
 
-            result = await Client.MakeRequest(httpRequestMessage);
+            result = await Client.MakeRequest<T>(httpRequestMessage);
 
             if (result?.Code != (int)HttpStatusCode.OK && result?.Code != (int)HttpStatusCode.Found)
                 success = false;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            if (ex.Source != "Newtonsoft.Json")
-                success = false;
-#if DEBUG
+            success = false;
             throw;
-#endif
         }
+
 
         if (result != null)
             result.Success = success;
@@ -235,8 +241,8 @@ public abstract class BaseSessionManager
 
     protected abstract Task<bool> LoginImplementation(VehicleSessionBase session);
 
-    protected async Task<Response?> PerformAction(VehicleSessionBase session, string? vin, string action, string type,
-        JObject attributes)
+    protected async Task<Response<JsonObject>?> PerformAction(VehicleSessionBase session, string? vin, string action, string type,
+        JsonObject attributes)
     {
         Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Execute, AuditContext.Leaf,
             $"Performing action {action} on {vin}"));
@@ -245,10 +251,10 @@ public abstract class BaseSessionManager
         return response;
     }
 
-    protected abstract Task<Response?> PerformActionImplementation(VehicleSessionBase session, string? vin, string action,
-        string type, JObject attributes);
+    protected abstract Task<Response<JsonObject>?> PerformActionImplementation(VehicleSessionBase session, string? vin, string action,
+        string type, JsonObject attributes);
 
-    protected async Task<Response?> GetStatus(VehicleSessionBase session, string? vin, string action)
+    protected async Task<Response<JsonObject>?> GetStatus(VehicleSessionBase session, string? vin, string action)
     {
         Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Execute, AuditContext.Leaf,
             $"Getting status {action} on {vin}"));
@@ -257,5 +263,5 @@ public abstract class BaseSessionManager
         return response;
     }
 
-    protected abstract Task<Response?> GetStatusImplementation(VehicleSessionBase session, string? vin, string action);
+    protected abstract Task<Response<JsonObject>?> GetStatusImplementation(VehicleSessionBase session, string? vin, string action);
 }

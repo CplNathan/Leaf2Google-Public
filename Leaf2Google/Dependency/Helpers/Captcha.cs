@@ -1,5 +1,7 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. CaptchaVerification.cs
 
+using System.Text.Json.Nodes;
+
 namespace Leaf2Google.Dependency.Helpers;
 
 public class Captcha
@@ -31,8 +33,8 @@ public class Captcha
         };
         httpRequestMessage.RequestUri = new Uri("https://www.google.com/recaptcha/api/siteverify");
 
-        var responseData = await Client.MakeRequest(httpRequestMessage);
+        var responseData = await Client.MakeRequest<JsonObject>(httpRequestMessage);
 
-        return responseData.Data?.success ?? false;
+        return responseData.Data["success"].GetValue<bool?>() ?? false;
     }
 }

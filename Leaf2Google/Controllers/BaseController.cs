@@ -4,8 +4,8 @@ using Leaf2Google.Models.Generic;
 using Leaf2Google.Models.Car.Sessions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using Newtonsoft.Json.Linq;
 using NUglify.Helpers;
+using System.Text.Json.Nodes;
 
 namespace Leaf2Google.Controllers;
 
@@ -77,11 +77,11 @@ public class BaseController : Controller
             .Where(method => !method.Item1.IsNullOrWhiteSpace())
             .GroupBy(method => method.Item1);
 
-        var endpoints = new JObject();
+        var endpoints = new JsonObject();
 
         foreach (var group in res)
         {
-            var endpoint = new JObject();
+            var endpoint = new JsonObject();
 
             foreach (var item in group) endpoint.Add(item.Item2, Url.ActionLink(item.Item2, item.Item1));
 

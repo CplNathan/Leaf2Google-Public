@@ -2,7 +2,8 @@
 
 using Leaf2Google.Models.Google.Devices;
 using Leaf2Google.Models.Car.Sessions;
-using Newtonsoft.Json.Linq;
+using Leaf2Google.Json.Google;
+using System.Text.Json.Nodes;
 
 namespace Leaf2Google.Dependency.Google.Devices;
 
@@ -33,17 +34,17 @@ public class LockDevice : BaseDevice, IDevice
             if (lockStatus is not null && lockStatus.Success && batteryStatus is not null && batteryStatus.Success)
             {
                 success = lockStatus.Success && batteryStatus.Success;
-                vehicleLock.Locked = (string?)lockStatus.Data?.data.attributes.lockStatus == "locked";
-                vehicleLock.CapacityRemaining = (int?)batteryStatus.Data?.data.attributes.batteryLevel ??
+                vehicleLock.Locked = lockStatus.Data["data"]["attributes"]["lockStatus"].GetValue<string>() == "locked";
+                vehicleLock.CapacityRemaining = batteryStatus.Data["data"]["attributes"]["batteryLevel"].GetValue<int?>() ??
                                                 vehicleLock.CapacityRemaining;
-                vehicleLock.KillometersRemaining = (int?)batteryStatus.Data?.data.attributes.rangeHvacOff ??
+                vehicleLock.KillometersRemaining = batteryStatus.Data["data"]["attributes"]["rangeHvacOff"].GetValue<int?>() ??
                                                    vehicleLock.KillometersRemaining;
-                vehicleLock.KillowatCapacity = (int?)batteryStatus.Data?.data.attributes.batteryCapacity / 1000 ??
+                vehicleLock.KillowatCapacity = batteryStatus.Data["data"]["attributes"]["batteryCapacity"].GetValue<int?>() / 1000 ??
                                                vehicleLock.KillowatCapacity;
-                vehicleLock.MinutesTillFull = (int?)batteryStatus.Data?.data.attributes.timeRequiredToFullFast ??
+                vehicleLock.MinutesTillFull = batteryStatus.Data["data"]["attributes"]["timeRequiredToFullFast"].GetValue<int?>() ??
                                               vehicleLock.MinutesTillFull;
-                vehicleLock.IsCharging = (bool?)batteryStatus.Data?.data.attributes.chargeStatus ?? false;
-                vehicleLock.IsPluggedIn = (bool?)batteryStatus.Data?.data.attributes.plugStatus ?? false;
+                vehicleLock.IsCharging = Convert.ToBoolean(batteryStatus.Data["data"]["attributes"]["chargeStatus"].GetValue<int?>() ?? 0);
+                vehicleLock.IsPluggedIn = Convert.ToBoolean(batteryStatus.Data["data"]["attributes"]["plugStatus"].GetValue<int?>() ?? 0);
                 vehicleLock.LastUpdated = DateTime.UtcNow;
                 vehicleLock.Location = location.IsEmpty ? null : location;
             }
@@ -56,15 +57,16 @@ public class LockDevice : BaseDevice, IDevice
         return success;
     }
 
-    public async Task<JObject> QueryAsync(VehicleSessionBase session, string? vin)
+    public async Task<QueryDeviceData> QueryAsync(VehicleSessionBase session, string? vin)
     {
         if (!session.Authenticated)
         {
-            return new JObject
+            return new QueryDeviceData
             {
-                { "online", false },
+                online = false,
+                status = "ERROR"
 
-                /* Custom Syntax, also need to implement */
+                /* Custom Syntax, also need to implement 
                 {
                     "errors", new JObject
                     {
@@ -72,6 +74,7 @@ public class LockDevice : BaseDevice, IDevice
                         { "errorCode", "authFailure" }
                     }
                 }
+                */
             };
         }
 
@@ -94,75 +97,44 @@ public class LockDevice : BaseDevice, IDevice
 
         var currentKillowat = vehicleLock.KillowatCapacity * (vehicleLock.CapacityRemaining / 100);
 
-        return new JObject
+        return new LockDeviceData
         {
-            { "status", "SUCCESS" },
-            { "online", success },
-            { "descriptiveCapacityRemaining", descriptiveCapacity },
+
+            status = "SUCCESS",
+            online = success,
+            descriptiveCapacityRemaining = descriptiveCapacity,
+            capacityRemaining = new List<ValueUnit>()
             {
-                "capacityRemaining", new JArray
-                {
-                    new JObject
-                    {
-                        { "rawValue", vehicleLock.CapacityRemaining },
-                        { "unit", "PERCENTAGE" }
-                    },
-                    new JObject
-                    {
-                        { "rawValue", vehicleLock.KillometersRemaining },
-                        { "unit", "KILOMETERS" }
-                    },
-                    new JObject
-                    {
-                        { "rawValue", vehicleLock.KillometersRemaining / 1.609 },
-                        { "unit", "MILES" }
-                    },
-                    new JObject
-                    {
-                        { "rawValue", currentKillowat },
-                        { "unit", "KILOWATT_HOURS" }
-                    }
-                }
+                new ValueUnit() { rawValue = vehicleLock.CapacityRemaining, unit = "PERCENTAGE" },
+                new ValueUnit() { rawValue = vehicleLock.KillometersRemaining, unit = "KILOMETERS" },
+                new ValueUnit() { rawValue = (int)(vehicleLock.KillometersRemaining / 1.609), unit = "MILES" }
+                //new ValueUnit() { rawValue = currentKillowat, unit = "KILOWATT_HOURS" }
             },
+            capacityUntilFull = new List<ValueUnit>()
             {
-                "capacityUntilFull", new JArray
-                {
-                    new JObject
-                    {
-                        { "rawValue", vehicleLock.MinutesTillFull * 60 },
-                        { "unit", "SECONDS" }
-                    },
-                    new JObject
-                    {
-                        { "rawValue", vehicleLock.KillowatCapacity - currentKillowat },
-                        { "unit", "KILOWATT_HOURS" }
-                    }
-                }
+                new ValueUnit() { rawValue = (vehicleLock.MinutesTillFull * 60), unit = "SECONDS" }
+                //new ValueUnit() { rawValue = (vehicleLock.KillowatCapacity - currentKillowat), unit = "KILOWATT_HOURS" }
             },
-            { "isCharging", vehicleLock.IsCharging },
-            { "isPluggedIn", vehicleLock.IsPluggedIn },
-            { "isLocked", vehicleLock.Locked },
-            { "isJammed", false }
+            isCharging = vehicleLock.IsCharging,
+            isPluggedIn = vehicleLock.IsPluggedIn,
+            isLocked = vehicleLock.Locked,
+            isJammed = false
         };
     }
 
-    public async Task<JObject> ExecuteAsync(VehicleSessionBase session, string? vin, JObject data)
+    public async Task<ExecuteDeviceData> ExecuteAsync(VehicleSessionBase session, string? vin, JsonObject data)
     {
         var vehicleLock = (LockModel)(StorageManager.GoogleSessions)[session.SessionId][typeof(LockDevice)];
 
         if (!session.Authenticated)
         {
-            return new JObject
+            return new ExecuteDeviceDataError
             {
-                { "online", false },
-
-                /* Custom Syntax, also need to implement */
+                status = "ERROR",
+                errorCode = "authFailure",
+                states = new JsonObject()
                 {
-                    "errors", new JObject
-                    {
-                        { "status", "FAILURE" },
-                        { "errorCode", "authFailure" }
-                    }
+                    { "online", false },
                 }
             };
         }
@@ -183,20 +155,16 @@ public class LockDevice : BaseDevice, IDevice
             var success = false;
             if (lockStatus is not null && lockStatus.Success) success = lockStatus.Success;
 
-            return new JObject
+            return new ExecuteDeviceDataError
             {
-                { "online", success },
-                { "isLocked", vehicleLock.Locked },
-                { "isJammed", true /* Need to investigate Secure Remote Protocol (SRP) */ },
-
-                /* Custom Syntax, also need to implement */
+                status = "ERROR",
+                errorCode = "remoteSetDisabled",
+                errorCodeReason = "remoteUnlockNotAllowed",
+                states = new JsonObject()
                 {
-                    "errors", new JObject
-                    {
-                        { "status", "FAILURE" },
-                        { "errorCode", "remoteSetDisabled" },
-                        { "errorCodeReason", "remoteUnlockNotAllowed" }
-                    }
+                    { "online", success },
+                    { "isLocked", vehicleLock.Locked },
+                    { "isJammed", true }
                 }
             };
         }
@@ -205,6 +173,6 @@ public class LockDevice : BaseDevice, IDevice
             throw new NotImplementedException($"Command: {(string?)data.Root["command"]} is not implemented");
         }
 
-        return new JObject();
+        return null;
     }
 }
