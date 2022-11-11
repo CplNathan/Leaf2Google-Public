@@ -73,11 +73,6 @@ if (!app.Environment.IsDevelopment())
 
 app.UseWebOptimizer();
 
-app.UseWhen(
-    ctx => ctx.Request.Path.StartsWithSegments("/google"),
-    ab => ab.UseMiddleware<EnableRequestBodyBufferingMiddleware>()
-);
-
 app.UseStaticFiles();
 
 app.UseRouting();

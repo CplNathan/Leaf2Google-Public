@@ -2,6 +2,7 @@
 using System.Net;
 using System.Text;
 using Leaf2Google.Models.Car.Sessions;
+using Leaf2Google.Models.Json.Nissan;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -348,7 +349,7 @@ public class LeafSessionManager : BaseSessionManager, ICarSessionManager
             }
         };
 
-        var response = await MakeRequest(session, httpRequestMessage, Configuration["Nissan:EU:user_base_url"]);
+        var response = await MakeRequest<CarInfo>(session, httpRequestMessage, Configuration["Nissan:EU:user_base_url"]);
 
         return response;
     }

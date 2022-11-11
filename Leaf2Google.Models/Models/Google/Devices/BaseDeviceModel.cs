@@ -3,9 +3,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Nodes;
+using Leaf2Google.Json.Google;
 using Newtonsoft.Json.Linq;
 
-namespace Leaf2Google.Models.Google.Devices {
+namespace Leaf2Google.Models.Google.Devices
+{
 
     public abstract class BaseDeviceModel
     {
@@ -27,19 +30,18 @@ namespace Leaf2Google.Models.Google.Devices {
 
         protected List<string> traits { get; set; }
 
-        public JArray Traits
+        public List<string> Traits
         {
-            get { return JArray.FromObject(traits.Select(trait => $"action.devices.traits.{trait}")); }
-            set => traits = value.ToObject<List<string>>() ?? traits;
+            get { return traits.Select(trait => $"action.devices.traits.{trait}").ToList(); }
         }
 
         public string Name { get; set; } = string.Empty;
 
         public bool WillReportState { get; set; }
 
-        public JObject Attributes { get; set; }
+        public JsonObject Attributes { get; set; }
 
-        public JObject DeviceInfo { get; set; }
+        public JsonObject DeviceInfo { get; set; }
 
         private List<string> _supportedCommands { get; } = new List<string>();
 
@@ -57,31 +59,31 @@ namespace Leaf2Google.Models.Google.Devices {
 
         public bool WillFetch => DateTime.UtcNow - LastUpdated > TimeSpan.FromMinutes(1);
 
-        public virtual JObject Sync()
+        public virtual JsonObject Sync()
         {
-            return new JObject
-        {
-            { "id", Id },
-            { "type", Type },
-            { "traits", Traits },
+            return new JsonObject
             {
-                "name", new JObject
+                { "id", Id },
+                { "type", Type },
+                { "traits", JsonValue.Create(Traits) },
                 {
-                    { "name", Name }
-                }
-            },
-            { "willReportState", WillReportState },
-            { "attributes", Attributes },
-            {
-                "deviceInfo", new JObject
+                    "name", new JsonObject
+                    {
+                        { "name", Name }
+                    }
+                },
+                { "willReportState", WillReportState },
+                { "attributes", Attributes },
                 {
-                    { "manufacturer", "Nathan Leaf2Google" },
-                    { "model", "Nissan Leaf" },
-                    { "hwVersion", "1.0" },
-                    { "swVersion", "1.0" }
+                    "deviceInfo", new JsonObject
+                    {
+                        { "manufacturer", "Nathan Leaf2Google" },
+                        { "model", "Nissan Leaf" },
+                        { "hwVersion", "1.0" },
+                        { "swVersion", "1.0" }
+                    }
                 }
-            }
-        };
+            };
         }
     }
 }

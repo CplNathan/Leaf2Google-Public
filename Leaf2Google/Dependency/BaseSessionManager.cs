@@ -122,7 +122,14 @@ public abstract class BaseSessionManager
         }
     }
 
+    [Obsolete]
     protected async Task<Response?> MakeRequest(VehicleSessionBase session, HttpRequestMessage httpRequestMessage,
+        string baseUri = "")
+    {
+        return await MakeRequest<JsonObjectAttribute>(session, httpRequestMessage, baseUri);
+    }
+
+    protected async Task<Response?> MakeRequest<T>(VehicleSessionBase session, HttpRequestMessage httpRequestMessage,
         string baseUri = "")
     {
         var success = true;
@@ -135,7 +142,7 @@ public abstract class BaseSessionManager
                     $"{(string.IsNullOrEmpty(baseUri) ? Configuration["Nissan:EU:auth_base_url"] : baseUri)}{httpRequestMessage.RequestUri?.ToString() ?? ""}");
             httpRequestMessage.Headers.Add("User-Agent", "NissanConnect/2 CFNetwork/978.0.7 Darwin/18.7.0");
 
-            result = await Client.MakeRequest(httpRequestMessage);
+            result = await Client.MakeRequest<T>(httpRequestMessage);
 
             if (result?.Code != (int)HttpStatusCode.OK && result?.Code != (int)HttpStatusCode.Found)
                 success = false;

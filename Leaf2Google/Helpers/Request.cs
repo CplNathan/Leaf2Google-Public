@@ -1,11 +1,12 @@
-﻿using System.Net.Http.Headers;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
+using System.Net.Http.Headers;
+using System.Text.Json;
 
 namespace Leaf2Google.Helpers;
 
 public static class Request
 {
-    public static async Task<Response> MakeRequest(this HttpClient client, HttpRequestMessage httpRequestMessage)
+    public static async Task<Response> MakeRequest<T>(this HttpClient client, HttpRequestMessage httpRequestMessage)
     {
         var httpResponseMessage = await client.SendAsync(httpRequestMessage);
 
@@ -15,6 +16,7 @@ public static class Request
 
         Console.WriteLine(httpResponseBody);
 
+        //JsonSerializer.Deserialize<T>(httpResponseBody);
         return new Response(httpResponseMessage.IsSuccessStatusCode,
             JsonConvert.DeserializeObject<dynamic>(httpResponseBody), httpResponseMessage.Headers,
             (int)httpResponseMessage.StatusCode);

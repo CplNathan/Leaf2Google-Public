@@ -2,7 +2,8 @@
 
 using Leaf2Google.Models.Google.Devices;
 using Leaf2Google.Models.Car.Sessions;
-using Newtonsoft.Json.Linq;
+using Leaf2Google.Json.Google;
+using System.Text.Json.Nodes;
 
 namespace Leaf2Google.Dependency.Google.Devices;
 
@@ -56,15 +57,16 @@ public class LockDevice : BaseDevice, IDevice
         return success;
     }
 
-    public async Task<JObject> QueryAsync(VehicleSessionBase session, string? vin)
+    public async Task<QueryDeviceData> QueryAsync(VehicleSessionBase session, string? vin)
     {
         if (!session.Authenticated)
         {
-            return new JObject
+            return new QueryDeviceData
             {
-                { "online", false },
+                online = false,
+                status = "ERROR"
 
-                /* Custom Syntax, also need to implement */
+                /* Custom Syntax, also need to implement 
                 {
                     "errors", new JObject
                     {
@@ -72,6 +74,7 @@ public class LockDevice : BaseDevice, IDevice
                         { "errorCode", "authFailure" }
                     }
                 }
+                */
             };
         }
 
@@ -94,75 +97,44 @@ public class LockDevice : BaseDevice, IDevice
 
         var currentKillowat = vehicleLock.KillowatCapacity * (vehicleLock.CapacityRemaining / 100);
 
-        return new JObject
+        return new LockDeviceData
         {
-            { "status", "SUCCESS" },
-            { "online", success },
-            { "descriptiveCapacityRemaining", descriptiveCapacity },
+
+            status = "SUCCESS",
+            online = success,
+            descriptiveCapacityRemaining = descriptiveCapacity,
+            capacityRemaining = new List<ValueUnit>()
             {
-                "capacityRemaining", new JArray
-                {
-                    new JObject
-                    {
-                        { "rawValue", vehicleLock.CapacityRemaining },
-                        { "unit", "PERCENTAGE" }
-                    },
-                    new JObject
-                    {
-                        { "rawValue", vehicleLock.KillometersRemaining },
-                        { "unit", "KILOMETERS" }
-                    },
-                    new JObject
-                    {
-                        { "rawValue", vehicleLock.KillometersRemaining / 1.609 },
-                        { "unit", "MILES" }
-                    },
-                    new JObject
-                    {
-                        { "rawValue", currentKillowat },
-                        { "unit", "KILOWATT_HOURS" }
-                    }
-                }
+                new ValueUnit() { rawValue = vehicleLock.CapacityRemaining, unit = "PERCENTAGE" },
+                new ValueUnit() { rawValue = vehicleLock.KillometersRemaining, unit = "KILOMETERS" },
+                new ValueUnit() { rawValue = (int)(vehicleLock.KillometersRemaining / 1.609), unit = "MILES" }
+                //new ValueUnit() { rawValue = currentKillowat, unit = "KILOWATT_HOURS" }
             },
+            capacityUntilFull = new List<ValueUnit>()
             {
-                "capacityUntilFull", new JArray
-                {
-                    new JObject
-                    {
-                        { "rawValue", vehicleLock.MinutesTillFull * 60 },
-                        { "unit", "SECONDS" }
-                    },
-                    new JObject
-                    {
-                        { "rawValue", vehicleLock.KillowatCapacity - currentKillowat },
-                        { "unit", "KILOWATT_HOURS" }
-                    }
-                }
+                new ValueUnit() { rawValue = (vehicleLock.MinutesTillFull * 60), unit = "SECONDS" }
+                //new ValueUnit() { rawValue = (vehicleLock.KillowatCapacity - currentKillowat), unit = "KILOWATT_HOURS" }
             },
-            { "isCharging", vehicleLock.IsCharging },
-            { "isPluggedIn", vehicleLock.IsPluggedIn },
-            { "isLocked", vehicleLock.Locked },
-            { "isJammed", false }
+            isCharging = vehicleLock.IsCharging,
+            isPluggedIn = vehicleLock.IsPluggedIn,
+            isLocked = vehicleLock.Locked,
+            isJammed = false
         };
     }
 
-    public async Task<JObject> ExecuteAsync(VehicleSessionBase session, string? vin, JObject data)
+    public async Task<ExecuteDeviceData> ExecuteAsync(VehicleSessionBase session, string? vin, JsonObject data)
     {
         var vehicleLock = (LockModel)(StorageManager.GoogleSessions)[session.SessionId][typeof(LockDevice)];
 
         if (!session.Authenticated)
         {
-            return new JObject
+            return new ExecuteDeviceDataError
             {
-                { "online", false },
-
-                /* Custom Syntax, also need to implement */
+                status = "ERROR",
+                errorCode = "authFailure",
+                states = new JsonObject()
                 {
-                    "errors", new JObject
-                    {
-                        { "status", "FAILURE" },
-                        { "errorCode", "authFailure" }
-                    }
+                    { "online", false },
                 }
             };
         }
@@ -183,20 +155,16 @@ public class LockDevice : BaseDevice, IDevice
             var success = false;
             if (lockStatus is not null && lockStatus.Success) success = lockStatus.Success;
 
-            return new JObject
+            return new ExecuteDeviceDataError
             {
-                { "online", success },
-                { "isLocked", vehicleLock.Locked },
-                { "isJammed", true /* Need to investigate Secure Remote Protocol (SRP) */ },
-
-                /* Custom Syntax, also need to implement */
+                status = "ERROR",
+                errorCode = "remoteSetDisabled",
+                errorCodeReason = "remoteUnlockNotAllowed",
+                states = new JsonObject()
                 {
-                    "errors", new JObject
-                    {
-                        { "status", "FAILURE" },
-                        { "errorCode", "remoteSetDisabled" },
-                        { "errorCodeReason", "remoteUnlockNotAllowed" }
-                    }
+                    { "online", success },
+                    { "isLocked", vehicleLock.Locked },
+                    { "isJammed", true }
                 }
             };
         }
@@ -205,6 +173,6 @@ public class LockDevice : BaseDevice, IDevice
             throw new NotImplementedException($"Command: {(string?)data.Root["command"]} is not implemented");
         }
 
-        return new JObject();
+        return null;
     }
 }

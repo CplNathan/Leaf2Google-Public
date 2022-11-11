@@ -3,6 +3,7 @@
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Text.Json.Nodes;
 
 namespace Leaf2Google.Models.Google.Devices
 {
@@ -15,12 +16,12 @@ namespace Leaf2Google.Models.Google.Devices
             type = "LOCK";
             traits = new List<string> { "LockUnlock", "Locator", "EnergyStorage" };
             WillReportState = true;
-            Attributes = new JObject
-        {
-            { "isRechargeable", true },
-            { "queryOnlyEnergyStorage", true /* TODO: implement */ },
-            { "energyStorageDistanceUnitForUX", "MILES" }
-        };
+            Attributes = new JsonObject()
+            {
+                { "isRechargeable", true },
+                { "queryOnlyEnergyStorage", true /* TODO: implement */ },
+                { "energyStorageDistanceUnitForUX", "MILES" }
+            };
 
             SupportedCommands = new List<string> { "LockUnlock", "Locate" };
         }

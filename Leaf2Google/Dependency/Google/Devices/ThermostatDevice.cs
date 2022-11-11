@@ -2,7 +2,8 @@
 
 using Leaf2Google.Models.Google.Devices;
 using Leaf2Google.Models.Car.Sessions;
-using Newtonsoft.Json.Linq;
+using Leaf2Google.Json.Google;
+using System.Text.Json.Nodes;
 
 namespace Leaf2Google.Dependency.Google.Devices;
 
@@ -42,15 +43,16 @@ public class ThermostatDevice : BaseDevice, IDevice
         return success;
     }
 
-    public async Task<JObject> QueryAsync(VehicleSessionBase session, string? vin)
+    public async Task<QueryDeviceData> QueryAsync(VehicleSessionBase session, string? vin)
     {
         if (!session.Authenticated)
         {
-            return new JObject
+            return new QueryDeviceData
             {
-                { "online", false },
+                online = false,
+                status = "ERROR"
 
-                /* Custom Syntax, also need to implement */
+                /* Custom Syntax, also need to implement 
                 {
                     "errors", new JObject
                     {
@@ -58,6 +60,7 @@ public class ThermostatDevice : BaseDevice, IDevice
                         { "errorCode", "authFailure" }
                     }
                 }
+                */
             };
         }
 
@@ -65,31 +68,27 @@ public class ThermostatDevice : BaseDevice, IDevice
 
         var vehicleThermostat = (ThermostatModel)(StorageManager.GoogleSessions)[session.SessionId][typeof(ThermostatDevice)];
 
-        return new JObject
+        return new ThermostatDeviceData
         {
-            { "status", "SUCCESS" },
-            { "online", success },
-            { "thermostatMode", vehicleThermostat.Active ? "heatcool" : "off" },
-            { "thermostatTemperatureSetpoint", vehicleThermostat.Target },
-            { "thermostatTemperatureAmbient", vehicleThermostat.LastTemperature }
+            status = "SUCCESS",
+            online = success,
+            thermostatMode = vehicleThermostat.Active ? "heatcool" : "off",
+            thermostatTemperatureSetpoint = vehicleThermostat.Target,
+            thermostatTemperatureAmbient = vehicleThermostat.LastTemperature
         };
     }
 
-    public async Task<JObject> ExecuteAsync(VehicleSessionBase session, string? vin, JObject data)
+    public async Task<ExecuteDeviceData> ExecuteAsync(VehicleSessionBase session, string? vin, JsonObject data)
     {
         if (!session.Authenticated)
         {
-            return new JObject
+            return new ExecuteDeviceDataError
             {
-                { "online", false },
-
-                /* Custom Syntax, also need to implement */
+                status = "ERROR",
+                errorCode = "authFailure",
+                states = new JsonObject()
                 {
-                    "errors", new JObject
-                    {
-                        { "status", "FAILURE" },
-                        { "errorCode", "authFailure" }
-                    }
+                    { "online", false },
                 }
             };
         }
@@ -109,12 +108,16 @@ public class ThermostatDevice : BaseDevice, IDevice
 
         await QueryAsync(session, vin).ConfigureAwait(false);
 
-        return new JObject
+        return new ExecuteDeviceDataSuccess()
         {
-            { "online", success },
-            { "thermostatMode", vehicleThermostat.Active ? "heatcool" : "off" },
-            { "thermostatTemperatureSetpoint", vehicleThermostat.Target },
-            { "thermostatTemperatureAmbient", vehicleThermostat.LastTemperature }
+            status = "SUCCESS",
+            states = new JsonObject()
+            {
+                { "online", success },
+                { "thermostatMode", vehicleThermostat.Active ? "heatcool" : "off" },
+                { "thermostatTemperatureSetpoint", vehicleThermostat.Target },
+                { "thermostatTemperatureAmbient", vehicleThermostat.LastTemperature }
+            }
         };
     }
 }

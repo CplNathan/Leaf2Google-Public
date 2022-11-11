@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. Thermostat.cs
 
 using System.Collections.Generic;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Newtonsoft.Json.Linq;
 
 namespace Leaf2Google.Models.Google.Devices
@@ -14,21 +16,21 @@ namespace Leaf2Google.Models.Google.Devices
             type = "THERMOSTAT";
             traits = new List<string> { "TemperatureSetting" };
             WillReportState = true;
-            Attributes = new JObject
+            Attributes = new JsonObject()
         {
             {
-                "availableThermostatModes", new JArray
+                "availableThermostatModes", JsonValue.Create(new List<string>()
                 {
                     "off",
                     "heatcool"
-                }
+                })
             },
             {
-                "thermostatTemperatureRange", new JObject
+                "thermostatTemperatureRange", JsonValue.Create(new Dictionary<string, int>()
                 {
                     { "minThresholdCelsius", 16 },
                     { "maxThresholdCelsius", 26 }
-                }
+                })
             },
             { "thermostatTemperatureUnit", "C" },
             { "bufferRangeCelsius", 0 }
