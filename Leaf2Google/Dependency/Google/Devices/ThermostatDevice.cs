@@ -78,7 +78,7 @@ public class ThermostatDevice : BaseDevice, IDevice
         };
     }
 
-    public async Task<ExecuteDeviceData> ExecuteAsync(VehicleSessionBase session, string? vin, JsonObject data)
+    public async Task<ExecuteDeviceData> ExecuteAsync(VehicleSessionBase session, string? vin, string command, JsonObject data)
     {
         if (!session.Authenticated)
         {

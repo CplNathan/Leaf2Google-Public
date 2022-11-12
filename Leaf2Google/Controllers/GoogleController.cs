@@ -140,10 +140,11 @@ public class GoogleController : BaseController
                                     var deviceType = device.Key;
                                     var deviceData = Devices.FirstOrDefault(x => x.GetType() == deviceType);
 
+                                    var parsedCommand = execution.command.Split("action.devices.commands.")[1];
+
                                     if (deviceData != null)
                                     {
-                                        updatedStatesTask.Add(device.Value.Id, deviceData.ExecuteAsync(leafSession,
-                                            leafSession.PrimaryVin, execution._params));
+                                        updatedStatesTask.Add(device.Value.Id, deviceData.ExecuteAsync(leafSession, leafSession.PrimaryVin, parsedCommand, execution._params));
                                     }
                                 }
 

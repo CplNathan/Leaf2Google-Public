@@ -79,6 +79,8 @@ namespace Leaf2Google.Json.Google
         public string unit { get; set; }
     }
 
+    [JsonDerivedType(typeof(ExecuteDeviceDataSuccess))]
+    [JsonDerivedType(typeof(ExecuteDeviceDataError))]
     public class ExecuteDeviceData
     {
         public List<string> ids { get; set; }

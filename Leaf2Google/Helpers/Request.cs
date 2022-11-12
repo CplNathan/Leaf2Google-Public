@@ -5,7 +5,7 @@ namespace Leaf2Google.Helpers;
 
 public static class Request
 {
-    public static async Task<Response<T>> MakeRequest<T>(this HttpClient client, HttpRequestMessage httpRequestMessage)
+    public static async Task<Response<T?>> MakeRequest<T>(this HttpClient client, HttpRequestMessage httpRequestMessage)
     {
         var httpResponseMessage = await client.SendAsync(httpRequestMessage);
 
@@ -15,7 +15,7 @@ public static class Request
 
         Console.WriteLine(httpResponseBody);
 
-        T jsonResult = default(T);
+        T? jsonResult = default(T);
 
         try
         {
@@ -27,7 +27,7 @@ public static class Request
             Console.WriteLine(ex.Message);
         }
 
-        return new Response<T>(httpResponseMessage.IsSuccessStatusCode,
+        return new Response<T?>(httpResponseMessage.IsSuccessStatusCode,
             jsonResult, httpResponseMessage.Headers,
             (int)httpResponseMessage.StatusCode);
     }

@@ -122,7 +122,7 @@ public class LockDevice : BaseDevice, IDevice
         };
     }
 
-    public async Task<ExecuteDeviceData> ExecuteAsync(VehicleSessionBase session, string? vin, JsonObject data)
+    public async Task<ExecuteDeviceData> ExecuteAsync(VehicleSessionBase session, string? vin, string command, JsonObject data)
     {
         var vehicleLock = (LockModel)(StorageManager.GoogleSessions)[session.SessionId][typeof(LockDevice)];
 
@@ -139,40 +139,46 @@ public class LockDevice : BaseDevice, IDevice
             };
         }
 
-        if ((string?)data.Root["command"] == "action.devices.commands.Locate" &&
-            ((bool?)data["silence"] ?? false) == false)
+        switch (command)
         {
-            await SessionManager.FlashLights(session, vin).ConfigureAwait(false);
-        }
-        else if ((string?)data.Root["command"] == "action.devices.commands.LockUnlock")
-        {
-            vehicleLock.Locked = data.ContainsKey("lock")
-                ? (bool?)data["lock"] ?? vehicleLock.Locked
-                : vehicleLock.Locked;
-
-            var lockStatus = await SessionManager.SetVehicleLock(session, vin, vehicleLock.Locked);
-
-            var success = false;
-            if (lockStatus is not null && lockStatus.Success) success = lockStatus.Success;
-
-            return new ExecuteDeviceDataError
-            {
-                status = "ERROR",
-                errorCode = "remoteSetDisabled",
-                errorCodeReason = "remoteUnlockNotAllowed",
-                states = new JsonObject()
+            case "Locate":
                 {
-                    { "online", success },
-                    { "isLocked", vehicleLock.Locked },
-                    { "isJammed", true }
+                    var locateStatus = await SessionManager.FlashLights(session, vin);
+                    return new ExecuteDeviceDataSuccess()
+                    {
+                        status = locateStatus.Success ? "SUCCESS" : "ERROR",
+                        states = new JsonObject()
+                        {
+                            { "online", locateStatus.Success }
+                        }
+                    };
                 }
-            };
-        }
-        else
-        {
-            throw new NotImplementedException($"Command: {(string?)data.Root["command"]} is not implemented");
-        }
+            case "LockUnlock":
+                {
+                    vehicleLock.Locked = data.ContainsKey("lock")
+                        ? (bool?)data["lock"] ?? vehicleLock.Locked
+                        : vehicleLock.Locked;
 
-        return null;
+                    var lockStatus = await SessionManager.SetVehicleLock(session, vin, vehicleLock.Locked);
+
+                    var success = false;
+                    if (lockStatus is not null && lockStatus.Success) success = lockStatus.Success;
+
+                    return new ExecuteDeviceDataError
+                    {
+                        status = "ERROR",
+                        errorCode = "remoteSetDisabled",
+                        errorCodeReason = "remoteUnlockNotAllowed",
+                        states = new JsonObject()
+                        {
+                            { "online", success },
+                            { "isLocked", vehicleLock.Locked },
+                            { "isJammed", true }
+                        }
+                    };
+                }
+            default:
+                throw new NotImplementedException($"Command: {(string?)data.Root["command"]} is not implemented");
+        }
     }
 }

@@ -10,7 +10,7 @@ namespace Leaf2Google.Dependency.Google.Devices;
 public interface IDevice
 {
     public Task<QueryDeviceData> QueryAsync(VehicleSessionBase session, string? vin);
-    public Task<ExecuteDeviceData> ExecuteAsync(VehicleSessionBase session, string? vin, JsonObject data);
+    public Task<ExecuteDeviceData> ExecuteAsync(VehicleSessionBase session, string? vin, string command, JsonObject data);
     public Task<bool> FetchAsync(VehicleSessionBase session, string? vin, bool forceFetch = false);
 }
 

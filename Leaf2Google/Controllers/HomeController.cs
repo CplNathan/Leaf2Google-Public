@@ -9,6 +9,7 @@ using Leaf2Google.Models.Generic;
 using Leaf2Google.Models.Google;
 using Leaf2Google.Models.Google.Devices;
 using Microsoft.AspNetCore.Mvc;
+using Leaf2Google.Models.Car.Sessions;
 
 namespace Leaf2Google.Controllers;
 
@@ -39,7 +40,7 @@ public class HomeController : BaseController
     {
         ReloadViewBag();
 
-        var session = StorageManager.VehicleSessions.GetValueOrDefault(SessionId ?? Guid.Empty);
+        VehicleSessionBase? session = StorageManager.VehicleSessions.GetValueOrDefault(SessionId ?? Guid.Empty);
 
         if (session == null || !StorageManager.GoogleSessions.ContainsKey(session.SessionId))
         {
@@ -49,22 +50,24 @@ public class HomeController : BaseController
             });
         }
 
+        VehicleSessionBase activeSession = session!;
+
         if (!session?.Authenticated ?? false)
-            await SessionManager.Login(session);
+            await SessionManager.Login(session!);
 
 
         foreach (var device in Devices)
         {
-            await device.FetchAsync(session, session.PrimaryVin);
+            await device.FetchAsync(activeSession, activeSession.PrimaryVin);
         }
 
-        var carThermostat = (ThermostatModel?)(StorageManager.GoogleSessions)[session.SessionId][typeof(ThermostatDevice)];
-        var carLock = (LockModel?)(StorageManager.GoogleSessions)[session.SessionId][typeof(LockDevice)];
-        PointF? location = StorageManager.VehicleSessions[session.SessionId].LastLocation.Item2;
+        var carThermostat = (ThermostatModel?)(StorageManager.GoogleSessions)[activeSession.SessionId][typeof(ThermostatDevice)];
+        var carLock = (LockModel?)(StorageManager.GoogleSessions)[activeSession.SessionId][typeof(LockDevice)];
+        PointF? location = StorageManager.VehicleSessions[activeSession.SessionId].LastLocation.Item2;
 
         return View("IndexUser", new CarViewModel
         {
-            car = await StorageManager.UserStorage.GetUser(SessionId ?? Guid.Empty) ?? new CarModel(),
+            car = await StorageManager.UserStorage.GetUser(activeSession.SessionId) ?? new CarModel(),
             carLock = carLock,
             carThermostat = carThermostat,
             carLocation = location
