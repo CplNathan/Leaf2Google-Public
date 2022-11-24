@@ -1,105 +1,121 @@
 using Leaf2Google.Controllers;
-using Leaf2Google.Dependency.Car;
-using Leaf2Google.Dependency.Google;
-using Leaf2Google.Dependency.Google.Devices;
-using Leaf2Google.Dependency.Helpers;
+using Leaf2Google.Services.Car;
+using Leaf2Google.Services.Google;
+using Leaf2Google.Services.Google.Devices;
+using Leaf2Google.Services.Helpers;
 using Leaf2Google.Entities.Security;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Leaf2Google.Controllers.API;
 
-var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-builder.Services.AddControllersWithViews();
-builder.Services.AddDbContext<LeafContext>(options => options
-    //.UseLazyLoadingProxies()
-    .UseSqlServer(builder.Configuration[$"ConnectionStrings:{(builder.Environment.IsDevelopment() ? "Test" : "Live")}"])
-);
-builder.Services.AddHttpClient<BaseController>(c =>
+namespace Leaf2Google.Blazor
 {
-    //c.BaseAddress = new Uri(builder.Configuration["Nissan:EU:auth_base_url"]);
-});
+    public class Program
+    {
+        public static async Task Main(string[] args)
+        {
+            var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddFido2(options =>
-{
-    options.ServerDomain = builder.Environment.IsDevelopment() ? "localhost" : builder.Configuration["fido2:serverDomain"];
-    options.ServerName = "Leaf2Google";
-    options.Origins = builder.Configuration.GetSection("fido2:origins").Get<HashSet<string>>();
-    options.TimestampDriftTolerance = builder.Configuration.GetValue<int>("fido2:timestampDriftTolerance");
-    options.MDSCacheDirPath = builder.Configuration["fido2:MDSCacheDirPath"];
-});
+            // Add services to the container.
+            builder.Services.AddControllersWithViews();
+            builder.Services.AddRazorPages();
 
-builder.Services.AddSingleton<SessionStorageContainer>();
+            builder.Services.AddDbContext<LeafContext>(options => options
+                //.UseLazyLoadingProxies()
+                .UseSqlServer(builder.Configuration[$"ConnectionStrings:{(builder.Environment.IsDevelopment() ? "Test" : "Live")}"])
+            );
+            builder.Services.AddHttpClient<BaseController>(c =>
+            {
+                //c.BaseAddress = new Uri(builder.Configuration["Nissan:EU:auth_base_url"]);
+            });
 
-builder.Services.AddScoped<BaseStorageManager>();
-builder.Services.AddScoped<IUserStorage, UserStorage>();
+            builder.Services.AddFido2(options =>
+            {
+                options.ServerDomain = builder.Environment.IsDevelopment() ? "localhost" : builder.Configuration["fido2:serverDomain"];
+                options.ServerName = "Leaf2Google";
+                options.Origins = builder.Configuration.GetSection("fido2:origins").Get<HashSet<string>>();
+                options.TimestampDriftTolerance = builder.Configuration.GetValue<int>("fido2:timestampDriftTolerance");
+                options.MDSCacheDirPath = builder.Configuration["fido2:MDSCacheDirPath"];
+            });
 
-builder.Services.AddScoped<ICarSessionManager, LeafSessionManager>();
-builder.Services.AddScoped<GoogleStateManager>();
+            var jwtKey = builder.Configuration["jwt:key"] = Guid.NewGuid().ToString();
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateAudience = true,
+                    ValidAudience = builder.Environment.IsDevelopment() ? "localhost" : builder.Configuration["fido2:serverDomain"],
+                    ValidateIssuer = true,
+                    ValidIssuer = builder.Environment.IsDevelopment() ? "localhost" : builder.Configuration["fido2:serverDomain"],
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(jwtKey)) // Static value will allow sessions to persist accross restart
+                };
+            });
 
-builder.Services.AddScoped<IDevice, LockDevice>();
-builder.Services.AddScoped<IDevice, ThermostatDevice>();
+            builder.Services.AddSingleton<SessionStorageContainer>();
 
-builder.Services.AddTransient<Captcha>();
-builder.Services.AddTransient<LoggingManager>();
+            builder.Services.AddScoped<BaseStorageService>();
+            builder.Services.AddScoped<IUserStorage, UserStorage>();
 
-builder.Services.AddWebOptimizer(pipeline =>
-{
-    pipeline.MinifyCssFiles("css/**/*.css");
-    pipeline.MinifyJsFiles("js/**/*.js");
-    pipeline.AddCssBundle("/css/bundle.css", "lib/bootstrap/dist/css/bootstrap.min.css", "lib/bootstrap-icons/dist/css/bootstrap-icons.css", "css/**/*.css")
-    .MinifyCss();
-    pipeline.AddJavaScriptBundle("/js/bundle.js", "lib/jquery/dist/jquery.min.js", "lib/jquery-validation/dist/jquery.validate.min.js", "lib/bootstrap/dist/js/bootstrap.min.js", "js/Components/**/*.js", "js/Partials/**/*.js", "js/site.js");
-    pipeline.AddJavaScriptBundle("/js/components-bundle.js", "js/WebComponents/**/*.js");
-});
+            builder.Services.AddScoped<ICarSessionManager, LeafSessionService>();
+            builder.Services.AddScoped<GoogleStateService>();
 
-builder.Services.AddSession(options =>
-{
-    options.IdleTimeout = TimeSpan.FromMinutes(30);
-    options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true;
-});
+            builder.Services.AddScoped<IDevice, LockDeviceService>();
+            builder.Services.AddScoped<IDevice, ThermostatDeviceService>();
 
-var app = builder.Build();
+            builder.Services.AddTransient<Captcha>();
+            builder.Services.AddTransient<LoggingService>();
 
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
-    app.UseHttpsRedirection();
+            var app = builder.Build();
+
+            // Configure the HTTP request pipeline.
+            if (!app.Environment.IsDevelopment())
+            {
+                app.UseExceptionHandler("/Home/Error");
+                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+                app.UseHsts();
+                app.UseHttpsRedirection();
+            }
+            else
+            {
+                app.UseWebAssemblyDebugging();
+            }
+
+            app.UseBlazorFrameworkFiles();
+            app.UseStaticFiles();
+
+            app.UseAuthentication();
+
+            app.UseRouting();
+
+            app.MapRazorPages();
+            app.MapControllers();
+            app.MapFallbackToFile("index.html");
+
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+            });
+
+            app.UseAuthorization();
+
+            using (var scope = app.Services.CreateScope())
+            {
+                scope.ServiceProvider.GetRequiredService<LeafContext>().Database.Migrate();
+                await scope.ServiceProvider.GetRequiredService<ICarSessionManager>().StartAsync().ConfigureAwait(false);
+            }
+
+            await app.RunAsync();
+        }
+    }
 }
-
-app.UseWebOptimizer();
-
-app.UseStaticFiles();
-
-app.UseRouting();
-
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-});
-
-app.UseAuthorization();
-app.UseSession();
-
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
-
-using (var scope = app.Services.CreateScope())
-{
-    scope.ServiceProvider.GetRequiredService<LeafContext>().Database.Migrate();
-    await scope.ServiceProvider.GetRequiredService<ICarSessionManager>().StartAsync().ConfigureAwait(false);
-}
-
-app.Run();
 
 namespace Leaf2Google.Models.Security
 {
-
     public class StoredCredentialModel : StoredCredential
     {
         public byte[] CredentialId { get; set; }

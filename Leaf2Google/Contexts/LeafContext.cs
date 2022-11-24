@@ -13,22 +13,22 @@ public class LeafContext : DbContext
     {
     }
 
-    public DbSet<CarModel> NissanLeafs { get; set; }
+    public DbSet<CarEntity> NissanLeafs { get; set; }
 
-    public DbSet<StoredCredentialModel> SecurityKeys { get; set; }
+    public DbSet<StoredCredentialEntity> SecurityKeys { get; set; }
 
-    public DbSet<AuditModel> NissanAudits { get; set; }
+    public DbSet<AuditEntity> NissanAudits { get; set; }
 
-    public DbSet<AuthModel> GoogleAuths { get; set; }
+    public DbSet<AuthEntity> GoogleAuths { get; set; }
 
-    public DbSet<TokenModel> GoogleTokens { get; set; }
+    public DbSet<TokenEntity> GoogleTokens { get; set; }
 
-    public DbSet<ConfigModel> AppConfig { get; set; }
+    public DbSet<ConfigEntity> AppConfig { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder
-            .Entity<CarModel>()
+            .Entity<CarEntity>()
             .ToTable("t_leafs_leaf")
             .HasQueryFilter(q => q.Deleted == null)
             .Property(e => e.NissanPassword)
@@ -38,7 +38,7 @@ public class LeafContext : DbContext
             );
 
         modelBuilder
-            .Entity<StoredCredentialModel>()
+            .Entity<StoredCredentialEntity>()
             .ToTable("t_leafs_securitykey")
             .Ignore(s => s.Descriptor);
 
@@ -49,19 +49,19 @@ public class LeafContext : DbContext
             .HasKey(s => s.PublicKey);
 
         modelBuilder
-            .Entity<AuditModel>()
+            .Entity<AuditEntity>()
             .ToTable("t_leafs_audit");
 
         modelBuilder
-            .Entity<AuthModel>()
+            .Entity<AuthEntity>()
             .ToTable("t_auths_auth");
 
         modelBuilder
-            .Entity<TokenModel>()
+            .Entity<TokenEntity>()
             .ToTable("t_auths_token");
 
         modelBuilder
-            .Entity<ConfigModel>()
+            .Entity<ConfigEntity>()
             .ToTable("t_app_config");
     }
 }

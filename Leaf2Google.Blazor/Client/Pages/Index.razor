@@ -1,0 +1,72 @@
+﻿@page "/{SelectedVin?}"
+@using Leaf2Google.Models.Car
+@inject IRequestService RequestService
+@implements IDisposable
+@attribute [Authorize]
+
+<PageTitle>Home</PageTitle>
+
+<MapControl @ref="mapControl" MapData="@Map" />
+
+<div class="position-absolute bottom-0 mb-5">
+    <div class="position-relative">
+        <BatteryControl ChargeData="@Charge" />
+    </div>
+</div>
+
+@code {
+    /* Parameters */
+    [Parameter]
+    public string? SelectedVin { get; set; }
+
+    /* Controls */
+    private MapControl mapControl;
+
+    /* Control Objects */
+    public MapData Map { get; set; } = new();
+
+    public BatteryData Charge { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UpdateControls();
+        IAuthService.OnAuthentication += OnAuthenticationChanged;
+    }
+
+    protected async void OnAuthenticationChanged(object? sender, bool authenticated)
+    {
+        if (authenticated)
+        {
+            await UpdateControls();
+        }
+    }
+
+    protected async Task UpdateControls()
+    {
+        await UpdateMap().ConfigureAwait(false);
+        await UpdateBattery().ConfigureAwait(false);
+    }
+
+    protected async Task UpdateMap()
+    {
+        var carLocationTask = ((LeafRequestService)RequestService).GetLocation();
+        var carPhotoTask = ((LeafRequestService)RequestService).GetPhoto();
+
+        Map.CarLocation = await carLocationTask;
+        Map.CarPhoto = await carPhotoTask;
+
+        await mapControl.OnLocationChanged(this, new());
+    }
+
+    protected async Task UpdateBattery()
+    {
+        var batteryTask = ((LeafRequestService)RequestService).GetBattery();
+
+        Charge = await batteryTask ?? new();
+    }
+
+    public void Dispose()
+    {
+        IAuthService.OnAuthentication -= OnAuthenticationChanged;
+    }
+}

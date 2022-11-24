@@ -4,32 +4,64 @@ using Leaf2Google.Models.Generic;
 using Leaf2Google.Models.Car.Sessions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using NUglify.Helpers;
 using System.Text.Json.Nodes;
+using System.Security.Principal;
+using System.Security.Claims;
+using Microsoft.IdentityModel.JsonWebTokens;
+using System.Linq;
 
 namespace Leaf2Google.Controllers;
 
 public class BaseController : Controller
 {
-    public BaseController(BaseStorageManager storageManager)
+    public BaseController(BaseStorageService storageManager)
     {
         StorageManager = storageManager;
     }
 
-    protected BaseStorageManager StorageManager { get; }
+    protected ClaimsPrincipal AuthenticatedUser
+    {
+        get
+        {
+            return HttpContext.User;
+        }
+    }
+
+    protected IIdentity? AuthenticatedIdentity
+    {
+        get
+        {
+            return AuthenticatedUser.Identity;
+        }
+    }
+
+    protected VehicleSessionBase? AuthenticatedSession
+    {
+        get
+        {
+            var jtiClaim = AuthenticatedUser.FindFirst(JwtRegisteredClaimNames.Jti);
+
+            if (jtiClaim is null)
+                return null;
+
+            return StorageManager.VehicleSessions.FirstOrDefault(session => session.Key.ToString() == jtiClaim.Value).Value;
+        }
+    }
+
+    protected BaseStorageService StorageManager { get; }
 
     protected Guid? SessionId
     {
         get
         {
-            var sessionGuid = HttpContext.Session.GetString("SessionId");
+            var sessionGuid = "";
             Guid parsedGuid;
 
             var success = Guid.TryParse(sessionGuid, out parsedGuid);
 
             return success ? parsedGuid : null;
         }
-        set => HttpContext.Session.SetString("SessionId", value.HasValue ? value.Value.ToString() : "");
+        set { bool success = true; }
     }
 
     protected VehicleSessionBase? Session =>
@@ -37,75 +69,6 @@ public class BaseController : Controller
 
     protected string? SelectedVin
     {
-        get => HttpContext.Session.GetString("SelectedVin") ?? "";
-        set => HttpContext.Session.SetString("SelectedVin", value ?? "");
-    }
-
-    public bool RegisterViewComponentScript(string scriptPath)
-    {
-        var scripts = HttpContext.Items["ComponentScripts"] is HashSet<string>
-            ? HttpContext.Items["ComponentScripts"] as HashSet<string>
-            : new HashSet<string>();
-
-        var success = scripts?.Add(scriptPath);
-
-        HttpContext.Items["ComponentScripts"] = scripts;
-
-        return success ?? false;
-    }
-
-    public override void OnActionExecuting(ActionExecutingContext filterContext)
-    {
-        ReloadViewBag(true);
-        base.OnActionExecuting(filterContext);
-    }
-
-    protected void ReloadViewBag(bool resetToasts = false)
-    {
-        ViewBag.SessionId = SessionId;
-        ViewBag.SelectedVin = SelectedVin;
-
-        var asm = Assembly.GetExecutingAssembly();
-
-        var res = asm.GetTypes()
-            .Where(type => typeof(Controller).IsAssignableFrom(type)) //filter controllers
-            .SelectMany(type => type.GetMethods())
-            .Where(method => method.IsPublic && !method.IsDefined(typeof(NonActionAttribute)) &&
-                             method.IsDefined(typeof(HttpPostAttribute)) &&
-                             (method.DeclaringType?.IsSubclassOf(typeof(BaseAPIController)) ?? false))
-            .Select(method => Tuple.Create(method.DeclaringType?.Name.Replace("Controller", "") ?? "", method.Name))
-            .Where(method => !method.Item1.IsNullOrWhiteSpace())
-            .GroupBy(method => method.Item1);
-
-        var endpoints = new JsonObject();
-
-        foreach (var group in res)
-        {
-            var endpoint = new JsonObject();
-
-            foreach (var item in group) endpoint.Add(item.Item2, Url.ActionLink(item.Item2, item.Item1));
-
-            endpoints.Add(group.Key, endpoint);
-        }
-
-        ViewBag.API = endpoints.ToString();
-
-        if (resetToasts)
-        {
-            if (ViewBag.Toasts is null)
-                ViewBag.Toasts = new List<ToastViewModel>();
-
-            ViewBag.Toasts = ((List<ToastViewModel>)ViewBag.Toasts).Where(toast => !toast.Displayed).ToList();
-            ViewBag.Toasts = ((List<ToastViewModel>)ViewBag.Toasts).Select(toast =>
-            {
-                toast.Displayed = true;
-                return toast;
-            }).ToList();
-        }
-    }
-
-    protected void AddToast(ToastViewModel toastView)
-    {
-        ((List<ToastViewModel>)ViewBag.Toasts).Add(toastView);
+        get => AuthenticatedSession?.PrimaryVin;
     }
 }

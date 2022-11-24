@@ -85,14 +85,13 @@ namespace Leaf2Google.Json.Google
     {
         public List<string> ids { get; set; }
         public string status { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public JsonObject states { get; set; }
 
     }
 
     public class ExecuteDeviceDataSuccess : ExecuteDeviceData
     {
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public JsonObject states { get; set; }
     }
 
     public class ExecuteDeviceDataError : ExecuteDeviceData

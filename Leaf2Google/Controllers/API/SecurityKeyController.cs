@@ -19,7 +19,7 @@ public class SecurityKeyController : BaseAPIController
     private readonly LeafContext _leafContext;
     private readonly string _origin;
 
-    public SecurityKeyController(BaseStorageManager storageManager, ICarSessionManager sessionManager, LeafContext leafContext,
+    public SecurityKeyController(BaseStorageService storageManager, ICarSessionManager sessionManager, LeafContext leafContext,
         IOptions<Fido2Configuration> fido2Configuration)
         : base(storageManager, sessionManager)
     {
@@ -110,7 +110,7 @@ public class SecurityKeyController : BaseAPIController
             var success = await _fido2.MakeNewCredentialAsync(attestationResponse, options, callback,
                 cancellationToken: cancellationToken);
 
-            await _leafContext.SecurityKeys.AddAsync(new Leaf2Google.Entities.Security.StoredCredentialModel
+            await _leafContext.SecurityKeys.AddAsync(new Leaf2Google.Entities.Security.StoredCredentialEntity
             {
                 Descriptor = new PublicKeyCredentialDescriptor(success.Result?.CredentialId ?? throw new NullReferenceException("CredentialId was null when trying to make a new security credential.")),
                 PublicKey = success.Result.PublicKey,
