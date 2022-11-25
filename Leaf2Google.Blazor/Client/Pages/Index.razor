@@ -6,11 +6,83 @@
 
 <PageTitle>Home</PageTitle>
 
-<MapControl @ref="mapControl" MapData="@Map" />
-
-<div class="position-absolute bottom-0 mb-5">
-    <div class="position-relative">
-        <BatteryControl ChargeData="@Charge" />
+<div class="row w-100 flex-grow-1 g-2 pb-2 pt-1">
+    <div class="col col-12 col-md-8">
+        <MapControl @ref="mapControl" MapData="@Map" />
+    </div>
+    <div class="d-flex flex-column col-12 col-md-4">
+        <div class="row flex-fill g-0">
+            <div class="col col-12">
+                <div class="row h-100 g-2">
+                    <div class="col col-12 d-none d-md-flex">
+                        <div class="w-100 h-100 bg-secondary rounded-3">
+                        </div>
+                    </div>
+                    <div class="col col-6 col-sm-3 col-md-12 col-lg-6">
+                        <div class="w-100 h-100 bg-secondary rounded-3">
+                        </div>
+                    </div>
+                    <div class="col col-6 col-sm-3 col-md-12 col-lg-6">
+                        <div class="w-100 h-100 bg-secondary rounded-3">
+                        </div>
+                    </div>
+                    <div class="col col-6 col-sm-3 col-md-12 col-lg-6">
+                        <div class="w-100 h-100 bg-secondary rounded-3">
+                        </div>
+                    </div>
+                    <div class="col col-6 col-sm-3 col-md-12 col-lg-6">
+                        <div class="w-100 h-100 bg-secondary rounded-3">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row g-0 d-none d-md-flex">
+            <div class="col col-12">
+                <div class="bg-dark shadow rounded-3 w-100 h-100">
+                    <BatteryControl ChargeData="@Charge" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row w-100 row-cols-2 row-cols-sm-3 row-cols-md-auto justify-content-between flex-shrink-1 action-scroller g-2 pb-1">
+    <div class="col flex-grow-1 rounded-3">
+        <div class="d-flex flex-column justify-content-around align-items-center align-items-md-start bg-dark text-white shadow rounded-3 w-100 h-100 p-2">
+            <h6>Climate Control</h6>
+            <div class="d-flex align-items-center flex-column flex-sm-row">
+                <div class="bg-success rounded-3 mx-1">
+                    <i class="fa-solid fa-spin fa-fan fa-2x p-1"></i>
+                </div>
+                <h4 class="m-2">@(Climate.CurrentTemperature)c</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col flex-grow-1 rounded-3">
+        <div class="d-flex flex-column justify-content-around align-items-center align-items-md-start bg-dark text-white shadow rounded-3 w-100 h-100 p-2">
+            <h6>Charge Control</h6>
+            <div class="d-flex align-items-center flex-column flex-sm-row">
+                <div class="bg-success rounded-3 mx-1">
+                    <i class="fa-solid fa-beat fa-charging-station fa-2x p-1" style="--fa-beat-scale: 0.9;"></i>
+                </div>
+                <h4 class="m-2">@(Charge.Charge)%</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col flex-grow-1 rounded-3">
+        <div class="d-flex flex-column justify-content-around align-items-center align-items-md-start bg-dark text-white shadow rounded-3 w-100 h-100 p-2">
+            <h6>Charge Limit</h6>
+            <div class="d-flex align-items-center flex-column flex-sm-row">
+                <div class="bg-danger rounded-3 mx-1">
+                    <i class="fa-solid fa-charging-station fa-2x p-1"></i>
+                </div>
+                <h4 class="m-2">@(Charge.Charge)%</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col col-12 col-md-4">
+        <div class="bg-dark shadow rounded-3 w-100 h-100">
+        </div>
     </div>
 </div>
 
@@ -20,12 +92,14 @@
     public string? SelectedVin { get; set; }
 
     /* Controls */
-    private MapControl mapControl;
+    private MapControl? mapControl;
 
     /* Control Objects */
     public MapData Map { get; set; } = new();
 
     public BatteryData Charge { get; set; } = new();
+
+    public ClimateData Climate { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -45,6 +119,7 @@
     {
         await UpdateMap().ConfigureAwait(false);
         await UpdateBattery().ConfigureAwait(false);
+        await UpdateClimate().ConfigureAwait(false);
     }
 
     protected async Task UpdateMap()
@@ -63,6 +138,13 @@
         var batteryTask = ((LeafRequestService)RequestService).GetBattery();
 
         Charge = await batteryTask ?? new();
+    }
+
+    protected async Task UpdateClimate()
+    {
+        var climateTask = ((LeafRequestService)RequestService).GetClimate();
+
+        Climate = await climateTask ?? new();
     }
 
     public void Dispose()

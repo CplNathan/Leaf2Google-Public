@@ -95,10 +95,10 @@ public class CarController : BaseAPIController
                         if (thermostatDevice != null)
                             await thermostatDevice.FetchAsync(AuthenticatedSession, thermostatModel, activevin);
 
-                        return Json(new
+                        return Json(new ClimateData()
                         {
-                            target = thermostatModel?.Target,
-                            current = thermostatModel?.LastTemperature
+                            TargetTemperature = ((int?)thermostatModel?.Target) ?? 21,
+                            CurrentTemperature = ((int?)thermostatModel?.LastTemperature) ?? 21
                         });
                     }
                 default:

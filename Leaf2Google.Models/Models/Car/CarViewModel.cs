@@ -39,4 +39,12 @@ namespace Leaf2Google.Models.Car
 
         public int OptimalCharge => Math.Min(100 - Charge, 20);
     }
+
+    public class ClimateData
+    {
+        public int CurrentTemperature { get; set; }
+        public int TargetTemperature { get; set; }
+        public int DeltaTargetTemperature => Math.Abs(CurrentTemperature - TargetTemperature);
+        public int DeltaPercentageTargetTemperature => (TargetTemperature - DeltaTargetTemperature) / TargetTemperature * 100;
+    }
 }

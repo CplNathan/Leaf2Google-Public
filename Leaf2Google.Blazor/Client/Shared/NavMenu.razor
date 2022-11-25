@@ -1,39 +1,21 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">Leaf2Google.Blazor</a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+﻿<nav class="d-flex flex-md-column flex-row align-items-center justify-content-evenly">
+    <div class="nav-item m-2">
+        <NavLink class="nav-link p-2 bg-dark shadow rounded-circle" href="" Match="NavLinkMatch.All">
+            <i class="fa-solid fa-car mx-1"></i>
+        </NavLink>
     </div>
-</div>
-
-<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <i class="fa-solid fa-car mx-1"></i> Home
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="settings">
-                <i class="fa-solid fa-gear mx-1"></i> Settings
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="data">
-                <i class="fa-solid fa-database mx-1"></i> Raw Data
-            </NavLink>
-        </div>
-    </nav>
-</div>
+    <div class="nav-item m-2">
+        <NavLink class="nav-link p-2 bg-dark shadow rounded-circle" href="settings">
+            <i class="fa-solid fa-gear mx-1"></i>
+        </NavLink>
+    </div>
+    <div class="nav-item m-2">
+        <NavLink class="nav-link p-2 bg-dark shadow rounded-circle" href="data">
+            <i class="fa-solid fa-database mx-1"></i>
+        </NavLink>
+    </div>
+</nav>
 
 @code {
-    private bool collapseNavMenu = true;
 
-    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
-
-    private void ToggleNavMenu()
-    {
-        collapseNavMenu = !collapseNavMenu;
-    }
 }

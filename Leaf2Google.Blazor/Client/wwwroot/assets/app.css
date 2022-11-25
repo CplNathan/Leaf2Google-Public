@@ -90,8 +90,13 @@ a, .btn-link {
     }
 
 
-@media (max-width: 640.98px) {
-    .top-row {
-        height: 75px;
-    }
+.action-scroller {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scroll-snap-type: x mandatory;
+    width: 100%;
 }
+
+    .action-scroller > div {
+        scroll-snap-align: center;
+    }

@@ -184,4 +184,9 @@ public class LeafRequestService : IRequestService
     {
         return await PerformQuery<BatteryData?>(QueryType.Battery);
     }
+
+    public async Task<ClimateData?> GetClimate()
+    {
+        return await PerformQuery<ClimateData?>(QueryType.Climate);
+    }
 }
