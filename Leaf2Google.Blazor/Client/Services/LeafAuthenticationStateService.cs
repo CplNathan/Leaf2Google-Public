@@ -29,7 +29,7 @@ namespace Leaf2Google.Blazor.Client.Services
                         new Claim(JwtRegisteredClaimNames.Sub, _currentUser.NissanUsername),
                         new Claim(JwtRegisteredClaimNames.Email, _currentUser.NissanUsername),
                         new Claim(JwtRegisteredClaimNames.Jti, _currentUser.SessionId.ToString())
-                    }*/new List<Claim>().Concat(_currentUser?.Claims?.Select(c => new Claim(c.Key, c.Value)));
+                    }*/new List<Claim>().Concat(_currentUser?.Claims?.Select(c => new Claim(c.Key, c.Value)) ?? new List<Claim>());
                     identity = new ClaimsIdentity(claims, "Server authentication");
                 }
             }

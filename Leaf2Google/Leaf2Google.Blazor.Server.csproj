@@ -12,17 +12,26 @@
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
     <AnalysisLevel>latest-all</AnalysisLevel>
     <StartupObject>Leaf2Google.Blazor.Program</StartupObject>
+    <Copyright>Nathan Ford</Copyright>
+    <Authors>Nathan Ford</Authors>
+    <Title>$(AssemblyName)</Title>
+    <PackageProjectUrl>https://leaf.nford.xyz</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/CplNathan/Leaf2Google-Public</RepositoryUrl>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <Optimize>False</Optimize>
     <WarningLevel>7</WarningLevel>
     <NoWarn>1701;1702;1707;CA1707</NoWarn>
+    <DebugType>none</DebugType>
+    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <WarningLevel>7</WarningLevel>
     <NoWarn>1701;1702;1707;CA1707</NoWarn>
+    <DebugType>none</DebugType>
+    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
   </PropertyGroup>
 
   <ItemGroup>

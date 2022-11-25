@@ -91,12 +91,27 @@ a, .btn-link {
 
 
 .action-scroller {
-    overflow-x: auto;
     flex-wrap: nowrap;
     scroll-snap-type: x mandatory;
     width: 100%;
+    overflow-x: auto;
 }
 
     .action-scroller > div {
         scroll-snap-align: center;
     }
+
+/*
+.actioncard {
+    height: 100%;
+    transition: height 0.5s;
+}
+
+.actioncard:hover {
+    height: 200%;
+}
+
+    .actioncard > div {
+        backdrop-filter: blur(6px);
+    }
+        */

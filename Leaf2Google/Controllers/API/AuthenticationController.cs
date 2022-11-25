@@ -102,6 +102,7 @@ public class AuthenticationController : BaseAPIController
         return Json(userResponse);
     }
 
+    /*
     [HttpPost]
     [Authorize]
     public async Task<ViewComponentResult> Delete([FromForm] Guid? authId)
@@ -122,4 +123,5 @@ public class AuthenticationController : BaseAPIController
             sessionId = ViewBag?.SessionId ?? null
         });
     }
+    */
 }

@@ -6,60 +6,56 @@
 
 <PageTitle>Home</PageTitle>
 
-<div class="row w-100 flex-grow-1 g-2 pb-2 pt-1">
-    <div class="col col-12 col-md-8">
-        <MapControl @ref="mapControl" MapData="@Map" />
-    </div>
-    <div class="d-flex flex-column col-12 col-md-4">
-        <div class="row flex-fill g-0">
-            <div class="col col-12">
-                <div class="row h-100 g-2">
-                    <div class="col col-12 d-none d-md-flex">
-                        <div class="w-100 h-100 bg-secondary rounded-3">
-                        </div>
-                    </div>
-                    <div class="col col-6 col-sm-3 col-md-12 col-lg-6">
-                        <div class="w-100 h-100 bg-secondary rounded-3">
-                        </div>
-                    </div>
-                    <div class="col col-6 col-sm-3 col-md-12 col-lg-6">
-                        <div class="w-100 h-100 bg-secondary rounded-3">
-                        </div>
-                    </div>
-                    <div class="col col-6 col-sm-3 col-md-12 col-lg-6">
-                        <div class="w-100 h-100 bg-secondary rounded-3">
-                        </div>
-                    </div>
-                    <div class="col col-6 col-sm-3 col-md-12 col-lg-6">
-                        <div class="w-100 h-100 bg-secondary rounded-3">
-                        </div>
-                    </div>
-                </div>
-            </div>
+<div class="row flex-column flex-md-row w-100 flex-grow-1 g-2 pb-2">
+    <div class="col col-12 col-md-9 flex-fill">
+
+        <div id="map" class="h-100 w-100 shadow rounded-3">
+            <MapControl @ref="mapControl" MapData="@Map" />
         </div>
-        <div class="row g-0 d-none d-md-flex">
-            <div class="col col-12">
-                <div class="bg-dark shadow rounded-3 w-100 h-100">
-                    <BatteryControl ChargeData="@Charge" />
+    </div>
+    <div class="col-12 col-md-3">
+        <div class="row flex-shrink-1 g-2 py-1">
+            <div class="col col-4 col-sm-2 col-md-6 col-lg-6">
+                <div class="ratio ratio-1x1 bg-dark text-primary shadow rounded-3">
+                    <div class="d-flex justify-content-center align-items-center">
+                        <i class="fa-3x fa-regular fa-lightbulb"></i>
+                    </div>
                 </div>
             </div>
+            <div class="col col-4 col-sm-2 col-md-6 col-lg-6">
+                <div class="ratio ratio-1x1 bg-dark text-primary shadow rounded-3">
+                    <div class="d-flex justify-content-center align-items-center">
+                        <i class="fa-3x fa-solid fa-bullhorn"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col col-4 col-sm-2 col-md-6 col-lg-6">
+                <div class="ratio ratio-1x1 bg-dark text-primary shadow rounded-3">
+                    <div class="d-flex justify-content-center align-items-center">
+                        <i class="fa-3x fa-solid fa-lock"></i>
+                    </div>
+                </div>
+            </div>
+            @*
+            <div class="col col-md-12">
+                <BatteryControl ChargeData="@Charge" />
+            </div>
+            *@
         </div>
     </div>
 </div>
-<div class="row w-100 row-cols-2 row-cols-sm-3 row-cols-md-auto justify-content-between flex-shrink-1 action-scroller g-2 pb-1">
-    <div class="col flex-grow-1 rounded-3">
-        <div class="d-flex flex-column justify-content-around align-items-center align-items-md-start bg-dark text-white shadow rounded-3 w-100 h-100 p-2">
+<div class="row w-100 row-cols-2 row-cols-sm-3 row-cols-md-auto justify-content-between align-items-end flex-shrink-1 action-scroller g-2 pb-2">
+    <div class="col flex-grow-1 pt-2 actioncard">
+        <div class="d-flex flex-column justify-content-between align-items-center align-items-md-start text-white shadow rounded-3 p-2 h-100">
             <h6>Climate Control</h6>
             <div class="d-flex align-items-center flex-column flex-sm-row">
-                <div class="bg-success rounded-3 mx-1">
-                    <i class="fa-solid fa-spin fa-fan fa-2x p-1"></i>
-                </div>
+                <div class="bg-success rounded-3 mx-1"><i class="fa-solid fa-spin fa-fan fa-2x p-1"></i></div>
                 <h4 class="m-2">@(Climate.CurrentTemperature)c</h4>
             </div>
         </div>
     </div>
-    <div class="col flex-grow-1 rounded-3">
-        <div class="d-flex flex-column justify-content-around align-items-center align-items-md-start bg-dark text-white shadow rounded-3 w-100 h-100 p-2">
+    <div class="col flex-grow-1 pt-2 actioncard">
+        <div class="d-flex flex-column justify-content-between align-items-center align-items-md-start text-white shadow rounded-3 p-2 h-100">
             <h6>Charge Control</h6>
             <div class="d-flex align-items-center flex-column flex-sm-row">
                 <div class="bg-success rounded-3 mx-1">
@@ -69,19 +65,19 @@
             </div>
         </div>
     </div>
-    <div class="col flex-grow-1 rounded-3">
-        <div class="d-flex flex-column justify-content-around align-items-center align-items-md-start bg-dark text-white shadow rounded-3 w-100 h-100 p-2">
+    <div class="col flex-grow-1 pt-2 actioncard">
+        <div class="d-flex flex-column justify-content-between align-items-center align-items-md-start text-white shadow rounded-3 p-2 h-100">
             <h6>Charge Limit</h6>
             <div class="d-flex align-items-center flex-column flex-sm-row">
-                <div class="bg-danger rounded-3 mx-1">
-                    <i class="fa-solid fa-charging-station fa-2x p-1"></i>
-                </div>
+                <div class="bg-danger rounded-3 mx-1"><i class="fa-solid fa-charging-station fa-2x p-1"></i></div>
                 <h4 class="m-2">@(Charge.Charge)%</h4>
             </div>
         </div>
     </div>
-    <div class="col col-12 col-md-4">
+    <div class="col col-12 col-md-3 h-100 pt-2
+">
         <div class="bg-dark shadow rounded-3 w-100 h-100">
+            <BatteryControl ChargeData="@Charge" />
         </div>
     </div>
 </div>
@@ -130,7 +126,7 @@
         Map.CarLocation = await carLocationTask;
         Map.CarPhoto = await carPhotoTask;
 
-        await mapControl.OnLocationChanged(this, new());
+        await mapControl!.OnLocationChanged(this, new());
     }
 
     protected async Task UpdateBattery()

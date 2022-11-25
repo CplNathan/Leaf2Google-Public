@@ -39,7 +39,7 @@ public class BaseController : Controller
     {
         get
         {
-            var jtiClaim = AuthenticatedUser.FindFirst(JwtRegisteredClaimNames.Jti);
+            var jtiClaim = AuthenticatedUser?.FindFirst(JwtRegisteredClaimNames.Jti);
 
             if (jtiClaim is null)
                 return null;
@@ -49,23 +49,6 @@ public class BaseController : Controller
     }
 
     protected BaseStorageService StorageManager { get; }
-
-    protected Guid? SessionId
-    {
-        get
-        {
-            var sessionGuid = "";
-            Guid parsedGuid;
-
-            var success = Guid.TryParse(sessionGuid, out parsedGuid);
-
-            return success ? parsedGuid : null;
-        }
-        set { bool success = true; }
-    }
-
-    protected VehicleSessionBase? Session =>
-        StorageManager.VehicleSessions.FirstOrDefault(session => session.Key == SessionId).Value;
 
     protected string? SelectedVin
     {

@@ -12,7 +12,7 @@
 
 @code {
     [Parameter]
-    public BatteryData ChargeData { get; set; }
+    public BatteryData ChargeData { get; set; } = new();
 
     private string RemainingClass => ChargeData.Charging ? "progress-bar-striped progress-bar-animated" : "";
 }

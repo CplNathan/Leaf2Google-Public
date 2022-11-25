@@ -40,6 +40,8 @@ public class LeafAuthService : IAuthService
 {
     private readonly HttpClient _httpClient;
 
+    private bool hasFirstAuthenticationAttempted = false;
+
     public LeafAuthService(HttpClient httpClient)
     {
         _httpClient = httpClient;
@@ -57,6 +59,8 @@ public class LeafAuthService : IAuthService
             if (!string.IsNullOrEmpty(result?.jwtBearer))
                 _httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + result?.jwtBearer);
 
+            hasFirstAuthenticationAttempted = true;
+
             IAuthService.OnAuthentication?.Invoke(this, true);
 
             return result;
@@ -71,6 +75,9 @@ public class LeafAuthService : IAuthService
 
     public async Task<CurrentUser?> CurrentUserInfo()
     {
+        if (!hasFirstAuthenticationAttempted)
+            return new();
+
         try
         {
             HttpResponseMessage userResult = await _httpClient.PostAsync("/API/Authentication/UserInfo", null);
@@ -170,8 +177,8 @@ public class LeafRequestService : IRequestService
 
         return new PointF()
         {
-            X = result["lat"]?.GetValue<float>() ?? 0,
-            Y = result["long"]?.GetValue<float>() ?? 0
+            X = result!["lat"]?.GetValue<float>() ?? 0,
+            Y = result!["long"]?.GetValue<float>() ?? 0
         };
     }
 

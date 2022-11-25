@@ -32,7 +32,7 @@ namespace Leaf2Google.Blazor.Client.Helpers
                 }
             }
 
-            value = default;
+            value = default!;
             return false;
         }
     }

@@ -41,19 +41,16 @@ public class SecurityKeyController : BaseAPIController
     {
         try
         {
-            if (!SessionId.HasValue)
+            if (AuthenticatedSession is null || (AuthenticatedSession?.SessionId ?? Guid.Empty) == Guid.Empty)
                 return Json(new CredentialCreateOptions { Status = "error", ErrorMessage = "Not logged in" });
 
-            if (Session is null)
-                return Json(new CredentialCreateOptions { Status = "error", ErrorMessage = "Not logged in" });
-
-            var username = Session.Username;
+            var username = AuthenticatedSession.Username;
 
             var user = new Fido2User
             {
-                DisplayName = Session.Username,
-                Name = Session.Username,
-                Id = SessionId.Value.ToByteArray()
+                DisplayName = AuthenticatedSession.Username,
+                Name = AuthenticatedSession.Username,
+                Id = AuthenticatedSession.SessionId.ToByteArray()
             };
 
             var existingKeys = _leafContext.SecurityKeys.Where(key => key.CredentialId.Length > 0)
@@ -92,6 +89,9 @@ public class SecurityKeyController : BaseAPIController
     public async Task<JsonResult> MakeCredential([FromBody] AuthenticatorAttestationRawResponse attestationResponse,
         CancellationToken cancellationToken)
     {
+        if (AuthenticatedSession is null || (AuthenticatedSession?.SessionId ?? Guid.Empty) == Guid.Empty)
+            return Json(new CredentialMakeResult("error", "Not logged in", null));
+
         try
         {
             var jsonOptions = HttpContext.Session.GetString("fido2.attestationOptions");
@@ -119,7 +119,7 @@ public class SecurityKeyController : BaseAPIController
                 CredType = success.Result.CredType,
                 RegDate = DateTime.Now,
                 AaGuid = success.Result.Aaguid,
-                UserId = SessionId?.ToByteArray() ?? throw new NullReferenceException("SessionId was null when trying to make a new security credential."),
+                UserId = AuthenticatedSession.SessionId.ToByteArray() ?? throw new NullReferenceException("SessionId was null when trying to make a new security credential."),
                 CredentialId = success.Result.CredentialId
             }, cancellationToken);
 
@@ -213,10 +213,12 @@ public class SecurityKeyController : BaseAPIController
 
                 var car = await _leafContext.NissanLeafs.FirstOrDefaultAsync(car =>
                     car.CarModelId == new Guid(key.UserId), cancellationToken);
-                SessionId = car?.CarModelId ?? Guid.Empty;
+
+                // Need to implement the login on client, return a new JWT as this is a succesful authentication flow - currently not implemented but will need to be.
+                throw new NotImplementedException();
+                //SessionId = car?.CarModelId ?? Guid.Empty;
             }
 
-            // 7. return OK to client
             return Json(res);
         }
         catch (Exception e)
