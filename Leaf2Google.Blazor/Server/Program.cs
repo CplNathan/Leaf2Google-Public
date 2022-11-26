@@ -23,6 +23,7 @@ namespace Leaf2Google.Blazor
             builder.Services.AddControllersWithViews();
             builder.Services.AddRazorPages();
 
+            // Add sensitive config variables from docker environment variables
             builder.Configuration.AddEnvironmentVariables();
 
             builder.Services.AddDbContext<LeafContext>(options => options
