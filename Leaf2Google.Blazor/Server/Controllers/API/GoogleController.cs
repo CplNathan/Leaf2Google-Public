@@ -82,7 +82,7 @@ public class GoogleController : BaseController
                 case "QUERY":
                     {
                         // Logging
-                        Console.WriteLine(await Logging.AddLog(AuthenticatedSession?.SessionId ?? Guid.Empty, AuditAction.Execute,
+                        Console.WriteLine(Logging.AddLog(AuthenticatedSession?.SessionId ?? Guid.Empty, AuditAction.Execute,
                             AuditContext.Google, $"Google executing query for {AuthenticatedSession?.Username ?? string.Empty}"));
                         //auth.LastQuery = DateTime.UtcNow;
 
@@ -112,7 +112,7 @@ public class GoogleController : BaseController
                 case "EXECUTE":
                     {
                         // Logging
-                        Console.WriteLine(await Logging.AddLog(AuthenticatedSession?.SessionId ?? Guid.Empty, AuditAction.Execute,
+                        Console.WriteLine(Logging.AddLog(AuthenticatedSession?.SessionId ?? Guid.Empty, AuditAction.Execute,
                             AuditContext.Google, $"Google executing command for {AuthenticatedSession?.Username ?? string.Empty}"));
                         //auth.LastExecute = DateTime.UtcNow;
 
@@ -224,7 +224,7 @@ public class GoogleController : BaseController
                 RefreshToken = Guid.NewGuid()
             };
 
-            Console.WriteLine(await Logging.AddLog(token?.Owner?.Owner?.CarModelId ?? Guid.Empty, AuditAction.Update,
+            Console.WriteLine(Logging.AddLog(token?.Owner?.Owner?.CarModelId ?? Guid.Empty, AuditAction.Update,
                 AuditContext.Google, $"Regenerating refresh token for {token?.Owner?.Owner?.NissanUsername ?? string.Empty}"));
 
             tokenState = EntityState.Added;
@@ -235,7 +235,7 @@ public class GoogleController : BaseController
                 form["refresh_token"].ToString() == token.RefreshToken.ToString())!;
             tokenState = EntityState.Modified;
 
-            Console.WriteLine(await Logging.AddLog(token?.Owner?.Owner?.CarModelId ?? Guid.Empty, AuditAction.Update,
+            Console.WriteLine(Logging.AddLog(token?.Owner?.Owner?.CarModelId ?? Guid.Empty, AuditAction.Update,
                 AuditContext.Google, $"Regenerating authorization code for {token?.Owner?.Owner?.NissanUsername ?? string.Empty}"));
         }
 

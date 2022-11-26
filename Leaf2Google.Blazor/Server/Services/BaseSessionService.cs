@@ -87,19 +87,19 @@ public abstract class BaseSessionService
                     nissanContext.Entry(leaf).State = EntityState.Modified;
                 }
 
-                Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Delete, AuditContext.Leaf,
+                Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Delete, AuditContext.Leaf,
                     "Deleting Stale Leaf"));
 
                 StorageManager.VehicleSessions.Remove(session.SessionId);
             }
             else if (session.Authenticated)
             {
-                Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
+                Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
                     "Authentication Success"));
             }
             else
             {
-                Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
+                Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
                     "Authentication Failed"));
                 await Login(session).ConfigureAwait(false);
             }
@@ -167,7 +167,7 @@ public abstract class BaseSessionService
         if (session is null)
             return false;
 
-        Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
+        Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
     "Authentication Method Invoked"));
 
         // If this is called concurrently we could add it to a queue/task where we can await the result of the previous authentication attempt although I am unsure of the benifit of this.
@@ -182,7 +182,7 @@ public abstract class BaseSessionService
         {
             session.LoginAuthenticationAttempting = true;
 
-            Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
+            Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
                 "Authentication Attempting"));
             await LoginImplementation(session);
 
@@ -190,7 +190,7 @@ public abstract class BaseSessionService
         }
         else
         {
-            Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
+            Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
                 "Authentication Attempted - But Given Up"));
 
             return false;
@@ -222,7 +222,7 @@ public abstract class BaseSessionService
         }
         catch (Exception ex)
         {
-            Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Exception, AuditContext.Leaf,
+            Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Exception, AuditContext.Leaf,
                 ex.ToString()));
         }
 
@@ -244,7 +244,7 @@ public abstract class BaseSessionService
     protected async Task<Response<JsonObject>?> PerformAction(VehicleSessionBase session, string? vin, string action, string type,
         JsonObject attributes)
     {
-        Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Execute, AuditContext.Leaf,
+        Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Execute, AuditContext.Leaf,
             $"Performing action {action} on {vin}"));
         var response = await PerformActionImplementation(session, vin, action, type, attributes);
 
@@ -256,7 +256,7 @@ public abstract class BaseSessionService
 
     protected async Task<Response<JsonObject>?> GetStatus(VehicleSessionBase session, string? vin, string action)
     {
-        Console.WriteLine(await Logging.AddLog(session.SessionId, AuditAction.Execute, AuditContext.Leaf,
+        Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Execute, AuditContext.Leaf,
             $"Getting status {action} on {vin}"));
         var response = await GetStatusImplementation(session, vin, action);
 

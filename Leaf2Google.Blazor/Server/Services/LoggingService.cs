@@ -15,7 +15,7 @@ public class LoggingService : IDisposable
 
     private IServiceScopeFactory ServiceScopeFactory => _serviceScopeFactory;
 
-    public async Task<string> AddLog(Guid owner, AuditAction action, AuditContext context, string data)
+    public string AddLog(Guid owner, AuditAction action, AuditContext context, string data)
     {
         using (var scope = ServiceScopeFactory.CreateScope())
         {
@@ -29,7 +29,8 @@ public class LoggingService : IDisposable
                 Data = $"{owner} - {data}"
             };
 
-            await nissanContext.NissanAudits.AddAsync(audit).ConfigureAwait(false);
+            nissanContext.NissanAudits.Add(audit);
+            nissanContext.SaveChanges();
 
             return $"{audit.Owner} - {audit.Action.ToString()} - {audit.Context.ToString()} - {data}";
         }
