@@ -97,12 +97,28 @@ public class LeafAuthService : IAuthService
         }
     }
 
-    public async Task Logout()
+    public async Task<RegisterResponse?> Register(RegisterModel registerRequest)
     {
-        throw new NotImplementedException();
+        try
+        {
+            HttpResponseMessage userResult = await _httpClient.PostAsJsonAsync<RegisterModel>("/API/Authentication/Register", registerRequest);
+            if (userResult.IsSuccessStatusCode)
+            {
+                RegisterResponse? result = await userResult.Content.ReadFromJsonAsync<RegisterResponse>();
+                return result;
+            }
+            else
+            {
+                return new();
+            }
+        }
+        catch
+        {
+            return new();
+        }
     }
 
-    public async Task<RegisterResponse?> Register(RegisterModel registerRequest)
+    public async Task Logout()
     {
         throw new NotImplementedException();
     }

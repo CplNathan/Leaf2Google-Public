@@ -1,5 +1,9 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. APIController.cs
 
+using Fido2NetLib.Objects;
+using Leaf2Google.Blazor.Server.Helpers;
+using Leaf2Google.Entities.Car;
+using Leaf2Google.Entities.Google;
 using Leaf2Google.Models.Car.Sessions;
 using Leaf2Google.Models.Google;
 using Microsoft.AspNetCore.Authorization;
@@ -9,14 +13,9 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Web;
 
 namespace Leaf2Google.Controllers.API;
-
-public static class Secret
-{
-    public static Guid SecretValue { get; } = Guid.NewGuid();
-}
-
 
 [Route("api/[controller]/[action]/{id?}")]
 [ApiController]
@@ -26,40 +25,11 @@ public class AuthenticationController : BaseAPIController
 
     private readonly IConfiguration _configuration;
 
-    public static bool IsDebugRelease
-    {
-        get
-        {
-#if DEBUG
-            return true;
-#else
-            return false;
-#endif
-        }
-    }
-
     public AuthenticationController(BaseStorageService storageManager, ICarSessionManager sessionManager, LeafContext googleContext, IConfiguration configuration)
         : base(storageManager, sessionManager)
     {
         _googleContext = googleContext;
         _configuration = configuration;
-    }
-
-    private string CreateJWT(VehicleSessionBase session)
-    {
-        var secretkey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_configuration["jwt:key"] ?? Guid.NewGuid().ToString())); // NOTE: SAME KEY AS USED IN Program.cs FILE
-        var credentials = new SigningCredentials(secretkey, SecurityAlgorithms.HmacSha256);
-
-        var claims = new[]
-        {
-            new Claim(ClaimTypes.Name, session.Username),
-            new Claim(JwtRegisteredClaimNames.Sub, session.Username),
-            new Claim(JwtRegisteredClaimNames.Email, session.Username),
-            new Claim(JwtRegisteredClaimNames.Jti, session.SessionId.ToString())
-        };
-
-        var token = new JwtSecurityToken(issuer: IsDebugRelease ? "localhost" : _configuration["fido2:serverDomain"], audience: IsDebugRelease ? "localhost" : _configuration["fido2:serverDomain"], claims: claims, expires: DateTime.Now.AddMinutes(60), signingCredentials: credentials);
-        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
     [HttpPost]
@@ -71,20 +41,111 @@ public class AuthenticationController : BaseAPIController
         if (loginResult == Guid.Empty)
         {
             loginResponse.success = false;
-            loginResponse.message = "Invalid User";
+            loginResponse.message = ResponseState.InvalidCredentials;
         }
         if (loginResult != Guid.Empty && StorageManager.VehicleSessions.Any(session => session.Key == loginResult))
         {
             VehicleSessionBase vehicleSession = StorageManager.VehicleSessions.First(session => session.Key == loginResult).Value;
 
+            var jwtString = new JwtSecurityTokenHandler().WriteToken(JWT.CreateJWT(vehicleSession, _configuration));
+
             loginResponse.success = true;
             loginResponse.NissanUsername = vehicleSession.Username;
             loginResponse.sessionId = vehicleSession.SessionId.ToString();
-            loginResponse.jwtBearer = CreateJWT(vehicleSession);
-            loginResponse.message = "Login Success";
+            loginResponse.jwtBearer = jwtString;
+            loginResponse.message = ResponseState.Success;
         }
 
         return Json(loginResponse);
+    }
+
+    [HttpPost]
+    public async Task<JsonResult> Register([FromBody(EmptyBodyBehavior = Microsoft.AspNetCore.Mvc.ModelBinding.EmptyBodyBehavior.Allow)] RegisterModel? form)
+    {
+        switch (form.request)
+        {
+            case RequestState.Initial:
+                {
+                    if (form.client_id != _configuration["Google:client_id"])
+                        return Json(BadRequest());
+
+                    var redirect_application = form!.redirect_uri?.AbsolutePath.Split('/')
+                        .Where(item => !string.IsNullOrEmpty(item))
+                        .Skip(1)
+                        .Take(1)
+                        .FirstOrDefault();
+
+                    if (redirect_application != _configuration["Google:client_reference"])
+                        return Json(BadRequest());
+
+                    var auth = new AuthEntity
+                    {
+                        RedirectUri = form.redirect_uri,
+                        ClientId = form.client_id,
+                        AuthState = form.state
+                    };
+
+                    _googleContext.GoogleAuths.Add(auth);
+                    await _googleContext.SaveChangesAsync().ConfigureAwait(false);
+
+                    return Json(new RegisterResponse
+                    {
+                        message = ResponseState.Success,
+                        success = true,
+                        state = form.state,
+                        client_id = form.client_id,
+                        redirect_uri = form.redirect_uri,
+                        request = RequestState.Final
+                    });
+                }
+            case RequestState.Final:
+                {
+                    var auth = await _googleContext.GoogleAuths.Include(auth => auth.Owner).FirstOrDefaultAsync(auth => auth.AuthState == form.state);
+                    if (auth == null)
+                        return Json(BadRequest());
+
+                    CarEntity leaf = new CarEntity(form.NissanUsername, form.NissanPassword); ;
+                    var leafId = await StorageManager.UserStorage.DoCredentialsMatch(form.NissanUsername, form.NissanPassword, true);
+                    if (leafId != Guid.Empty)
+                    {
+                        leaf = await StorageManager.UserStorage.RestoreUser(leafId) ?? leaf;
+                    }
+
+                    var response = new RegisterResponse
+                    {
+                        client_id = form.client_id,
+                        redirect_uri = form.redirect_uri,
+                        state = form.state
+                    };
+
+                    if (await SessionManager.AddAsync(leaf))
+                    {
+                        var authCode = Guid.NewGuid();
+
+                        auth.AuthCode = authCode;
+                        auth.Owner = leaf;
+
+                        if (!await _googleContext.NissanLeafs.AnyAsync(car => car.CarModelId == leaf.CarModelId))
+                            await _googleContext.NissanLeafs.AddAsync(leaf);
+
+                        _googleContext.Entry(auth).State = EntityState.Modified;
+                        await _googleContext.SaveChangesAsync();
+
+                        response.success = true;
+                        response.message = ResponseState.Success;
+                        response.code = authCode;
+                    }
+                    else
+                    {
+                        response.success = false;
+                        response.message = ResponseState.InvalidCredentials;
+                    }
+
+                    return Json(response);
+                }
+            default:
+                return Json(new RegisterResponse { message = ResponseState.BadRequest, success = false });
+        }
     }
 
     [HttpPost]

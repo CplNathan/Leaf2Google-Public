@@ -29,7 +29,7 @@ public class LoggingService : IDisposable
                 Data = $"{owner} - {data}"
             };
 
-            await nissanContext.NissanAudits.AddAsync(audit);
+            await nissanContext.NissanAudits.AddAsync(audit).ConfigureAwait(false);
 
             return $"{audit.Owner} - {audit.Action.ToString()} - {audit.Context.ToString()} - {data}";
         }

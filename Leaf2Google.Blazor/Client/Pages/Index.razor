@@ -8,10 +8,7 @@
 
 <div class="row flex-column flex-md-row w-100 flex-grow-1 g-2 pb-2">
     <div class="col col-12 col-md-9 flex-fill">
-
-        <div id="map" class="h-100 w-100 shadow rounded-3">
-            <MapControl @ref="mapControl" MapData="@Map" />
-        </div>
+        <MapControl @ref="mapControl" MapData="@Map" />
     </div>
     <div class="col-12 col-md-3">
         <div class="row flex-shrink-1 g-2 py-1">
@@ -38,7 +35,7 @@
             </div>
             @*
             <div class="col col-md-12">
-                <BatteryControl ChargeData="@Charge" />
+            <BatteryControl ChargeData="@Charge" />
             </div>
             *@
         </div>

@@ -1,6 +1,7 @@
 ﻿@page "/google/auth"
 @using Leaf2Google.Models.Google
 @using Leaf2Google.Blazor.Client.Helpers
+@using System.Web;
 @inject LeafAuthenticationStateService AuthState
 @inject NavigationManager Navigation
 @attribute [AllowAnonymous]
@@ -16,11 +17,13 @@
 @code {
     public LoginForm? loginForm;
 
+    public RegisterResponse registerState = new();
+
     private bool ShowLoginError { get; set; }
 
     public string LoginErrorClass => ShowLoginError ? "" : "d-none";
 
-    protected async Task OnValidSubmit(ChangeEventArgs? args)
+    protected override async Task OnInitializedAsync()
     {
         Navigation.TryGetQueryString<string>("client_id", out string client_id);
         Navigation.TryGetQueryString<string>("redirect_uri", out string redirect_uri);
@@ -28,25 +31,58 @@
 
         RegisterModel registerModel = new()
             {
-                NissanUsername = loginForm?.loginModel.NissanUsername ?? "",
-                NissanPassword = loginForm?.loginModel.NissanPassword ?? "",
+                NissanUsername = "loopback@localhost.local",
+                NissanPassword = "-",
                 client_id = client_id,
                 redirect_uri = string.IsNullOrEmpty(redirect_uri) ? null : new Uri(redirect_uri),
-                state = state
+                state = state,
+                request = RequestState.Initial
             };
 
-        var registerResult = await AuthState.Register(registerModel);
+        registerState = await AuthState.Register(registerModel) ?? new();
 
+        if (!registerState.success) // Need to validate to prevent bad outbound redirects
+        {
+            var query = HttpUtility.ParseQueryString(string.Empty);
+            query["state"] = state;
+            query["error"] = "1";
+
+            var redirect_uri_processed = new UriBuilder(redirect_uri);
+            redirect_uri_processed.Query = query.ToString();
+
+            Navigation.NavigateTo(redirect_uri_processed.ToString(), true);
+        }
+    }
+
+    protected async Task OnValidSubmit(ChangeEventArgs? args)
+    {
+        registerState.NissanUsername = loginForm?.loginModel.NissanUsername ?? "";
+        registerState.NissanPassword = loginForm?.loginModel.NissanPassword ?? "";
+
+        var registerResult = await AuthState.Register(registerState);
+
+        var redirectURi = registerState?.redirect_uri;
+
+        var query = HttpUtility.ParseQueryString(string.Empty);
         if (registerResult?.success ?? false)
         {
-            var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
-            var returnUrl = QueryHelpers.ParseQuery(uri.Query).FirstOrDefault(val => val.Key == "returnUrl");
-            var returnUrlString = returnUrl.Value.ToString();
+            query["state"] = registerState?.state;
+            query["code"] = registerState?.code.ToString();
 
-            if (!string.IsNullOrEmpty(returnUrlString))
-            {
-                Navigation.NavigateTo(returnUrlString);
-            }
+            var redirect_uri_processed = new UriBuilder(redirectURi!);
+            redirect_uri_processed.Query = query.ToString();
+
+            Navigation.NavigateTo(redirect_uri_processed.ToString(), true);
+        }
+        else if (registerResult?.message == ResponseState.BadRequest)
+        {
+            query["state"] = registerState?.state;
+            query["error"] = registerState?.code.ToString();
+
+            var redirect_uri_processed = new UriBuilder(redirectURi!);
+            redirect_uri_processed.Query = query.ToString();
+
+            Navigation.NavigateTo(redirect_uri_processed.ToString(), true);
         }
         else
         {

@@ -8,6 +8,19 @@ using System.Security.Claims;
 
 namespace Leaf2Google.Models.Google
 {
+    public enum ResponseState
+    {
+        BadRequest,
+        InvalidCredentials,
+        Success
+    }
+
+    public enum RequestState
+    {
+        Initial,
+        Final
+    }
+
     public class LoginModel
     {
         [Required(ErrorMessage = "Email address is required.")]
@@ -33,6 +46,8 @@ namespace Leaf2Google.Models.Google
 
     public class RegisterModel : LoginModel
     {
+        public RequestState request { get; set; }
+
         public string client_id { get; set; } = string.Empty;
         public Uri? redirect_uri { get; set; }
         public string state { get; set; } = string.Empty;
@@ -43,13 +58,14 @@ namespace Leaf2Google.Models.Google
         public string sessionId { get; set; }
         public string jwtBearer { get; set; }
 
-        public string message { get; set; }
+        public ResponseState message { get; set; }
         public bool success { get; set; }
     }
 
     public class RegisterResponse : RegisterModel
     {
-        public string message { get; set; }
+        public ResponseState message { get; set; }
+        public Guid code { get; set; }
         public bool success { get; set; }
     }
 }

@@ -4,7 +4,7 @@ using Leaf2Google.Models.Car.Sessions;
 
 namespace Leaf2Google.Services.Google;
 
-public class GoogleStateService
+public class GoogleStateService : IDisposable
 {
     public GoogleStateService(BaseStorageService storageManager,
         ICarSessionManager sessionManager)
@@ -23,6 +23,11 @@ public class GoogleStateService
 
             BaseSessionService.OnAuthenticationAttempt += BaseSessionManager_OnAuthenticationAttempt;
         }
+    }
+
+    public void Dispose()
+    {
+        BaseSessionService.OnAuthenticationAttempt -= BaseSessionManager_OnAuthenticationAttempt;
     }
 
     protected BaseStorageService StorageManager { get; }

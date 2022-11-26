@@ -16,19 +16,3 @@ public class BaseAPIController : BaseController
         SessionManager = sessionManager;
     }
 }
-
-[Route("/WeatherForecast")]
-[ApiController]
-public class WeatherController : BaseAPIController
-{
-    public WeatherController(BaseStorageService storageManager, ICarSessionManager sessionManager)
-    : base(storageManager, sessionManager)
-    {
-    }
-
-    [HttpGet]
-    public WeatherForecast[] WeatherData()
-    {
-        return Enumerable.Range(1, 4).Select(i => new WeatherForecast() {  Date = DateOnly.FromDateTime(DateTime.Now), Summary = i.ToString(), TemperatureC = i }).ToArray();
-    }
-}
