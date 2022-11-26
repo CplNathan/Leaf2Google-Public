@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Leaf2Google.Controllers.API;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace Leaf2Google.Blazor
 {
@@ -31,7 +33,8 @@ namespace Leaf2Google.Blazor
 
             builder.Services.AddDbContext<LeafContext>(options => options
                 //.UseLazyLoadingProxies()
-                .UseSqlServer(builder.Configuration[$"ConnectionStrings:{(builder.Environment.IsDevelopment() ? "Test" : "Live")}"])
+                .UseNpgsql(builder.Configuration[$"ConnectionStrings:{(builder.Environment.IsDevelopment() ? "Test" : "Live")}"])
+            //.UseSqlServer(builder.Configuration[$"ConnectionStrings:{(builder.Environment.IsDevelopment() ? "Test" : "Live")}"])
             );
             builder.Services.AddHttpClient<BaseController>(c =>
             {

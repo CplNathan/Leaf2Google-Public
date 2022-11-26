@@ -51,11 +51,17 @@
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.17.0" />
+		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.0" />
+		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL.Design" Version="1.1.0" />
 	</ItemGroup>
 
 	<ItemGroup>
 	  <ProjectReference Include="..\..\Leaf2Google.Models\Leaf2Google.Models.csproj" />
 	  <ProjectReference Include="..\Client\Leaf2Google.Blazor.Client.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Migrations\" />
 	</ItemGroup>
 
 </Project>
