@@ -9,7 +9,6 @@
     <Copyright>Nathan Ford</Copyright>
     <PackageProjectUrl>https://leaf.nford.xyz</PackageProjectUrl>
     <RepositoryUrl>https://github.com/CplNathan/Leaf2Google-Public</RepositoryUrl>
-    <RunAOTCompilation>true</RunAOTCompilation>
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
