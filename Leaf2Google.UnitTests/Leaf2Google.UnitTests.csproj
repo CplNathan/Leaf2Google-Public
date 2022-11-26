@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Leaf2Google\Leaf2Google.Blazor.Server.csproj" />
+    <ProjectReference Include="..\Leaf2Google.Blazor\Server\Leaf2Google.Blazor.Server.csproj" />
   </ItemGroup>
 
 </Project>

@@ -51,7 +51,7 @@ public class GoogleController : BaseController
     // Welcome to hell
     [HttpPost]
     [Consumes("application/json")]
-    [Authorize()]
+    [Authorize]
     public async Task<ActionResult> Fulfillment([FromBody] GoogleIntentRequest request)
     {
         //return Unauthorized("{\"error\": \"invalid_grant\"}");
