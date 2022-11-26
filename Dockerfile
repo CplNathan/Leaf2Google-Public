@@ -16,6 +16,7 @@ RUN dotnet workload install wasm-tools
 RUN dotnet restore "Leaf2Google.Blazor/Server/Leaf2Google.Blazor.Server.csproj"
 COPY . .
 WORKDIR "/src/Leaf2Google.Blazor/Server"
+RUN dotnet test
 RUN dotnet build "Leaf2Google.Blazor.Server.csproj" -c Release -o /app/build
 
 FROM build AS publish
