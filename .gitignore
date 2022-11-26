@@ -10,10 +10,6 @@
 *.userosscache
 *.sln.docstates
 
-# Don't track appsettings
-appsettings.json
-appsettings.*.json
-
 # Ignore Migrations
 Migrations/*
 /Migrations/*

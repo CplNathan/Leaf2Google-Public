@@ -23,6 +23,8 @@ namespace Leaf2Google.Blazor
             builder.Services.AddControllersWithViews();
             builder.Services.AddRazorPages();
 
+            builder.Configuration.AddEnvironmentVariables();
+
             builder.Services.AddDbContext<LeafContext>(options => options
                 //.UseLazyLoadingProxies()
                 .UseSqlServer(builder.Configuration[$"ConnectionStrings:{(builder.Environment.IsDevelopment() ? "Test" : "Live")}"])
