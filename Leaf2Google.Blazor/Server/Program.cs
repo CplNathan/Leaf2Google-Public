@@ -26,6 +26,9 @@ namespace Leaf2Google.Blazor
             // Add sensitive config variables from docker environment variables
             builder.Configuration.AddEnvironmentVariables();
 
+            // Use listen address specified in environment variable
+            builder.WebHost.UseUrls(builder.Configuration["APPLICATION_URL"]);
+
             builder.Services.AddDbContext<LeafContext>(options => options
                 //.UseLazyLoadingProxies()
                 .UseSqlServer(builder.Configuration[$"ConnectionStrings:{(builder.Environment.IsDevelopment() ? "Test" : "Live")}"])
