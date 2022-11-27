@@ -13,6 +13,7 @@
 		<AnalysisLevel>latest-all</AnalysisLevel>
 		<StartupObject>Leaf2Google.Blazor.Program</StartupObject>
 		<DockerfileContext>..\..</DockerfileContext>
+		<DockerfileRunEnvironmentFiles>settings.env</DockerfileRunEnvironmentFiles>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

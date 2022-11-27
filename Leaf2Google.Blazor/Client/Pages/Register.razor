@@ -59,12 +59,12 @@
         registerState.NissanUsername = loginForm?.loginModel.NissanUsername ?? "";
         registerState.NissanPassword = loginForm?.loginModel.NissanPassword ?? "";
 
-        var registerResult = await AuthState.Register(registerState);
+        registerState = await AuthState.Register(registerState) ?? registerState;
 
         var redirectURi = registerState?.redirect_uri;
 
         var query = HttpUtility.ParseQueryString(string.Empty);
-        if (registerResult?.success ?? false)
+        if (registerState?.success ?? false)
         {
             query["state"] = registerState?.state;
             query["code"] = registerState?.code.ToString();
@@ -74,7 +74,7 @@
 
             Navigation.NavigateTo(redirect_uri_processed.ToString(), true);
         }
-        else if (registerResult?.message == ResponseState.BadRequest)
+        else if (registerState?.message != ResponseState.InvalidCredentials)
         {
             query["state"] = registerState?.state;
             query["error"] = registerState?.code.ToString();
