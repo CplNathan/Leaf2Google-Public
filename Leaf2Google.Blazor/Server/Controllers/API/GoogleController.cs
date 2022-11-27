@@ -237,6 +237,9 @@ public class GoogleController : BaseController
                 form["refresh_token"].ToString() == token.RefreshToken.ToString())!;
             tokenState = EntityState.Modified;
 
+            token.Owner = (await LeafContext.GoogleAuths.Include(auth => auth.Owner).FirstOrDefaultAsync(auth =>
+                    form["code"].ToString() == auth.AuthCode.ToString()));
+
             Console.WriteLine(Logging.AddLog(token?.Owner?.Owner?.CarModelId ?? Guid.Empty, AuditAction.Update,
                 AuditContext.Google, $"Regenerating authorization code for {token?.Owner?.Owner?.NissanUsername ?? string.Empty}"));
         }

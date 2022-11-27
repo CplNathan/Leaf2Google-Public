@@ -104,7 +104,7 @@ public class AuthenticationController : BaseAPIController
                     if (auth == null)
                         return Json(BadRequest());
 
-                    CarEntity leaf = new CarEntity(form.NissanUsername, form.NissanPassword); ;
+                    CarEntity leaf = new CarEntity(form.NissanUsername, form.NissanPassword);
                     var leafId = await StorageManager.UserStorage.DoCredentialsMatch(form.NissanUsername, form.NissanPassword, true);
                     if (leafId != Guid.Empty)
                     {
