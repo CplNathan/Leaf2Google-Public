@@ -12,13 +12,15 @@ namespace Leaf2Google.Json.Google
     public class GoogleIntentRequest
     {
         public string requestId { get; set; }
-        public Input[] inputs { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public Input[]? inputs { get; set; }
     }
 
     public class Input
     {
         public string intent { get; set; }
-        public RequestPayload payload { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public RequestPayload? payload { get; set; }
     }
 
     public class RequestPayload

@@ -19,7 +19,8 @@ namespace Leaf2Google.Json.Google
 
         public string requestId { get; set; }
 
-        public ResponsePayload payload { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public ResponsePayload? payload { get; set; }
     }
 
     // Important for polymorphism
