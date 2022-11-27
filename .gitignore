@@ -10,6 +10,8 @@
 *.userosscache
 *.sln.docstates
 
+appsettings.Development.json
+
 # Ignore Migrations
 Migrations/*
 /Migrations/*
