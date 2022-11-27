@@ -35,16 +35,16 @@ public class BaseController : Controller
         }
     }
 
-    protected VehicleSessionBase? AuthenticatedSession
+    protected VehicleSessionBase AuthenticatedSession
     {
         get
         {
             var jtiClaim = AuthenticatedUser?.FindFirst(JwtRegisteredClaimNames.Jti);
 
             if (jtiClaim is null)
-                return null;
+                throw new UnauthorizedAccessException("Attempted to access active session but JWT was not valid. Invalid call.");
 
-            return StorageManager.VehicleSessions.FirstOrDefault(session => session.Key.ToString() == jtiClaim.Value).Value;
+            return StorageManager.VehicleSessions.First(session => session.Key.ToString() == jtiClaim.Value).Value;
         }
     }
 
@@ -52,6 +52,6 @@ public class BaseController : Controller
 
     protected string? SelectedVin
     {
-        get => AuthenticatedSession?.PrimaryVin;
+        get => AuthenticatedSession.PrimaryVin;
     }
 }
