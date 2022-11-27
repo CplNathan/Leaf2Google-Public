@@ -17,6 +17,7 @@ using Microsoft.EntityFrameworkCore;
 using Leaf2Google.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Leaf2Google.Blazor.Server.Helpers;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Leaf2Google.Blazor.Server.Controllers.API;
 
@@ -172,79 +173,80 @@ public class GoogleController : BaseController
         return Json(response);
     }
 
+    private JsonResult UnauthorizedResponse()
+    {
+        Response.StatusCode = StatusCodes.Status400BadRequest;
+        return Json("{\"error\": \"invalid_grant\"}");
+    }
+
     [HttpPost]
     [Consumes("application/x-www-form-urlencoded")]
     public async Task<JsonResult> Token([FromForm] IFormCollection form)
     {
-        if (form == null)
-            return Json(BadRequest());
+        if (form == null || form.Count <= 0)
+            return UnauthorizedResponse();
 
-        if (form["grant_type"] != "refresh_token" && form["grant_type"] != "authorization_code")
-            return Json(BadRequest());
-
-        if (form["grant_type"] == "authorization_code" && string.IsNullOrEmpty(form["code"]))
-            return Json(BadRequest());
-
-        // TODO: use switch block, also TODO: invalidate AuthCode once redeemed.
-
-        // Ensure that the provided code matches the same client that requested it.
-        if (form["grant_type"] == "authorization_code" && !await LeafContext.GoogleAuths.AnyAsync(auth =>
-                auth.AuthCode.ToString() == form["code"].ToString() || auth.ClientId == form["client_id"].ToString()))
-            return Json(BadRequest("{\"error\": \"invalid_grant\"}"));
-
-        if (form["grant_type"] == "authorization_code" && string.IsNullOrEmpty(form["redirect_uri"]))
-            return Json(BadRequest("{\"error\": \"invalid_grant\"}"));
-
-        if (form["grant_type"] == "authorization_code")
-        {
-            // Ensure that the uri which requested this matches the token request.
-            var formUri = new Uri(form["redirect_uri"].ToString());
-            if (form["grant_type"] == "authorization_code" &&
-                !await LeafContext.GoogleAuths.AnyAsync(auth => auth.RedirectUri == formUri))
-                return Json(BadRequest("{\"error\": \"invalid_grant\"}"));
-        }
-
-        if (form["grant_type"] == "refresh_token" && !await LeafContext.GoogleTokens.Include(token => token.Owner).AnyAsync(token =>
-                form["refresh_token"].ToString() == token.RefreshToken.ToString() &&
-                form["client_id"].ToString() == token.Owner.ClientId))
-            return Json(BadRequest("{\"error\": \"invalid_grant\"}"));
-
-        // Ensure that the client secret given by google matches our stored one.
         if (form["client_secret"] != Configuration["Google:client_secret"])
-            return Json(BadRequest("{\"error\": \"invalid_grant\"}"));
+            return UnauthorizedResponse();
 
         // Token state
         TokenEntity? token = null;
         var tokenState = EntityState.Unchanged;
 
-        if (form["grant_type"] == "authorization_code")
+        switch (form["grant_type"])
         {
-            token = new TokenEntity
-            {
-                Owner = (await LeafContext.GoogleAuths.Include(auth => auth.Owner).FirstOrDefaultAsync(auth =>
-                    form["code"].ToString() == auth.AuthCode.ToString()))!,
-                RefreshToken = Guid.NewGuid()
-            };
+            case "authorization_code":
+                {
+                    if (string.IsNullOrEmpty(form["code"]) || string.IsNullOrEmpty(form["redirect_uri"]))
+                        return UnauthorizedResponse();
 
-            Console.WriteLine(Logging.AddLog(token?.Owner?.Owner?.CarModelId ?? Guid.Empty, AuditAction.Update,
-                AuditContext.Google, $"Regenerating refresh token for {token?.Owner?.Owner?.NissanUsername ?? string.Empty}"));
+                    var formUri = new Uri(form["redirect_uri"].ToString());
+                    if (!await LeafContext.GoogleAuths.AnyAsync(auth =>
+                            auth.AuthCode.ToString() == form["code"].ToString() &&
+                            auth.ClientId == form["client_id"].ToString() &&
+                            auth.RedirectUri == formUri))
+                        return UnauthorizedResponse();
 
-            tokenState = EntityState.Added;
+                    token = new TokenEntity
+                    {
+                        Owner = (await LeafContext.GoogleAuths.Include(auth => auth.Owner).FirstOrDefaultAsync(auth =>
+                            form["code"].ToString() == auth.AuthCode.ToString()))!,
+                        RefreshToken = Guid.NewGuid()
+                    };
+
+                    Console.WriteLine(Logging.AddLog(token?.Owner?.Owner?.CarModelId ?? Guid.Empty, AuditAction.Update,
+                        AuditContext.Google, $"Regenerating refresh token for {token?.Owner?.Owner?.NissanUsername ?? string.Empty}"));
+
+                    tokenState = EntityState.Added;
+
+                    break;
+                }
+            case "refresh_token":
+                {
+                    if (!await LeafContext.GoogleTokens.Include(token => token.Owner).AnyAsync(token =>
+                            form["refresh_token"].ToString() == token.RefreshToken.ToString() &&
+                            form["client_id"].ToString() == token.Owner.ClientId))
+                        return UnauthorizedResponse();
+
+                    token = await LeafContext.GoogleTokens.Include(token => token.Owner).FirstOrDefaultAsync(token =>
+                        form["refresh_token"].ToString() == token.RefreshToken.ToString())!;
+                    token.Owner = (await LeafContext.GoogleAuths.Include(auth => auth.Owner).FirstOrDefaultAsync(auth => 
+                        token.Owner.AuthId == auth.AuthId));
+
+                    Console.WriteLine(Logging.AddLog(token?.Owner?.Owner?.CarModelId ?? Guid.Empty, AuditAction.Update,
+                        AuditContext.Google, $"Regenerating authorization code for {token?.Owner?.Owner?.NissanUsername ?? string.Empty}"));
+
+                    tokenState = EntityState.Modified;
+
+                    break;
+                }
+
+            default:
+                return UnauthorizedResponse();
         }
-        else if (form["grant_type"] == "refresh_token")
-        {
-            token = await LeafContext.GoogleTokens.Include(token => token.Owner).FirstOrDefaultAsync(token =>
-                form["refresh_token"].ToString() == token.RefreshToken.ToString())!;
-            tokenState = EntityState.Modified;
 
-            token.Owner = (await LeafContext.GoogleAuths.Include(auth => auth.Owner).FirstOrDefaultAsync(auth => token.Owner.AuthId == auth.AuthId));
-
-            Console.WriteLine(Logging.AddLog(token?.Owner?.Owner?.CarModelId ?? Guid.Empty, AuditAction.Update,
-                AuditContext.Google, $"Regenerating authorization code for {token?.Owner?.Owner?.NissanUsername ?? string.Empty}"));
-        }
-
-        if (token == null || token.Owner == null || token.Owner.Deleted.HasValue)
-            return Json(BadRequest("{\"error\": \"invalid_grant\"}"));
+        if (token == null || token.Owner == null || token.Owner.Owner == null || token.Owner.Deleted.HasValue)
+            return UnauthorizedResponse();
 
         LeafContext.Entry(token).State = tokenState;
         await LeafContext.SaveChangesAsync();
@@ -252,8 +254,9 @@ public class GoogleController : BaseController
         var jwtToken = JWT.CreateJWT(StorageManager.VehicleSessions[token.Owner.Owner.CarModelId], Configuration);
         if (tokenState == EntityState.Added)
             return Json(new RefreshTokenDto(token, jwtToken));
-        if (tokenState == EntityState.Modified)
+        else if (tokenState == EntityState.Modified)
             return Json(new AccessTokenDto(token, jwtToken));
-        return Json(BadRequest("{\"error\": \"invalid_grant\"}"));
+        else
+            return UnauthorizedResponse();
     }
 }
