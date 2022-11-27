@@ -132,6 +132,7 @@ public class AuthenticationController : BaseAPIController
                         await _googleContext.SaveChangesAsync();
 
                         response.success = true;
+                        response.redirect_uri = form.redirect_uri;
                         response.message = ResponseState.Success;
                         response.code = authCode;
                     }

@@ -32,9 +32,9 @@ namespace Leaf2Google.Entities.Google
         public int expires_in { get; set; }
     }
 
-    public class RefreshTokenDto : TokenDto
+    public class RefreshTokenDto : AccessTokenDto
     {
-        public RefreshTokenDto(TokenEntity InToken)
+        public RefreshTokenDto(TokenEntity InToken, JwtSecurityToken jwtToken) : base(InToken, jwtToken)
         {
             refresh_token = InToken.RefreshToken;
         }

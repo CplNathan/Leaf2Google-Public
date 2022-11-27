@@ -185,6 +185,8 @@ public class GoogleController : BaseController
         if (form["grant_type"] == "authorization_code" && string.IsNullOrEmpty(form["code"]))
             return Json(BadRequest());
 
+        // TODO: use switch block, also TODO: invalidate AuthCode once redeemed.
+
         // Ensure that the provided code matches the same client that requested it.
         if (form["grant_type"] == "authorization_code" && !await LeafContext.GoogleAuths.AnyAsync(auth =>
                 auth.AuthCode.ToString() == form["code"].ToString() || auth.ClientId == form["client_id"].ToString()))
@@ -245,10 +247,11 @@ public class GoogleController : BaseController
         LeafContext.Entry(token).State = tokenState;
         await LeafContext.SaveChangesAsync();
 
+        var jwtToken = JWT.CreateJWT(StorageManager.VehicleSessions[token.Owner.Owner.CarModelId], Configuration);
         if (tokenState == EntityState.Added)
-            return Json(new RefreshTokenDto(token));
+            return Json(new RefreshTokenDto(token, jwtToken));
         if (tokenState == EntityState.Modified)
-            return Json(new AccessTokenDto(token, JWT.CreateJWT(StorageManager.VehicleSessions[token.Owner.Owner.CarModelId], Configuration)));
+            return Json(new AccessTokenDto(token, jwtToken));
         return Json(BadRequest("{\"error\": \"invalid_grant\"}"));
     }
 }
