@@ -177,7 +177,7 @@ public class GoogleController : BaseController
     private JsonResult UnauthorizedResponse()
     {
         Response.StatusCode = StatusCodes.Status400BadRequest;
-        return Json("{\"error\": \"invalid_grant\"}");
+        return Json("""{"error": "invalid_grant"}""");
     }
 
     [HttpPost]
@@ -256,7 +256,7 @@ public class GoogleController : BaseController
         LeafContext.Entry(token.Owner).State = EntityState.Modified;
         await LeafContext.SaveChangesAsync();
 
-        var jwtToken = JWT.CreateJWT(StorageManager.VehicleSessions[token.Owner.Owner.CarModelId], Configuration);
+        var jwtToken = JWT.CreateJWT(StorageManager.VehicleSessions[token.Owner.Owner.CarModelId], Configuration, token.Owner);
         if (tokenState == EntityState.Added)
             return Json(new RefreshTokenDto(token, jwtToken));
         else if (tokenState == EntityState.Modified)
