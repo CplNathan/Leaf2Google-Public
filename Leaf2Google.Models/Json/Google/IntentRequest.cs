@@ -25,7 +25,8 @@ namespace Leaf2Google.Json.Google
 
     public class RequestPayload
     {
-        public RequestDevice[] devices { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public RequestDevice[]? devices { get; set; }
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public Command[]? commands { get; set; }
     }
