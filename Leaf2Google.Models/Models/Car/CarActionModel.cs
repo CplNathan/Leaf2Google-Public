@@ -9,6 +9,7 @@ public enum ActionType
     Battery,
     Climate,
     Lights,
+    Horn,
     None
 }
 
@@ -21,6 +22,8 @@ namespace Leaf2Google.Models.Car
 
     public class ActionRequest
     {
+        public ActionType Action { get; set; }
 
+        public int Duration { get; set; }
     }
 }

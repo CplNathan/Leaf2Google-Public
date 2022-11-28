@@ -110,6 +110,7 @@ public abstract class BaseSessionService
 
     private async void BaseSessionManager_OnRequest(object sender, bool requestSuccess)
     {
+        // This should not be used as various contexts may be disposed of when calling.
         if (sender is VehicleSessionBase session)
         {
             session.LastRequestSuccessful = requestSuccess;
@@ -117,7 +118,7 @@ public abstract class BaseSessionService
             if (!session.Authenticated && !session.LoginGivenUp &&
             session.LastAuthenticated > DateTime.MinValue && !requestSuccess && !session.LoginAuthenticationAttempting)
             {
-                await Login(session).ConfigureAwait(false);
+                //await Login(session).ConfigureAwait(false);
             }
         }
     }
@@ -129,7 +130,7 @@ public abstract class BaseSessionService
         return await MakeRequest<JsonObject>(session, httpRequestMessage, baseUri);
     }
 
-    protected async Task<Response<T>?> MakeRequest<T>(VehicleSessionBase session, HttpRequestMessage httpRequestMessage,
+    protected async Task<Response<T>> MakeRequest<T>(VehicleSessionBase session, HttpRequestMessage httpRequestMessage,
         string baseUri = "")
     {
         var success = true;

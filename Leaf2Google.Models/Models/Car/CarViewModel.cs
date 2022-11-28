@@ -48,4 +48,9 @@ namespace Leaf2Google.Models.Car
         public int DeltaTargetTemperature => Math.Abs(CurrentTemperature - TargetTemperature);
         public int DeltaPercentageTargetTemperature => (TargetTemperature - DeltaTargetTemperature) / TargetTemperature * 100;
     }
+
+    public class LockData
+    {
+        public bool Locked { get; set; }
+    }
 }

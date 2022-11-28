@@ -5,7 +5,7 @@ namespace Leaf2Google.Helpers;
 
 public static class Request
 {
-    public static async Task<Response<T?>> MakeRequest<T>(this HttpClient client, HttpRequestMessage httpRequestMessage)
+    public static async Task<Response<T>?> MakeRequest<T>(this HttpClient client, HttpRequestMessage httpRequestMessage)
     {
         var httpResponseMessage = await client.SendAsync(httpRequestMessage);
 

@@ -8,6 +8,7 @@ public enum QueryType
 {
     PrimaryVin,
     Battery,
+    Lock,
     Climate,
     Location,
     Photo,

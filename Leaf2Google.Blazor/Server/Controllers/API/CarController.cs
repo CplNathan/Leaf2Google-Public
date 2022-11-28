@@ -26,23 +26,40 @@ public class CarController : BaseAPIController
     }
 
     [HttpPost]
-    public async Task<JsonResult> Action([FromForm] string action, [FromForm] int? duration)
+    [Authorize]
+    public async Task<JsonResult> Action([FromBody] ActionRequest actionRequest)
     {
-        if (AuthenticatedSession != null && action != null && duration != null &&
-        StorageManager.VehicleSessions[AuthenticatedSession.SessionId] != null)
+        if (AuthenticatedSession != null)
         {
-            var clampedDuration = duration.Value > 15 ? 15 : duration.Value < 5 ? 5 : duration.Value;
+            var clampedDuration = actionRequest.Duration > 15 ? 15 : actionRequest.Duration < 5 ? 5 : actionRequest.Duration;
 
-            if (action == "flash")
-                await SessionManager.FlashLights(AuthenticatedSession, SelectedVin, clampedDuration).ConfigureAwait(false);
-            else if (action == "horn")
-                await SessionManager.BeepHorn(AuthenticatedSession, SelectedVin, clampedDuration).ConfigureAwait(false);
+            switch (actionRequest.Action)
+            {
+                case ActionType.Lights:
+                    {
+                        await SessionManager.FlashLights(AuthenticatedSession, SelectedVin, clampedDuration).ConfigureAwait(false);
+                        break;
+                    }
+                case ActionType.Horn:
+                    {
+                        await SessionManager.BeepHorn(AuthenticatedSession, SelectedVin, clampedDuration).ConfigureAwait(false);
+                        break;
+                    }
+                case ActionType.Climate:
+                    {
+                        await SessionManager.SetVehicleClimate(AuthenticatedSession, SelectedVin, actionRequest.Duration > 0 ? actionRequest.Duration : 21, actionRequest.Duration > 0).ConfigureAwait(false);
+                        break;
+                    }
+                default:
+                    throw new NotImplementedException();
+            }
         }
 
         return Json(null);
     }
 
     [HttpPost]
+    [Authorize]
     public async Task<JsonResult> Query([FromBody] QueryRequest queryRequest)
     {
         if (AuthenticatedSession != null)
@@ -67,6 +84,19 @@ public class CarController : BaseAPIController
                         {
                             Charge = lockModel.CapacityRemaining,
                             Charging = lockModel.IsCharging
+                        });
+                    }
+                case QueryType.Lock:
+                    {
+                        var lockModel = (LockModel)(StorageManager.GoogleSessions)[AuthenticatedSession.SessionId][typeof(LockDeviceService)];
+                        var lockDevice = Devices.FirstOrDefault(x => x.GetType() == typeof(LockDeviceService));
+
+                        if (lockDevice != null)
+                            await lockDevice.FetchAsync(AuthenticatedSession, lockModel, activevin);
+
+                        return Json(new LockData()
+                        {
+                            Locked = lockModel.Locked
                         });
                     }
                 case QueryType.Location:

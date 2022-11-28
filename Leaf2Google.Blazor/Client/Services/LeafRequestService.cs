@@ -212,4 +212,9 @@ public class LeafRequestService : IRequestService
     {
         return await PerformQuery<ClimateData?>(QueryType.Climate);
     }
+
+    public async Task<LockData?> GetLock()
+    {
+        return await PerformQuery<LockData?>(QueryType.Lock);
+    }
 }

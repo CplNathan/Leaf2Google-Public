@@ -105,6 +105,27 @@ a, .btn-link {
     box-shadow: unset !important;
 }
 
+.actioncard .btn:not(.actioncardtoggle) {
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.actioncard .btn {
+    cursor: not-allowed;
+}
+
+    .actioncard .btn:not([disabled]) {
+        cursor: pointer !important;
+    }
+
+    .actioncard .btn:hover:not([disabled]) {
+        color: #fff !important;
+    }
+
+.actioncard:hover .btn:not(.actioncardtoggle) {
+    opacity: 0.8;
+}
+
 /*
 .actioncard {
     height: 100%;
