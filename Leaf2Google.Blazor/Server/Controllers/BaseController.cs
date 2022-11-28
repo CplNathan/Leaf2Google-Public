@@ -15,10 +15,9 @@ namespace Leaf2Google.Controllers;
 
 public class BaseController : Controller
 {
-    public BaseController(BaseStorageService storageManager, LeafContext leafContext)
+    public BaseController(BaseStorageService storageManager)
     {
         StorageManager = storageManager;
-        LeafContext = leafContext;
     }
 
     protected ClaimsPrincipal AuthenticatedUser
@@ -61,13 +60,11 @@ public class BaseController : Controller
                 throw new UnauthorizedAccessException("Attempted to access active session but JWT was not valid or claim was not found. Invalid call.");
 
             var claimValue = jtiClaim.Value.Split(",")[1];
-            return LeafContext.GoogleAuths.First(auth => auth.AuthId.ToString() == claimValue);
+            return StorageManager.AuthSessions.First(auth => auth.AuthId.ToString() == claimValue);
         }
     }
 
     protected BaseStorageService StorageManager { get; }
-
-    protected LeafContext LeafContext;
 
     protected string? SelectedVin
     {

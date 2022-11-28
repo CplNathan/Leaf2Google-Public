@@ -5,6 +5,7 @@ using Leaf2Google.Models.Google.Devices;
 using Leaf2Google.Models.Car.Sessions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
+using Leaf2Google.Entities.Google;
 
 namespace Leaf2Google.Services
 {
@@ -111,6 +112,8 @@ namespace Leaf2Google.Services
 
     public class SessionStorageContainer
     {
+        public Guid ApplicationSecret { get; } = Guid.NewGuid();
+
         public Dictionary<Guid, VehicleSessionBase> VehicleSessions { get; init; }
 
         public Dictionary<Guid, Dictionary<Type, BaseDeviceModel>> GoogleSessions { get; init; }
@@ -124,7 +127,7 @@ namespace Leaf2Google.Services
 
     public class BaseStorageService
     {
-        public Guid ApplicationSecret { get; } = Guid.NewGuid();
+        public Guid ApplicationSecret { get => StorageContainer.ApplicationSecret; }
 
         protected LeafContext LeafContext { get; }
 
@@ -135,6 +138,8 @@ namespace Leaf2Google.Services
         public Dictionary<Guid, VehicleSessionBase> VehicleSessions { get => StorageContainer.VehicleSessions; }
 
         public Dictionary<Guid, Dictionary<Type, BaseDeviceModel>> GoogleSessions { get => StorageContainer.GoogleSessions; }
+
+        public DbSet<AuthEntity> AuthSessions { get => LeafContext.GoogleAuths; }
 
         public BaseStorageService(LeafContext leafContext, IUserStorage userStorage, SessionStorageContainer sessionStorageContainer)
         {

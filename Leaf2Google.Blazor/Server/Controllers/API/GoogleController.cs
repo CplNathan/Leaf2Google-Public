@@ -27,7 +27,7 @@ public class GoogleController : BaseController
 {
     public GoogleController(BaseStorageService storageManager, ICarSessionManager sessionManager, GoogleStateService googleState, LeafContext leafContext,
         LoggingService logging, IEnumerable<IDevice> activeDevices, IConfiguration configuration)
-        : base(storageManager, null)
+        : base(storageManager)
     {
         SessionManager = sessionManager;
         GoogleState = googleState;
