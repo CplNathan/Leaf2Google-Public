@@ -8,6 +8,6 @@ namespace Leaf2Google.Models.Google
 
     public class SessionInfoViewModel
     {
-        public List<AuthModel> auths { get; set; }
+        public List<AuthEntity> auths { get; set; }
     }
 }

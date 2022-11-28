@@ -1,0 +1,44 @@
+﻿@page "/login"
+@inject LeafAuthenticationStateService AuthState
+@inject NavigationManager Navigation
+@attribute [AllowAnonymous]
+
+<div class="position-absolute">
+    <div class="alert alert-warning w-100 position-relative @LoginErrorClass" role="alert">
+        Unable to authenticate with Nissan services using the supplied credentials.
+    </div>
+</div>
+
+<PageTitle>Login</PageTitle>
+
+<LoginForm @ref="loginForm" ValidSubmit="@OnValidSubmit" />
+
+@code {
+    [Parameter]
+    public bool ShowLoginError { get; set; }
+
+    public string LoginErrorClass => ShowLoginError ? "" : "d-none";
+
+    public LoginForm? loginForm;
+
+    protected async Task OnValidSubmit(ChangeEventArgs? args)
+    {
+        var loginResult = await AuthState.Login(loginForm?.loginModel ?? new Models.Google.LoginModel(), true);
+
+        if (loginResult?.success ?? false)
+        {
+            var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+            var returnUrl = QueryHelpers.ParseQuery(uri.Query).FirstOrDefault(val => val.Key == "returnUrl");
+            var returnUrlString = returnUrl.Value.ToString();
+
+            if (!string.IsNullOrEmpty(returnUrlString))
+            {
+                Navigation.NavigateTo(returnUrlString);
+            }
+        }
+        else
+        {
+            ShowLoginError = true;
+        }
+    }
+}

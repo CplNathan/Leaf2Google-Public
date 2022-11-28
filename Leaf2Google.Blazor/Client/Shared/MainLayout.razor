@@ -1,0 +1,13 @@
+﻿@inherits LayoutComponentBase
+
+<div class="row g-0 h-100 w-100 flex-column flex-md-row justify-content-between bg-dark">
+    <div class="col col-12 col-md-1 order-1 order-md-0 shadow">
+        <NavMenu />
+    </div>
+
+    <main class="col col-12 col-md-11 flex-fill g-2">
+        <article class="d-flex flex-column align-items-center h-100">
+            @Body
+        </article>
+    </main>
+</div>

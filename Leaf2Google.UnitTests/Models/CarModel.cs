@@ -9,7 +9,7 @@ namespace Leaf2Google.UnitTests.Models
     [TestFixture]
     public class CarModel_Tests
     {
-        private CarModel _carModel;
+        private CarEntity _carModel;
 
         public const string _username = "TestUser";
 
@@ -28,7 +28,7 @@ namespace Leaf2Google.UnitTests.Models
         {
             // Arrange / Act
             // Each new instance has a new IV/Key so to ensure that testing is consistent use a single instance.
-            _carModel = new CarModel(_username, _password);
+            _carModel = new CarEntity(_username, _password);
         }
 
         // This test now may be redundant as the DbSet has a property converter assigned to it instead - the StorageManager test replaces this.

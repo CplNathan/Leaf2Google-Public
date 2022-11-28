@@ -56,33 +56,30 @@ namespace Leaf2Google.Models.Google.Devices
 
         public DateTime LastUpdated { get; set; } = DateTime.MinValue;
 
-        public bool WillFetch => DateTime.UtcNow - LastUpdated > TimeSpan.FromMinutes(1);
+        public bool WillFetch => DateTime.UtcNow - LastUpdated > TimeSpan.FromSeconds(10);
 
-        public virtual JsonObject Sync()
+        public virtual JsonObject Sync() => new JsonObject()
         {
-            return new JsonObject
+            { "id", Id },
+            { "type", Type },
+            { "traits", JsonValue.Create(Traits) },
             {
-                { "id", Id },
-                { "type", Type },
-                { "traits", JsonValue.Create(Traits) },
+                "name", new JsonObject
                 {
-                    "name", new JsonObject
-                    {
-                        { "name", Name }
-                    }
-                },
-                { "willReportState", WillReportState },
-                { "attributes", Attributes },
-                {
-                    "deviceInfo", new JsonObject
-                    {
-                        { "manufacturer", "Nathan Leaf2Google" },
-                        { "model", "Nissan Leaf" },
-                        { "hwVersion", "1.0" },
-                        { "swVersion", "1.0" }
-                    }
+                    { "name", Name }
                 }
-            };
-        }
+            },
+            { "willReportState", WillReportState },
+            { "attributes", Attributes },
+            {
+                "deviceInfo", new JsonObject
+                {
+                    { "manufacturer", "Nathan Leaf2Google" },
+                    { "model", "Nissan Leaf" },
+                    { "hwVersion", "1.0" },
+                    { "swVersion", "1.0" }
+                }
+            }
+        };
     }
 }

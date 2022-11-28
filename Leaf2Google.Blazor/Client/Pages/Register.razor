@@ -1,0 +1,92 @@
+﻿@page "/google/auth"
+@using Leaf2Google.Models.Google
+@using Leaf2Google.Blazor.Client.Helpers
+@using System.Web;
+@inject LeafAuthenticationStateService AuthState
+@inject NavigationManager Navigation
+@attribute [AllowAnonymous]
+
+<div class="position-absolute">
+    <div class="alert alert-warning w-100 position-relative @LoginErrorClass" role="alert">
+        Unable to authenticate with Nissan services using the supplied credentials.
+    </div>
+</div>
+
+<LoginForm @ref="loginForm" ValidSubmit="@OnValidSubmit" />
+
+@code {
+    public LoginForm? loginForm;
+
+    public RegisterResponse registerState = new();
+
+    private bool ShowLoginError { get; set; }
+
+    public string LoginErrorClass => ShowLoginError ? "" : "d-none";
+
+    protected override async Task OnInitializedAsync()
+    {
+        Navigation.TryGetQueryString<string>("client_id", out string client_id);
+        Navigation.TryGetQueryString<string>("redirect_uri", out string redirect_uri);
+        Navigation.TryGetQueryString<string>("state", out string state);
+
+        RegisterModel registerModel = new()
+            {
+                NissanUsername = "loopback@localhost.local",
+                NissanPassword = "-",
+                client_id = client_id,
+                redirect_uri = string.IsNullOrEmpty(redirect_uri) ? null : new Uri(redirect_uri),
+                state = state,
+                request = RequestState.Initial
+            };
+
+        registerState = await AuthState.Register(registerModel) ?? new();
+
+        if (!registerState.success) // Need to validate to prevent bad outbound redirects
+        {
+            var query = HttpUtility.ParseQueryString(string.Empty);
+            query["state"] = state;
+            query["error"] = "1";
+
+            var redirect_uri_processed = new UriBuilder(redirect_uri);
+            redirect_uri_processed.Query = query.ToString();
+
+            Navigation.NavigateTo(redirect_uri_processed.ToString(), true);
+        }
+    }
+
+    protected async Task OnValidSubmit(ChangeEventArgs? args)
+    {
+        registerState.NissanUsername = loginForm?.loginModel.NissanUsername ?? "";
+        registerState.NissanPassword = loginForm?.loginModel.NissanPassword ?? "";
+
+        var registerResult = await AuthState.Register(registerState);
+
+        var redirectURi = registerResult?.redirect_uri;
+
+        var query = HttpUtility.ParseQueryString(string.Empty);
+        if (registerResult?.success ?? false)
+        {
+            query["state"] = registerResult?.state;
+            query["code"] = registerResult?.code.ToString();
+
+            var redirect_uri_processed = new UriBuilder(redirectURi!);
+            redirect_uri_processed.Query = query.ToString();
+
+            Navigation.NavigateTo(redirect_uri_processed.ToString(), true);
+        }
+        else if (registerResult?.message != ResponseState.InvalidCredentials)
+        {
+            query["state"] = registerResult?.state;
+            query["error"] = registerResult?.code.ToString();
+
+            var redirect_uri_processed = new UriBuilder(redirectURi!);
+            redirect_uri_processed.Query = query.ToString();
+
+            Navigation.NavigateTo(redirect_uri_processed.ToString(), true);
+        }
+        else
+        {
+            ShowLoginError = true;
+        }
+    }
+}

@@ -16,24 +16,24 @@ namespace Leaf2Google.Models.Google.Devices
             traits = new List<string> { "TemperatureSetting" };
             WillReportState = true;
             Attributes = new JsonObject()
-        {
             {
-                "availableThermostatModes", JsonValue.Create(new List<string>()
                 {
-                    "off",
-                    "heatcool"
-                })
-            },
-            {
-                "thermostatTemperatureRange", JsonValue.Create(new Dictionary<string, int>()
+                    "availableThermostatModes", JsonValue.Create(new List<string>()
+                    {
+                        "off",
+                        "heatcool"
+                    })
+                },
                 {
-                    { "minThresholdCelsius", 16 },
-                    { "maxThresholdCelsius", 26 }
-                })
-            },
-            { "thermostatTemperatureUnit", "C" },
-            { "bufferRangeCelsius", 0 }
-        };
+                    "thermostatTemperatureRange", JsonValue.Create(new Dictionary<string, int>()
+                    {
+                        { "minThresholdCelsius", 16 },
+                        { "maxThresholdCelsius", 26 }
+                    })
+                },
+                { "thermostatTemperatureUnit", "C" },
+                { "bufferRangeCelsius", 0 }
+            };
 
             SupportedCommands = new List<string> { "ThermostatTemperatureSetpoint", "ThermostatSetMode" };
         }

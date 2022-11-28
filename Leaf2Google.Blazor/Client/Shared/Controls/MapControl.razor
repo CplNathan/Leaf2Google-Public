@@ -1,0 +1,20 @@
+﻿@using Leaf2Google.Models.Car
+@inject IJSRuntime JS
+
+<div id="map" class="h-100 w-100 shadow rounded-3"></div>
+
+@code {
+    [Parameter]
+    public MapData? MapData { get; set; }
+
+    public async Task OnLocationChanged(object? sender, EventArgs args)
+    {
+        await JS.InvokeVoidAsync("mapLocation", MapData?.CarLocation?.Y, MapData?.CarLocation?.X, MapData?.CarPhoto);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("loadMap", "map", MapData?.CarLocation?.Y, MapData?.CarLocation?.X);
+        await JS.InvokeVoidAsync("mapLocation", MapData?.CarLocation?.Y, MapData?.CarLocation?.X, MapData?.CarPhoto);
+    }
+}

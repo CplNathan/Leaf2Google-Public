@@ -1,8 +1,0 @@
-﻿@model List<string?>
-
-@{
-    @if (Model != null)
-    {
-        @Html.DropDownList("Select VIN", Model.Select(item => new SelectListItem { Text = item, Value = item, Selected = Model.IndexOf(item) == 0 }), new { @class = "rounded" })
-    }
-}

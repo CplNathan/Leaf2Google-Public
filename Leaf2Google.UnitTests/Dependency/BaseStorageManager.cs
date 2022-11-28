@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. BaseStorageManager.cs
 
 using Leaf2Google.Contexts;
-using Leaf2Google.Dependency;
+using Leaf2Google.Services;
 using Leaf2Google.Entities.Car;
 using Leaf2Google.Models.Car;
 using Microsoft.EntityFrameworkCore;
@@ -20,7 +20,7 @@ namespace Leaf2Google.UnitTests.Dependency
     {
         private DbContextOptions<LeafContext> _options;
         private LeafContext _leafContext;
-        private BaseStorageManager _storageManager;
+        private BaseStorageService _storageManager;
 
         public const string _username = "TestUser";
 
@@ -50,7 +50,7 @@ namespace Leaf2Google.UnitTests.Dependency
 
             _leafContext = new LeafContext(_options);
             var _userStorage = new UserStorage(_leafContext);
-            _storageManager = new BaseStorageManager(_leafContext, _userStorage, null);
+            _storageManager = new BaseStorageService(_leafContext, _userStorage, null);
         }
 
         [TearDown]
@@ -60,46 +60,47 @@ namespace Leaf2Google.UnitTests.Dependency
         }
 
         [TestCaseSource(nameof(InvalidCredentialsSource))]
-        public void Login_WithInvalidValid_ReturnsEmpty(string username, string password)
+        public async Task Login_WithInvalidValid_ReturnsEmpty(string username, string password)
         {
             // Act
             using (var context = new LeafContext(_options))
             {
-                context.NissanLeafs.Add(new CarModel(_username, _password));
-                context.SaveChanges();
+                await context.NissanLeafs.AddAsync(new CarEntity(_username, _password));
+                await context.SaveChangesAsync();
             }
 
             // Assert
-            Assert.AreEqual(Guid.Empty, _storageManager.UserStorage.LoginUser(username, password).Result);
+            Assert.AreEqual(Guid.Empty, await _storageManager.UserStorage.LoginUser(username, password));
         }
 
         [TestCaseSource(nameof(ValidCredentialsSource))]
-        public void Login_WithValid_ReturnsGuid(string username, string password)
+        public async Task Login_WithValid_ReturnsGuid(string username, string password)
         {
             // Act
             var expectedGuid = Guid.NewGuid();
             using (var context = new LeafContext(_options))
             {
-                context.NissanLeafs.Add(new CarModel(_username, _password) { CarModelId = expectedGuid });
-                context.SaveChanges();
+                await context.NissanLeafs.AddAsync(new CarEntity(_username, _password) { CarModelId = expectedGuid });
+                await context.SaveChangesAsync();
             }
 
             // Assert
-            Assert.AreEqual(expectedGuid, _storageManager.UserStorage.LoginUser(username, password).Result);
+            Assert.AreEqual(expectedGuid, await _storageManager.UserStorage.LoginUser(username, password));
         }
 
+        // Slow Implementation :|
         [TestCaseSource(nameof(ValidCredentialsSource))]
-        public void Login_WithDeleted_ReturnsEmpty(string username, string password)
+        public async Task Login_WithDeleted_ReturnsEmpty(string username, string password)
         {
             // Act
             using (var context = new LeafContext(_options))
             {
-                context.NissanLeafs.Add(new CarModel(_username, _password) { Deleted = DateTime.UtcNow });
-                context.SaveChanges();
+                await context.NissanLeafs.AddAsync(new CarEntity(_username, _password) { Deleted = DateTime.UtcNow });
+                await context.SaveChangesAsync();
             }
 
             // Assert
-            Assert.AreEqual(Guid.Empty, _storageManager.UserStorage.LoginUser(username, password).Result);
+            Assert.AreEqual(Guid.Empty, await _storageManager.UserStorage.LoginUser(username, password));
         }
     }
 }

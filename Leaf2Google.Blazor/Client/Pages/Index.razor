@@ -1,0 +1,217 @@
+﻿@page "/{SelectedVin?}"
+@using Leaf2Google.Models.Car
+@inject IRequestService RequestService
+@implements IDisposable
+@attribute [Authorize]
+
+<PageTitle>Home</PageTitle>
+
+<div class="row flex-column flex-md-row w-100 flex-grow-1 g-2 pb-2">
+    <div class="col col-12 col-md-11 col-lg-10 col-xl-1 flex-fill">
+        <MapControl @ref="mapControl" MapData="@Map" />
+    </div>
+    <div class="d-flex col-12 col-md-1 col-lg-2 col-xl-1">
+        <div class="row flex-row flex-md-column g-2 flex-fill flex-grow-1">
+            <div class="col col-md-12">
+                <div class="btn btn-action ratio ratio-1x1 bg-dark text-primary shadow rounded-3 p-0" @onclick="OnLightsClick">
+                    <div class="d-flex justify-content-center align-items-center">
+                        <i class="fa-2x fa-regular fa-lightbulb"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col col-md-12">
+                <div class="btn btn-action ratio ratio-1x1 bg-dark text-primary shadow rounded-3 p-0" @onclick="OnHornClick">
+                    <div class="d-flex justify-content-center align-items-center">
+                        <i class="fa-2x fa-solid fa-bullhorn"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col col-md-12">
+                <div class="btn btn-action ratio ratio-1x1 bg-dark @(Lock.Locked ? "text-success" : "text-danger") shadow rounded-3 p-0" @onmouseover="LockMouseOver" @onmouseout="LockMouseOut">
+                    <div class="d-flex justify-content-center align-items-center">
+                        <i class="fa-2x fa-solid @(Lock.Locked ^ !LockHovering ? "fa-lock-open" : "fa-lock")"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col col-sm-6 col-md-12 mt-md-auto">
+                <div class="h-100 w-100 bg-dark text-primary shadow rounded-3 p-0">
+                    <BatteryControl ChargeData="@Charge" />
+                </div>
+            </div>
+            @*
+            <div class="col col-md-12">
+            <BatteryControl ChargeData="@Charge" />
+            </div>
+            *@
+        </div>
+    </div>
+</div>
+<div class="row w-100 row-cols-2 row-cols-sm-3 row-cols-md-auto justify-content-between align-items-end flex-shrink-1 action-scroller g-2 pb-2">
+    <div class="col flex-grow-1 pt-0 actioncard" @onmouseout="ClimateMouseOut" @onmouseover="ClimateMouseOver">
+        <div class="d-flex flex-column justify-content-between align-items-center align-items-md-start text-white shadow rounded-3 p-2 h-100">
+            <h6>Climate Control</h6>
+            <div class="d-flex align-items-center flex-column flex-sm-row">
+                <div class="@(Climate.ClimateActive ? "bg-success" : "bg-danger") rounded-3 mx-1">
+                    <i class="btn actioncardtoggle fa-solid @(Climate.ClimateActive ? "fa-spin" : "") fa-fan fa-2x p-1" @onclick="ClimateToggle"></i>
+                </div>
+                <div class="d-flex align-items-center">
+                    <i class="btn p-0 fa-solid fa-square-caret-up mx-1 fa-2x text-danger order-0 order-md-1" disabled="@(Climate.ClimateActive)" @onclick="IncrementTemperature"></i>
+                    <h4 class="m-2 @(ClimateHovering ? "text-warning" : Climate.CurrentTemperature >= Climate.TargetTemperature ? "text-success" : "")">@(ClimateHovering ? Climate.TargetTemperature : Climate.CurrentTemperature)c</h4>
+                    <i class="btn p-0 fa-solid fa-square-caret-down mx-1 fa-2x text-primary" disabled="@(Climate.ClimateActive)" @onclick="DecrementTemperature"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col flex-grow-1 pt-0 actioncard">
+        <div class="d-flex flex-column justify-content-between align-items-center align-items-md-start text-white shadow rounded-3 p-2 h-100">
+            <h6>Charge Control</h6>
+            <div class="d-flex align-items-center flex-column flex-sm-row">
+                <div class="@(Charge.Charging ? "bg-success" : "bg-danger") rounded-3 mx-1">
+                    <i class="btn actioncardtoggle fa-solid @(Charge.Charging ? "fa-beat" : "") fa-charging-station fa-2x p-1" style="--fa-beat-scale: 0.9;"></i>
+                </div>
+                <h4 class="m-2">@(Charge.Charge)%</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col flex-grow-1 pt-0 actioncard">
+        <div class="d-flex flex-column justify-content-between align-items-center align-items-md-start text-white shadow rounded-3 p-2 h-100">
+            <h6>Charge Limit</h6>
+            <div class="d-flex align-items-center flex-column flex-sm-row">
+                <div class="bg-danger rounded-3 mx-1">
+                    <i class="btn actioncardtoggle fa-solid fa-charging-station fa-2x p-1"></i>
+                </div>
+                <h4 class="m-2">@(Charge.Charge)%</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col col-12 col-md-1 col-lg-2 col-xl-1 h-100 pt-0">
+        <div class="rounded-3 w-100 h-100">
+        </div>
+    </div>
+</div>
+
+@code {
+    /* Parameters */
+    [Parameter]
+    public string? SelectedVin { get; set; }
+
+    /* Controls */
+    private MapControl? mapControl;
+
+    /* Control Objects */
+    public MapData Map { get; set; } = new();
+
+    public BatteryData Charge { get; set; } = new();
+
+    public ClimateData Climate { get; set; } = new();
+
+    public LockData Lock { get; set; } = new();
+
+    public bool LockHovering { get; set; } = false;
+
+    public bool ClimateHovering { get; set; } = false;
+
+    private System.Threading.Timer timer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UpdateControls(true);
+        IAuthService.OnAuthentication += OnAuthenticationChanged;
+
+        timer = new System.Threading.Timer(async _ =>
+        {
+            await UpdateControls();
+            await InvokeAsync(StateHasChanged);
+        }, null, 0, 1000);
+    }
+
+    protected async void OnAuthenticationChanged(object? sender, bool authenticated)
+    {
+        if (authenticated)
+        {
+            await UpdateControls();
+        }
+    }
+
+    protected async Task UpdateControls(bool pageLoad = false)
+    {
+        await UpdateMap().ConfigureAwait(false);
+        await UpdateBattery().ConfigureAwait(false);
+        await UpdateClimate(pageLoad).ConfigureAwait(false);
+        await UpdateLock().ConfigureAwait(false);
+    }
+
+    protected async Task UpdateMap()
+    {
+        var carLocationTask = ((LeafRequestService)RequestService).GetLocation();
+        var carPhotoTask = ((LeafRequestService)RequestService).GetPhoto();
+
+        Map.CarLocation = await carLocationTask;
+        Map.CarPhoto = await carPhotoTask;
+
+        await mapControl!.OnLocationChanged(this, new());
+    }
+
+    protected async Task UpdateBattery()
+    {
+        var batteryTask = ((LeafRequestService)RequestService).GetBattery();
+
+        Charge = await batteryTask ?? new();
+    }
+
+    protected async Task UpdateClimate(bool pageLoad = false)
+    {
+        var climateTask = ((LeafRequestService)RequestService).GetClimate();
+
+        var climateResult = await climateTask ?? new();
+        climateResult.TargetTemperature = pageLoad ? climateResult.TargetTemperature : Climate.TargetTemperature;//(climateResult.ClimateActive || Climate.ClimateActive) ? Climate.TargetTemperature : climateResult.TargetTemperature;
+        Climate = climateResult;
+    }
+
+    protected async Task UpdateLock()
+    {
+        var lockTask = ((LeafRequestService)RequestService).GetLock();
+
+        Lock = await lockTask ?? new();
+    }
+
+    void LockMouseOver(MouseEventArgs e) { LockHovering = true; }
+
+    void LockMouseOut(MouseEventArgs e) { LockHovering = false; }
+
+    void ClimateMouseOver(MouseEventArgs e) { ClimateHovering = true; }
+
+    void ClimateMouseOut(MouseEventArgs e) { ClimateHovering = false; }
+
+    public void IncrementTemperature()
+    {
+        if (!Climate.ClimateActive) Climate.TargetTemperature += 1;
+    }
+
+    public void DecrementTemperature()
+    {
+        if (!Climate.ClimateActive) Climate.TargetTemperature -= 1;
+    }
+
+    public async Task OnLightsClick()
+    {
+        await ((LeafRequestService)RequestService).PerformAction<ActionRequest>(new ActionRequest() { Action = ActionType.Lights, Duration = 5 }).ConfigureAwait(false);
+    }
+
+    public async Task OnHornClick()
+    {
+        await ((LeafRequestService)RequestService).PerformAction<ActionRequest>(new ActionRequest() { Action = ActionType.Horn, Duration = 5 }).ConfigureAwait(false);
+    }
+
+    public async Task ClimateToggle()
+    {
+        await ((LeafRequestService)RequestService).PerformAction<ActionRequest>(new ActionRequest() { Action = ActionType.Climate, Duration = Climate.ClimateActive ? -1 : Climate.TargetTemperature }).ConfigureAwait(false);
+        Climate.ClimateActive = !Climate.ClimateActive;
+    }
+
+    public void Dispose()
+    {
+        IAuthService.OnAuthentication -= OnAuthenticationChanged;
+        timer?.Dispose();
+    }
+}

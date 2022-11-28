@@ -1,0 +1,18 @@
+﻿@using Leaf2Google.Models.Car
+
+<div id="batteryStatus" class="progress d-flex w-100 h-100">
+    <div id="remainingBar" class="progress-bar bg-success p-3 @RemainingClass" style="@($"width:{ChargeData.RemainingCharge}%;")">
+        <i class="fa-solid fa-bolt"></i>
+    </div>
+    <div id="usageBar" class="progres-bar bg-danger" style="@($"width:{ChargeData.UsageCharge}%;")">
+    </div>
+    <div id="optimalBar" class="progress-bar bg-warning" style="@($"width:{ChargeData.OptimalCharge}%;")">
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public BatteryData ChargeData { get; set; } = new();
+
+    private string RemainingClass => ChargeData.Charging ? "progress-bar-striped progress-bar-animated" : "";
+}

@@ -10,9 +10,7 @@
 *.userosscache
 *.sln.docstates
 
-# Don't track appsettings
-appsettings.json
-appsettings.*.json
+appsettings.Development.json
 
 # Ignore Migrations
 Migrations/*
@@ -399,3 +397,4 @@ FodyWeavers.xsd
 /Leaf2Google/Migrations/20220827180530_Update_2.cs
 /Leaf2Google/Migrations/20220827013057_Update_1.cs
 /Leaf2Google/Migrations/20220826230417_InitialCreate.cs
+/Leaf2Google.Blazor/Server/appsettings.Development.json
