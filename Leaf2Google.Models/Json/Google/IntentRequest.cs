@@ -19,15 +19,14 @@ namespace Leaf2Google.Json.Google
     public class Input
     {
         public string intent { get; set; }
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public RequestPayload? payload { get; set; }
+        public RequestPayload payload { get; set; }
     }
 
     public class RequestPayload
     {
         public RequestDevice[] devices { get; set; }
-
-        public Command[] commands { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public Command[]? commands { get; set; }
     }
 
     public class Command
@@ -47,6 +46,7 @@ namespace Leaf2Google.Json.Google
     public class RequestDevice
     {
         public string id { get; set; }
-        public JsonObject customData { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public JsonObject? customData { get; set; }
     }
 }
