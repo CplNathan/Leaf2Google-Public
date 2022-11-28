@@ -204,6 +204,7 @@ public class GoogleController : BaseController
                     var formUri = new Uri(form["redirect_uri"].ToString());
                     if (!await LeafContext.GoogleAuths.AnyAsync(auth =>
                             auth.AuthCode.ToString() == form["code"].ToString() &&
+                            auth.AuthCode != null &&
                             auth.ClientId == form["client_id"].ToString() &&
                             auth.RedirectUri == formUri))
                         return UnauthorizedResponse();
@@ -214,6 +215,8 @@ public class GoogleController : BaseController
                             form["code"].ToString() == auth.AuthCode.ToString()))!,
                         RefreshToken = Guid.NewGuid()
                     };
+
+                    token.Owner.AuthCode = null;
 
                     Console.WriteLine(Logging.AddLog(token?.Owner?.Owner?.CarModelId ?? Guid.Empty, AuditAction.Update,
                         AuditContext.Google, $"Regenerating refresh token for {token?.Owner?.Owner?.NissanUsername ?? string.Empty}"));
@@ -250,6 +253,7 @@ public class GoogleController : BaseController
             return UnauthorizedResponse();
 
         LeafContext.Entry(token).State = tokenState;
+        LeafContext.Entry(token.Owner).State = EntityState.Modified;
         await LeafContext.SaveChangesAsync();
 
         var jwtToken = JWT.CreateJWT(StorageManager.VehicleSessions[token.Owner.Owner.CarModelId], Configuration);
