@@ -166,6 +166,7 @@ public class GoogleController : BaseController
                     }
             }
 
+            // Need to update auth last used.
             //LeafContext.GoogleAuths.Update(auth);
             await LeafContext.SaveChangesAsync();
         }

@@ -101,6 +101,10 @@ a, .btn-link {
         scroll-snap-align: center;
     }
 
+.btn-action:hover {
+    box-shadow: unset !important;
+}
+
 /*
 .actioncard {
     height: 100%;

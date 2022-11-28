@@ -7,30 +7,35 @@
 <PageTitle>Home</PageTitle>
 
 <div class="row flex-column flex-md-row w-100 flex-grow-1 g-2 pb-2">
-    <div class="col col-12 col-md-9 flex-fill">
+    <div class="col col-12 col-md-11 col-lg-10 col-xl-1 flex-fill">
         <MapControl @ref="mapControl" MapData="@Map" />
     </div>
-    <div class="col-12 col-md-3">
-        <div class="row flex-shrink-1 g-2 py-1">
-            <div class="col col-4 col-sm-2 col-md-6 col-lg-6">
-                <div class="ratio ratio-1x1 bg-dark text-primary shadow rounded-3">
+    <div class="col-12 col-md-1 col-lg-2 col-xl-1">
+        <div class="row flex-row flex-md-column g-2 py-1 h-100">
+            <div class="col col-md-12">
+                <div class="btn btn-action ratio ratio-1x1 bg-dark text-primary shadow rounded-3 p-0">
                     <div class="d-flex justify-content-center align-items-center">
-                        <i class="fa-3x fa-regular fa-lightbulb"></i>
+                        <i class="fa-2x fa-regular fa-lightbulb"></i>
                     </div>
                 </div>
             </div>
-            <div class="col col-4 col-sm-2 col-md-6 col-lg-6">
-                <div class="ratio ratio-1x1 bg-dark text-primary shadow rounded-3">
+            <div class="col col-md-12">
+                <div class="btn btn-action ratio ratio-1x1 bg-dark text-primary shadow rounded-3 p-0">
                     <div class="d-flex justify-content-center align-items-center">
-                        <i class="fa-3x fa-solid fa-bullhorn"></i>
+                        <i class="fa-2x fa-solid fa-bullhorn"></i>
                     </div>
                 </div>
             </div>
-            <div class="col col-4 col-sm-2 col-md-6 col-lg-6">
-                <div class="ratio ratio-1x1 bg-dark text-primary shadow rounded-3">
+            <div class="col col-md-12">
+                <div class="btn btn-action ratio ratio-1x1 bg-dark text-primary shadow rounded-3 p-0">
                     <div class="d-flex justify-content-center align-items-center">
-                        <i class="fa-3x fa-solid fa-lock"></i>
+                        <i class="fa-2x fa-solid fa-lock"></i>
                     </div>
+                </div>
+            </div>
+            <div class="col col-sm-6 col-md-12 mt-md-auto">
+                <div class="btn btn-action h-100 w-100 bg-dark text-primary shadow rounded-3 p-0">
+                    <BatteryControl ChargeData="@Charge" />
                 </div>
             </div>
             @*
@@ -42,7 +47,7 @@
     </div>
 </div>
 <div class="row w-100 row-cols-2 row-cols-sm-3 row-cols-md-auto justify-content-between align-items-end flex-shrink-1 action-scroller g-2 pb-2">
-    <div class="col flex-grow-1 pt-2 actioncard">
+    <div class="col flex-grow-1 pt-0 actioncard">
         <div class="d-flex flex-column justify-content-between align-items-center align-items-md-start text-white shadow rounded-3 p-2 h-100">
             <h6>Climate Control</h6>
             <div class="d-flex align-items-center flex-column flex-sm-row">
@@ -51,7 +56,7 @@
             </div>
         </div>
     </div>
-    <div class="col flex-grow-1 pt-2 actioncard">
+    <div class="col flex-grow-1 pt-0 actioncard">
         <div class="d-flex flex-column justify-content-between align-items-center align-items-md-start text-white shadow rounded-3 p-2 h-100">
             <h6>Charge Control</h6>
             <div class="d-flex align-items-center flex-column flex-sm-row">
@@ -62,7 +67,7 @@
             </div>
         </div>
     </div>
-    <div class="col flex-grow-1 pt-2 actioncard">
+    <div class="col flex-grow-1 pt-0 actioncard">
         <div class="d-flex flex-column justify-content-between align-items-center align-items-md-start text-white shadow rounded-3 p-2 h-100">
             <h6>Charge Limit</h6>
             <div class="d-flex align-items-center flex-column flex-sm-row">
@@ -71,10 +76,9 @@
             </div>
         </div>
     </div>
-    <div class="col col-12 col-md-3 h-100 pt-2
-">
-        <div class="bg-dark shadow rounded-3 w-100 h-100">
-            <BatteryControl ChargeData="@Charge" />
+    <div class="col col-12 col-md-1 col-lg-2 col-xl-1 h-100 pt-0">
+        <div class="rounded-3 w-100 h-100">
+            
         </div>
     </div>
 </div>
