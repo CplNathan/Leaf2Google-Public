@@ -55,7 +55,7 @@ namespace Leaf2Google.Blazor.Server.Helpers
             return new JsonResult(new JsonObject { { "error", "invalid_grant" } })
             {
                 ContentType = "application/json",
-                StatusCode = StatusCodes.Status400BadRequest
+                StatusCode = StatusCodes.Status401Unauthorized
             };
         }
 
