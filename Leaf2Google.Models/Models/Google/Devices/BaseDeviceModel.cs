@@ -56,7 +56,7 @@ namespace Leaf2Google.Models.Google.Devices
 
         public DateTime LastUpdated { get; set; } = DateTime.MinValue;
 
-        public bool WillFetch => DateTime.UtcNow - LastUpdated > TimeSpan.FromMinutes(1);
+        public bool WillFetch => DateTime.UtcNow - LastUpdated > TimeSpan.FromSeconds(10);
 
         public virtual JsonObject Sync() => new JsonObject()
         {
