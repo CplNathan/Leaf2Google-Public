@@ -214,6 +214,10 @@ public abstract class BaseSessionService
     {
         var session = new NissanConnectSession(NewCar.NissanUsername, NewCar.NissanPassword, NewCar.CarModelId);
 
+        // Skip login check if already authenticated.
+        if (StorageManager.VehicleSessions.ContainsKey(session.SessionId) && StorageManager.VehicleSessions[session.SessionId].Authenticated)
+            return true;
+
         var success = false;
         try
         {
