@@ -52,7 +52,7 @@ public class GoogleController : BaseController
     // Welcome to hell
     [HttpPost]
     [Consumes("application/json")]
-    [Authorize]
+    [GoogleAuthorize]
     public async Task<ActionResult> Fulfillment([FromBody] GoogleIntentRequest request)
     {
         //return Unauthorized("{\"error\": \"invalid_grant\"}");
@@ -60,7 +60,7 @@ public class GoogleController : BaseController
         var response = new GoogleIntentResponse(request);
 
         if (AuthenticatedSession is null)
-            return UnauthorizedResponse();
+            return JWT.UnauthorizedResponse();
 
         var userDevices = GoogleState.GetOrCreateDevices(AuthenticatedSession.SessionId);
 
@@ -190,24 +190,15 @@ public class GoogleController : BaseController
         return Json(response);
     }
 
-    private JsonResult UnauthorizedResponse()
-    {
-        Response.StatusCode = StatusCodes.Status400BadRequest;
-        return Json(new JsonObject
-        {
-            { "error", "invalid_grant" }
-        });
-    }
-
     [HttpPost]
     [Consumes("application/x-www-form-urlencoded")]
     public async Task<JsonResult> Token([FromForm] IFormCollection form)
     {
         if (form == null || form.Count <= 0)
-            return UnauthorizedResponse();
+            return JWT.UnauthorizedResponse();
 
         if (form["client_secret"] != Configuration["Google:client_secret"])
-            return UnauthorizedResponse();
+            return JWT.UnauthorizedResponse();
 
         // Token state
         TokenEntity? token = null;
@@ -218,7 +209,7 @@ public class GoogleController : BaseController
             case "authorization_code":
                 {
                     if (string.IsNullOrEmpty(form["code"]) || string.IsNullOrEmpty(form["redirect_uri"]))
-                        return UnauthorizedResponse();
+                        return JWT.UnauthorizedResponse();
 
                     var formUri = new Uri(form["redirect_uri"].ToString());
                     if (!await LeafContext.GoogleAuths.AnyAsync(auth =>
@@ -226,7 +217,7 @@ public class GoogleController : BaseController
                             auth.AuthCode != null &&
                             auth.ClientId == form["client_id"].ToString() &&
                             auth.RedirectUri == formUri))
-                        return UnauthorizedResponse();
+                        return JWT.UnauthorizedResponse();
 
                     token = new TokenEntity
                     {
@@ -249,7 +240,7 @@ public class GoogleController : BaseController
                     if (!await LeafContext.GoogleTokens.Include(token => token.Owner).AnyAsync(token =>
                             form["refresh_token"].ToString() == token.RefreshToken.ToString() &&
                             form["client_id"].ToString() == token.Owner.ClientId))
-                        return UnauthorizedResponse();
+                        return JWT.UnauthorizedResponse();
 
                     token = await LeafContext.GoogleTokens.Include(token => token.Owner).FirstOrDefaultAsync(token =>
                         form["refresh_token"].ToString() == token.RefreshToken.ToString())!;
@@ -265,11 +256,11 @@ public class GoogleController : BaseController
                 }
 
             default:
-                return UnauthorizedResponse();
+                return JWT.UnauthorizedResponse();
         }
 
         if (token == null || token.Owner == null || token.Owner.Owner == null || token.Owner.Deleted.HasValue)
-            return UnauthorizedResponse();
+            return JWT.UnauthorizedResponse();
 
         LeafContext.Entry(token).State = tokenState;
         LeafContext.Entry(token.Owner).State = EntityState.Modified;
@@ -281,6 +272,6 @@ public class GoogleController : BaseController
         else if (tokenState == EntityState.Modified)
             return Json(new AccessTokenDto(token, jwtToken));
         else
-            return UnauthorizedResponse();
+            return JWT.UnauthorizedResponse();
     }
 }

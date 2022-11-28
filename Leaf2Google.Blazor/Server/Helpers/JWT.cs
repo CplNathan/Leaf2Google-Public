@@ -2,12 +2,40 @@
 
 using Leaf2Google.Entities.Google;
 using Leaf2Google.Models.Car.Sessions;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text.Json.Nodes;
+using System.Web;
 
 namespace Leaf2Google.Blazor.Server.Helpers
 {
+    public class GoogleAuthorizeAttribute : TypeFilterAttribute
+    {
+        public GoogleAuthorizeAttribute() : base(typeof(GoogleAuthorizeFilter))
+        {
+        }
+    }
+
+    public class GoogleAuthorizeFilter : IAuthorizationFilter
+    {
+        public GoogleAuthorizeFilter()
+        {
+        }
+
+        public void OnAuthorization(AuthorizationFilterContext context)
+        {
+            bool isAuthenticated = context?.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
+            if (!isAuthenticated)
+            {
+                context.Result = JWT.UnauthorizedResponse();
+            }
+        }
+    }
+
     public static class JWT
     {
         public static bool IsDebugRelease
@@ -20,6 +48,15 @@ namespace Leaf2Google.Blazor.Server.Helpers
             return false;
 #endif
             }
+        }
+
+        public static JsonResult UnauthorizedResponse()
+        {
+            return new JsonResult(new JsonObject { { "error", "invalid_grant" } })
+            {
+                ContentType = "application/json",
+                StatusCode = StatusCodes.Status400BadRequest
+            };
         }
 
         public static JwtSecurityToken CreateJWT(VehicleSessionBase session, IConfiguration _configuration, AuthEntity? authEntity = null)

@@ -12,6 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 using Leaf2Google.Controllers.API;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Leaf2Google.Blazor
 {
