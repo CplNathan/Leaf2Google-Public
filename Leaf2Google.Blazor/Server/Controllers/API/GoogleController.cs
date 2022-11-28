@@ -75,7 +75,17 @@ public class GoogleController : BaseController
             {
                 case "SYNC":
                     {
-                        response.payload = new SyncPayload() { devices = new List<JsonObject>(userDevices.Select(device => device.Value.Sync())), agentUserId = AuthenticatedSession.SessionId.ToString() };
+                        var devices = new List<JsonObject>();
+
+                        foreach (var device in userDevices)
+                        {
+                            devices.Add(device.Value.Sync());
+                        }
+
+                        response.payload = new SyncPayload() {
+                            devices = devices,
+                            agentUserId = AuthenticatedSession.SessionId.ToString()
+                        };
 
                         break;
                     }
@@ -106,7 +116,10 @@ public class GoogleController : BaseController
                             deviceQuery.Add(deviceTask.Key, JsonValue.Create(await deviceTask.Value));
                         }
 
-                        response.payload = new QueryPayload() { devices = deviceQuery, agentUserId = AuthenticatedSession.SessionId.ToString() };
+                        response.payload = new QueryPayload() {
+                            devices = deviceQuery,
+                            agentUserId = AuthenticatedSession.SessionId.ToString()
+                        };
 
                         break;
                     }
@@ -154,14 +167,17 @@ public class GoogleController : BaseController
                             }
                         }
 
-                        response.payload = new ExecutePayload() { commands = executedCommands, agentUserId = AuthenticatedSession.SessionId.ToString() };
+                        response.payload = new ExecutePayload() {
+                            commands = executedCommands,
+                            agentUserId = AuthenticatedSession.SessionId.ToString()
+                        };
 
                         break;
                     }
 
                 case "DISCONNECT":
                     {
-                        // Todo: handle
+                        // Todo: handle, do we get a header sent with this to id?
                         break;
                     }
             }

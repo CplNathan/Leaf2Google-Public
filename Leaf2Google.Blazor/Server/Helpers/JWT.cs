@@ -33,7 +33,7 @@ namespace Leaf2Google.Blazor.Server.Helpers
                 new Claim(ClaimTypes.Name, session.Username),
                 new Claim(JwtRegisteredClaimNames.Sub, session.Username),
                 new Claim(JwtRegisteredClaimNames.Email, session.Username),
-                new Claim(JwtRegisteredClaimNames.Jti, string.Join(",", jti.Select(jti => !string.IsNullOrEmpty(jti))))
+                new Claim(JwtRegisteredClaimNames.Jti, string.Join(",", jti))
             };
 
             return new JwtSecurityToken(issuer: IsDebugRelease ? "localhost" : _configuration["fido2:serverDomain"], audience: IsDebugRelease ? "localhost" : _configuration["fido2:serverDomain"], claims: claims, expires: DateTime.UtcNow.AddMinutes(60), signingCredentials: credentials);
