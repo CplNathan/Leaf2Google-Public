@@ -177,7 +177,10 @@ public class GoogleController : BaseController
     private JsonResult UnauthorizedResponse()
     {
         Response.StatusCode = StatusCodes.Status400BadRequest;
-        return Json("""{"error": "invalid_grant"}""");
+        return Json(new JsonObject
+        {
+            { "error", "invalid_grant" }
+        });
     }
 
     [HttpPost]
