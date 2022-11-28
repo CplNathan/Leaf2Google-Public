@@ -46,7 +46,8 @@ public class BaseController : Controller
             if (jtiClaim is null || jtiClaim.Value.Split(",").Count() < 1)
                 throw new UnauthorizedAccessException("Attempted to access active session but JWT was not valid or claim was not found. Invalid call.");
 
-            return StorageManager.VehicleSessions.First(session => session.Key.ToString() == jtiClaim.Value.Split(",")[0]).Value;
+            var claimValue = jtiClaim.Value.Split(",")[0];
+            return StorageManager.VehicleSessions.First(session => session.Key.ToString() == claimValue).Value;
         }
     }
 
@@ -59,7 +60,8 @@ public class BaseController : Controller
             if (jtiClaim is null || jtiClaim.Value.Split(",").Count() < 2)
                 throw new UnauthorizedAccessException("Attempted to access active session but JWT was not valid or claim was not found. Invalid call.");
 
-            return LeafContext.GoogleAuths.First(auth => auth.AuthId.ToString() == jtiClaim.Value.Split(",")[1]);
+            var claimValue = jtiClaim.Value.Split(",")[1];
+            return LeafContext.GoogleAuths.First(auth => auth.AuthId.ToString() == claimValue);
         }
     }
 
