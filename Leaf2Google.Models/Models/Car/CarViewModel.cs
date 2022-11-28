@@ -44,6 +44,7 @@ namespace Leaf2Google.Models.Car
     {
         public int CurrentTemperature { get; set; }
         public int TargetTemperature { get; set; }
+        public bool ClimateActive { get; set; }
         public int DeltaTargetTemperature => Math.Abs(CurrentTemperature - TargetTemperature);
         public int DeltaPercentageTargetTemperature => (TargetTemperature - DeltaTargetTemperature) / TargetTemperature * 100;
     }

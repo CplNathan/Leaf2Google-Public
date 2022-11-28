@@ -98,7 +98,8 @@ public class CarController : BaseAPIController
                         return Json(new ClimateData()
                         {
                             TargetTemperature = ((int?)thermostatModel?.Target) ?? 21,
-                            CurrentTemperature = ((int?)thermostatModel?.LastTemperature) ?? 21
+                            CurrentTemperature = ((int?)thermostatModel?.LastTemperature) ?? 21,
+                            ClimateActive = thermostatModel.Active
                         });
                     }
                 default:
