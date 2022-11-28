@@ -1,8 +1,8 @@
 # Leaf2Google-Public
 A service which allows you to link your Nissan Connect enabled vehicle to Google Home with a nifty web interface.
 
-![Leaf2Google Example](https://github.com/CplNathan/Leaf2Google-Public/blob/blazor-app/Leaf2Google/wwwroot/img/leaf2google.png)
-![Leaf2Google Responsive](https://github.com/CplNathan/Leaf2Google-Public/blob/blazor-app/Leaf2Google/wwwroot/img/leaf2google_mobile.png)
+![Leaf2Google Example](https://github.com/CplNathan/Leaf2Google-Public/blob/main/Leaf2Google.Blazor/Server/wwwroot/img/leaf2google.png)
+![Leaf2Google Responsive](https://github.com/CplNathan/Leaf2Google-Public/blob/main/Leaf2Google.Blazor/Server/wwwroot/img/leaf2google_mobile.png)
 ![Leaf2Google Home App](https://user-images.githubusercontent.com/16903800/191339881-d1ffe0f2-b2f5-4774-94ed-cbe85460482b.png)
 
 ## Want to do's:
