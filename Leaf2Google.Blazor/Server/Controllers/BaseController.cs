@@ -9,14 +9,16 @@ using System.Security.Principal;
 using System.Security.Claims;
 using Microsoft.IdentityModel.JsonWebTokens;
 using System.Linq;
+using Leaf2Google.Entities.Google;
 
 namespace Leaf2Google.Controllers;
 
 public class BaseController : Controller
 {
-    public BaseController(BaseStorageService storageManager)
+    public BaseController(BaseStorageService storageManager, LeafContext leafContext)
     {
         StorageManager = storageManager;
+        LeafContext = leafContext;
     }
 
     protected ClaimsPrincipal AuthenticatedUser
@@ -42,13 +44,28 @@ public class BaseController : Controller
             var jtiClaim = AuthenticatedUser?.FindFirst(JwtRegisteredClaimNames.Jti);
 
             if (jtiClaim is null)
-                throw new UnauthorizedAccessException("Attempted to access active session but JWT was not valid. Invalid call.");
+                throw new UnauthorizedAccessException("Attempted to access active session but JWT was not valid or claim was not found. Invalid call.");
 
             return StorageManager.VehicleSessions.First(session => session.Key.ToString() == jtiClaim.Value).Value;
         }
     }
 
+    protected AuthEntity AuthenticatedSessionEntity
+    {
+        get
+        {
+            var jtiClaim = AuthenticatedUser?.FindFirst(JwtRegisteredClaimNames.Sub);
+
+            if (jtiClaim is null)
+                throw new UnauthorizedAccessException("Attempted to access active session but JWT was not valid or claim was not found. Invalid call.");
+
+            return LeafContext.GoogleAuths.First(auth => auth.AuthId.ToString() == jtiClaim.Value);
+        }
+    }
+
     protected BaseStorageService StorageManager { get; }
+
+    protected LeafContext LeafContext;
 
     protected string? SelectedVin
     {

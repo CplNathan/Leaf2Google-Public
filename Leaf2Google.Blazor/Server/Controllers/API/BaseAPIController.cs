@@ -11,7 +11,7 @@ public class BaseAPIController : BaseController
     protected ICarSessionManager SessionManager { get; }
 
     public BaseAPIController(BaseStorageService storageManager, ICarSessionManager sessionManager)
-        : base(storageManager)
+        : base(storageManager, null)
     {
         SessionManager = sessionManager;
     }

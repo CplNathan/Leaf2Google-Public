@@ -27,7 +27,7 @@ public class GoogleController : BaseController
 {
     public GoogleController(BaseStorageService storageManager, ICarSessionManager sessionManager, GoogleStateService googleState, LeafContext leafContext,
         LoggingService logging, IEnumerable<IDevice> activeDevices, IConfiguration configuration)
-        : base(storageManager)
+        : base(storageManager, null)
     {
         SessionManager = sessionManager;
         GoogleState = googleState;
@@ -60,7 +60,7 @@ public class GoogleController : BaseController
         var response = new GoogleIntentResponse(request);
 
         if (AuthenticatedSession is null)
-            return Unauthorized("{\"error\": \"invalid_grant\"}");
+            return UnauthorizedResponse();
 
         var userDevices = GoogleState.GetOrCreateDevices(AuthenticatedSession.SessionId);
 
@@ -85,7 +85,7 @@ public class GoogleController : BaseController
                         // Logging
                         Console.WriteLine(Logging.AddLog(AuthenticatedSession?.SessionId ?? Guid.Empty, AuditAction.Execute,
                             AuditContext.Google, $"Google executing query for {AuthenticatedSession?.Username ?? string.Empty}"));
-                        //auth.LastQuery = DateTime.UtcNow;
+                        AuthenticatedSessionEntity.LastQuery = DateTime.UtcNow;
 
                         var requestedDevices = action.payload.devices.Select(device => device.id);
 
@@ -115,7 +115,7 @@ public class GoogleController : BaseController
                         // Logging
                         Console.WriteLine(Logging.AddLog(AuthenticatedSession?.SessionId ?? Guid.Empty, AuditAction.Execute,
                             AuditContext.Google, $"Google executing command for {AuthenticatedSession?.Username ?? string.Empty}"));
-                        //auth.LastExecute = DateTime.UtcNow;
+                        AuthenticatedSessionEntity.LastExecute = DateTime.UtcNow;
 
                         var executedCommands = new List<ExecuteDeviceData>();
 
@@ -167,7 +167,7 @@ public class GoogleController : BaseController
             }
 
             // Need to update auth last used.
-            //LeafContext.GoogleAuths.Update(auth);
+            LeafContext.GoogleAuths.Update(AuthenticatedSessionEntity);
             await LeafContext.SaveChangesAsync();
         }
 

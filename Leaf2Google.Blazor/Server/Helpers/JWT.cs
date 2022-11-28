@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. JWTSecurityToken.cs
 
+using Leaf2Google.Entities.Google;
 using Leaf2Google.Models.Car.Sessions;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -21,7 +22,7 @@ namespace Leaf2Google.Blazor.Server.Helpers
             }
         }
 
-        public static JwtSecurityToken CreateJWT(VehicleSessionBase session, IConfiguration _configuration)
+        public static JwtSecurityToken CreateJWT(VehicleSessionBase session, IConfiguration _configuration, AuthEntity? authEntity = null)
         {
             var secretkey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_configuration["jwt:key"] ?? Guid.NewGuid().ToString())); // NOTE: SAME KEY AS USED IN Program.cs FILE
             var credentials = new SigningCredentials(secretkey, SecurityAlgorithms.HmacSha256);
@@ -29,7 +30,7 @@ namespace Leaf2Google.Blazor.Server.Helpers
             var claims = new[]
             {
             new Claim(ClaimTypes.Name, session.Username),
-            new Claim(JwtRegisteredClaimNames.Sub, session.Username),
+            new Claim(JwtRegisteredClaimNames.Sub, authEntity?.AuthId.ToString() ?? session.Username),
             new Claim(JwtRegisteredClaimNames.Email, session.Username),
             new Claim(JwtRegisteredClaimNames.Jti, session.SessionId.ToString())
         };
