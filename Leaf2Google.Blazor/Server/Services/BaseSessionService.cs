@@ -33,7 +33,7 @@ public delegate void AuthDelegate(object sender, string? authToken);
 
 public delegate void RequestDelegate(object sender, bool requestSuccess);
 
-public abstract class BaseSessionService
+public abstract class BaseSessionService : IDisposable
 {
     public BaseSessionService(HttpClient client, LeafContext leafContext, BaseStorageService storageManager, LoggingService logging, IServiceScopeFactory serviceScopeFactory,
         IConfiguration configuration)
@@ -48,6 +48,14 @@ public abstract class BaseSessionService
         OnRequest += BaseSessionManager_OnRequest;
         OnAuthenticationAttempt += BaseSessionManager_OnAuthenticationAttempt;
     }
+
+    public void Dispose()
+    {
+        OnRequest -= BaseSessionManager_OnRequest;
+        OnAuthenticationAttempt -= BaseSessionManager_OnAuthenticationAttempt;
+    }
+
+    protected Dictionary<DateTime, HttpRequestMessage> RetryQueue = new();
 
     protected HttpClient Client { get; }
 
@@ -118,8 +126,21 @@ public abstract class BaseSessionService
             if (!session.Authenticated && !session.LoginGivenUp &&
             session.LastAuthenticated > DateTime.MinValue && !requestSuccess && !session.LoginAuthenticationAttempting)
             {
-                //await Login(session).ConfigureAwait(false);
+                var loginSuccess = await Login(session);
+                if (loginSuccess)
+                    await AttemptRetryQueue().ConfigureAwait(false);
             }
+        }
+    }
+
+    public async Task AttemptRetryQueue()
+    {
+        var queue = RetryQueue.Select(item => (DateTime.UtcNow - item.Key) <= TimeSpan.FromSeconds(15)).ToList();
+        RetryQueue.Clear();
+
+        foreach (var item in queue)
+        {
+
         }
     }
 
@@ -130,7 +151,7 @@ public abstract class BaseSessionService
         return await MakeRequest<JsonObject>(session, httpRequestMessage, baseUri);
     }
 
-    protected async Task<Response<T>> MakeRequest<T>(VehicleSessionBase session, HttpRequestMessage httpRequestMessage,
+    protected async Task<Response<T>?> MakeRequest<T>(VehicleSessionBase session, HttpRequestMessage httpRequestMessage,
         string baseUri = "")
     {
         var success = true;
@@ -153,7 +174,6 @@ public abstract class BaseSessionService
             success = false;
             throw;
         }
-
 
         if (result != null)
             result.Success = success;
