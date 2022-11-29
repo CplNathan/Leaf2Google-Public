@@ -36,17 +36,17 @@ public class LockDeviceService : BaseDeviceService, IDevice
             if (lockStatus is not null && lockStatus.Success && batteryStatus is not null && batteryStatus.Success)
             {
                 success = lockStatus.Success && batteryStatus.Success;
-                vehicleLock.Locked = lockStatus.Data["data"]["attributes"]["lockStatus"].GetValue<string>() == "locked";
-                vehicleLock.CapacityRemaining = batteryStatus.Data["data"]["attributes"]["batteryLevel"].GetValue<int?>() ??
+                vehicleLock.Locked = lockStatus?.Data?["data"]?["attributes"]?["lockStatus"]?.GetValue<string>() == "locked";
+                vehicleLock.CapacityRemaining = batteryStatus?.Data?["data"]?["attributes"]?["batteryLevel"]?.GetValue<int?>() ??
                                                 vehicleLock.CapacityRemaining;
-                vehicleLock.KillometersRemaining = batteryStatus.Data["data"]["attributes"]["rangeHvacOff"].GetValue<int?>() ??
+                vehicleLock.KillometersRemaining = batteryStatus?.Data?["data"]?["attributes"]?["rangeHvacOff"]?.GetValue<int?>() ??
                                                    vehicleLock.KillometersRemaining;
-                vehicleLock.KillowatCapacity = batteryStatus.Data["data"]["attributes"]["batteryCapacity"].GetValue<int?>() / 1000 ??
+                vehicleLock.KillowatCapacity = batteryStatus?.Data?["data"]?["attributes"]?["batteryCapacity"]?.GetValue<int?>() / 1000 ??
                                                vehicleLock.KillowatCapacity;
-                vehicleLock.MinutesTillFull = batteryStatus.Data["data"]["attributes"]["timeRequiredToFullFast"].GetValue<int?>() ??
+                vehicleLock.MinutesTillFull = batteryStatus?.Data?["data"]?["attributes"]?["timeRequiredToFullFast"]?.GetValue<int?>() ??
                                               vehicleLock.MinutesTillFull;
-                vehicleLock.IsCharging = Convert.ToBoolean(batteryStatus.Data["data"]["attributes"]["chargeStatus"].GetValue<int?>() ?? 0);
-                vehicleLock.IsPluggedIn = Convert.ToBoolean(batteryStatus.Data["data"]["attributes"]["plugStatus"].GetValue<int?>() ?? 0);
+                vehicleLock.IsCharging = Convert.ToBoolean(batteryStatus?.Data?["data"]?["attributes"]?["chargeStatus"]?.GetValue<int?>() ?? 0);
+                vehicleLock.IsPluggedIn = Convert.ToBoolean(batteryStatus?.Data?["data"]?["attributes"]?["plugStatus"]?.GetValue<int?>() ?? 0);
                 vehicleLock.LastUpdated = DateTime.UtcNow;
                 vehicleLock.Location = location.IsEmpty ? null : location;
             }

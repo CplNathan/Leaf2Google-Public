@@ -27,7 +27,7 @@ public static class Request
             Console.WriteLine(ex.Message);
         }
 
-        return new Response<T?>(httpResponseMessage.IsSuccessStatusCode,
+        return new Response<T>(httpResponseMessage.IsSuccessStatusCode,
             jsonResult, httpResponseMessage.Headers,
             (int)httpResponseMessage.StatusCode);
     }

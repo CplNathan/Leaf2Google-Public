@@ -31,9 +31,9 @@ public class ThermostatDeviceService : BaseDeviceService, IDevice
             if (climateStatus is not null && climateStatus.Success)
             {
                 success = climateStatus.Success;
-                vehicleThermostat.LastTemperature = climateStatus.Data["data"]["attributes"]["internalTemperature"].GetValue<decimal?>() ??
+                vehicleThermostat.LastTemperature = climateStatus?.Data?["data"]?["attributes"]?["internalTemperature"]?.GetValue<decimal?>() ??
                                                     vehicleThermostat.LastTemperature;
-                vehicleThermostat.Active = climateStatus.Data["data"]["attributes"]["hvacStatus"].GetValue<string>() != "off";
+                vehicleThermostat.Active = climateStatus?.Data?["data"]?["attributes"]?["hvacStatus"]?.GetValue<string>() != "off";
                 vehicleThermostat.LastUpdated = DateTime.UtcNow; //climateStatus.Data?.data.attributes.lastUpdateTime;
             }
         }

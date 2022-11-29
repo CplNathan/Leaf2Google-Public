@@ -129,7 +129,7 @@ public class CarController : BaseAPIController
                         {
                             TargetTemperature = ((int?)thermostatModel?.Target) ?? 21,
                             CurrentTemperature = ((int?)thermostatModel?.LastTemperature) ?? 21,
-                            ClimateActive = thermostatModel.Active
+                            ClimateActive = thermostatModel?.Active ?? false
                         });
                     }
                 default:

@@ -119,7 +119,7 @@ public class SecurityKeyController : BaseAPIController
                 CredType = success.Result.CredType,
                 RegDate = DateTime.Now,
                 AaGuid = success.Result.Aaguid,
-                UserId = AuthenticatedSession.SessionId.ToByteArray() ?? throw new NullReferenceException("SessionId was null when trying to make a new security credential."),
+                UserId = AuthenticatedSession?.SessionId.ToByteArray() ?? throw new NullReferenceException("SessionId was null when trying to make a new security credential."),
                 CredentialId = success.Result.CredentialId
             }, cancellationToken);
 
