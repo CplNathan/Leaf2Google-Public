@@ -26,8 +26,8 @@ public class LeafSessionService : BaseSessionService, ICarSessionManager
             if (location != null)
             {
                 session.LastLocation = Tuple.Create(DateTime.UtcNow,
-                    (PointF?)new PointF((float?)location?.Data["data"]["attributes"]["gpsLatitude"].GetValue<float?>() ?? 0,
-                        (float?)location?.Data["data"]["attributes"]["gpsLongitude"].GetValue<float?>() ?? 0));
+                    (PointF?)new PointF(location?.Data["data"]?["attributes"]?["gpsLatitude"]?.GetValue<float?>() ?? 0,
+                        location?.Data["data"]?["attributes"]?["gpsLongitude"]?.GetValue<float?>() ?? 0));
                 return session.LastLocation?.Item2 ?? new PointF(0f, 0f);
             }
         }
