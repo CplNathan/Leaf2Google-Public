@@ -55,7 +55,7 @@ public class AuthenticationController : BaseAPIController
     }
 
     [HttpPost]
-    public async Task<JsonResult> Register([FromBody] RegisterModel form)
+    public async Task<JsonResult> Register([FromBody] RegisterModel form) // maybe this needs to be optional?
     {
         switch (form.request)
         {
@@ -66,7 +66,7 @@ public class AuthenticationController : BaseAPIController
                         return Json(BadRequest());
                     }
 
-                    var redirect_application = form.Data.redirect_uri.Split('/')
+                    var redirect_application = new Uri(form.Data.redirect_uri).AbsolutePath.Split('/')
                         .Where(item => !string.IsNullOrEmpty(item))
                         .Skip(1)
                         .Take(1)
@@ -89,8 +89,8 @@ public class AuthenticationController : BaseAPIController
                         Data = auth
                     };
 
-                    _ = _googleContext.GoogleAuths.Add(authEntity);
-                    _ = await _googleContext.SaveChangesAsync().ConfigureAwait(false);
+                    _googleContext.GoogleAuths.Add(authEntity);
+                    await _googleContext.SaveChangesAsync().ConfigureAwait(false);
 
                     return Json(new RegisterResponse
                     {
@@ -129,11 +129,11 @@ public class AuthenticationController : BaseAPIController
 
                         if (!await _googleContext.NissanLeafs.AnyAsync(car => car.CarModelId == leaf.CarModelId))
                         {
-                            _ = await _googleContext.NissanLeafs.AddAsync(leaf);
+                            await _googleContext.NissanLeafs.AddAsync(leaf);
                         }
 
                         _googleContext.Entry(authEntity).State = EntityState.Modified;
-                        _ = await _googleContext.SaveChangesAsync();
+                        await _googleContext.SaveChangesAsync();
 
                         response.success = true;
                         response.Data = form.Data;

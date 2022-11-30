@@ -20,26 +20,26 @@ namespace Leaf2Google.Blazor
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
-            _ = builder.Services.AddControllersWithViews();
-            _ = builder.Services.AddRazorPages();
+            builder.Services.AddControllersWithViews();
+            builder.Services.AddRazorPages();
 
             // Add sensitive config variables from docker environment variables
-            _ = builder.Configuration.AddEnvironmentVariables();
+            builder.Configuration.AddEnvironmentVariables();
 
             // Use listen address specified in environment variable
-            _ = builder.WebHost.UseUrls(builder.Configuration["APPLICATION_URL"]);
+            builder.WebHost.UseUrls(builder.Configuration["APPLICATION_URL"]);
 
-            _ = builder.Services.AddDbContext<LeafContext>(options => options
+            builder.Services.AddDbContext<LeafContext>(options => options
                 //.UseLazyLoadingProxies()
                 .UseNpgsql(builder.Configuration[$"ConnectionStrings:{(builder.Environment.IsDevelopment() ? "Test" : "Live")}"])
             //.UseSqlServer(builder.Configuration[$"ConnectionStrings:{(builder.Environment.IsDevelopment() ? "Test" : "Live")}"])
             );
-            _ = builder.Services.AddHttpClient<BaseController>(c =>
+            builder.Services.AddHttpClient<BaseController>(c =>
             {
                 //c.BaseAddress = new Uri(builder.Configuration["Nissan:EU:auth_base_url"]);
             });
 
-            _ = builder.Services.AddFido2(options =>
+            builder.Services.AddFido2(options =>
             {
                 options.ServerDomain = builder.Environment.IsDevelopment() ? "localhost" : builder.Configuration["fido2:serverDomain"];
                 options.ServerName = "Leaf2Google";
@@ -49,7 +49,7 @@ namespace Leaf2Google.Blazor
             });
 
             var jwtKey = builder.Configuration["jwt:key"] = Guid.NewGuid().ToString();
-            _ = builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
             {
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
@@ -63,52 +63,47 @@ namespace Leaf2Google.Blazor
                 };
             });
 
-            _ = builder.Services.AddSingleton<SessionStorageContainer>();
+            builder.Services.AddSingleton<SessionStorageContainer>();
 
-            _ = builder.Services.AddScoped<BaseStorageService>();
-            _ = builder.Services.AddScoped<IUserStorage, UserStorage>();
+            builder.Services.AddScoped<BaseStorageService>();
+            builder.Services.AddScoped<IUserStorage, UserStorage>();
 
-            _ = builder.Services.AddScoped<ICarSessionManager, LeafSessionService>();
-            _ = builder.Services.AddScoped<GoogleStateService>();
+            builder.Services.AddScoped<ICarSessionManager, LeafSessionService>();
+            builder.Services.AddScoped<GoogleStateService>();
 
-            _ = builder.Services.AddScoped<IDevice, LockDeviceService>();
-            _ = builder.Services.AddScoped<IDevice, ThermostatDeviceService>();
+            builder.Services.AddScoped<IDevice, LockDeviceService>();
+            builder.Services.AddScoped<IDevice, ThermostatDeviceService>();
 
-            _ = builder.Services.AddTransient<Captcha>();
-            _ = builder.Services.AddTransient<LoggingService>();
+            builder.Services.AddTransient<Captcha>();
+            builder.Services.AddTransient<LoggingService>();
 
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())
             {
-                _ = app.UseExceptionHandler("/Home/Error");
+                app.UseExceptionHandler("/Home/Error");
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                _ = app.UseHsts();
-                _ = app.UseHttpsRedirection();
+                app.UseHsts();
+                app.UseHttpsRedirection();
             }
             else
             {
                 app.UseWebAssemblyDebugging();
             }
 
-            _ = app.UseBlazorFrameworkFiles();
-            _ = app.UseStaticFiles();
+            app.UseBlazorFrameworkFiles();
+            app.UseStaticFiles();
 
-            _ = app.UseAuthentication();
+            app.UseAuthentication();
 
-            _ = app.UseRouting();
+            app.UseRouting();
 
-            _ = app.MapRazorPages();
-            _ = app.MapControllers();
-            _ = app.MapFallbackToFile("index.html");
+            app.MapRazorPages();
+            app.MapControllers();
+            app.MapFallbackToFile("index.html");
 
-            _ = app.UseForwardedHeaders(new ForwardedHeadersOptions
-            {
-                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-            });
-
-            _ = app.UseAuthorization();
+            app.UseAuthorization();
 
             using (var scope = app.Services.CreateScope())
             {
