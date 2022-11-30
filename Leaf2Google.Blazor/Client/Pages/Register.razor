@@ -33,9 +33,12 @@
             {
                 NissanUsername = "loopback@localhost.local",
                 NissanPassword = "-",
-                client_id = client_id,
-                redirect_uri = string.IsNullOrEmpty(redirect_uri) ? null : new Uri(redirect_uri),
-                state = state,
+                Data = new Entities.Google.GoogleAuth
+                {
+                    client_id = client_id,
+                    redirect_uri = string.IsNullOrEmpty(redirect_uri) ? null : new Uri(redirect_uri),
+                    state = state,
+                },
                 request = RequestState.Initial
             };
 
@@ -61,12 +64,12 @@
 
         var registerResult = await AuthState.Register(registerState);
 
-        var redirectURi = registerResult?.redirect_uri;
+        var redirectURi = registerResult?.Data.redirect_uri;
 
         var query = HttpUtility.ParseQueryString(string.Empty);
         if (registerResult?.success ?? false)
         {
-            query["state"] = registerResult?.state;
+            query["state"] = registerResult?.Data.state;
             query["code"] = registerResult?.code.ToString();
 
             var redirect_uri_processed = new UriBuilder(redirectURi!);
@@ -76,7 +79,7 @@
         }
         else if (registerResult?.message != ResponseState.InvalidCredentials)
         {
-            query["state"] = registerResult?.state;
+            query["state"] = registerResult?.Data.state;
             query["error"] = registerResult?.code.ToString();
 
             var redirect_uri_processed = new UriBuilder(redirectURi!);

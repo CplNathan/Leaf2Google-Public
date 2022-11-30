@@ -64,7 +64,7 @@ public class GoogleController : BaseController
 
         var userDevices = GoogleState.GetOrCreateDevices(AuthenticatedSession.SessionId);
 
-        foreach (Input action in request.inputs)
+        foreach (Input action in request?.inputs ?? new Input[0])
         {
             var intent = (action.intent ?? string.Empty).Split("action.devices.");
 
@@ -215,8 +215,8 @@ public class GoogleController : BaseController
                     if (!await LeafContext.GoogleAuths.AnyAsync(auth =>
                             auth.AuthCode.ToString() == form["code"].ToString() &&
                             auth.AuthCode != null &&
-                            auth.ClientId == form["client_id"].ToString() &&
-                            auth.RedirectUri == formUri))
+                            auth.Data.client_id == form["client_id"].ToString() &&
+                            auth.Data.redirect_uri == formUri))
                         return JWT.UnauthorizedResponse();
 
                     token = new TokenEntity
@@ -239,7 +239,7 @@ public class GoogleController : BaseController
                 {
                     if (!await LeafContext.GoogleTokens.Include(token => token.Owner).AnyAsync(token =>
                             form["refresh_token"].ToString() == token.RefreshToken.ToString() &&
-                            form["client_id"].ToString() == token.Owner.ClientId))
+                            form["client_id"].ToString() == token.Owner.Data.client_id))
                         return JWT.UnauthorizedResponse();
 
                     token = await LeafContext.GoogleTokens.Include(token => token.Owner).FirstOrDefaultAsync(token =>

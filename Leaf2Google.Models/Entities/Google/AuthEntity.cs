@@ -2,26 +2,25 @@
 using System.ComponentModel.DataAnnotations;
 using Leaf2Google.Models;
 using Leaf2Google.Entities.Car;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Leaf2Google.Entities.Google
 {
+    public class GoogleAuth
+    {
+        public string client_id { get; set; } = string.Empty;
+        public Uri? redirect_uri { get; set; }
+        public string state { get; set; } = string.Empty;
+    }
 
     public class AuthEntity : BaseModel
     {
-        public AuthEntity()
-        {
-            AuthState = string.Empty;
-            ClientId = string.Empty;
-        }
-
         [Key] public Guid AuthId { get; set; }
 
         public virtual CarEntity? Owner { get; set; }
 
-        public string AuthState { get; set; }
-
-        public Uri? RedirectUri { get; set; }
-        public string ClientId { get; set; }
+        [Column(TypeName = "jsonb")]
+        public GoogleAuth Data { get; set; }
 
         public Guid? AuthCode { get; set; }
 

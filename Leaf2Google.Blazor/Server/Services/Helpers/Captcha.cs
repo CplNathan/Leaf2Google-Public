@@ -16,8 +16,15 @@ public class Captcha
 
     public IConfiguration Configuration { get; }
 
+    public string? CaptchaKey => Configuration.GetValue<string>("Google:captcha:secret_key") ?? null;
+
+    public bool UsingCaptcha => !string.IsNullOrEmpty(CaptchaKey);
+
     public async Task<bool> VerifyCaptcha(string response, string? remoteip)
     {
+        if (!UsingCaptcha)
+            return true;
+
         var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, "recaptcha/api/siteverify")
         {
             Headers =
@@ -26,7 +33,7 @@ public class Captcha
             },
             Content = new FormUrlEncodedContent(new[]
             {
-                new KeyValuePair<string, string>("secret", Configuration["Google:captcha:secret_key"]),
+                new KeyValuePair<string, string>("secret", CaptchaKey ?? ""),
                 new KeyValuePair<string, string>("response", response),
                 new KeyValuePair<string, string>("remoteip", remoteip ?? "")
             })
@@ -35,6 +42,6 @@ public class Captcha
 
         var responseData = await Client.MakeRequest<JsonObject>(httpRequestMessage);
 
-        return responseData.Data["success"].GetValue<bool?>() ?? false;
+        return responseData?.Data?["success"]?.GetValue<bool?>() ?? false;
     }
 }

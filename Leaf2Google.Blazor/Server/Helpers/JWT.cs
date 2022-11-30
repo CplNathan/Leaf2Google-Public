@@ -28,10 +28,13 @@ namespace Leaf2Google.Blazor.Server.Helpers
 
         public void OnAuthorization(AuthorizationFilterContext context)
         {
+            if (context is null)
+                throw new NullReferenceException();
+
             bool isAuthenticated = context?.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
             if (!isAuthenticated)
             {
-                context.Result = JWT.UnauthorizedResponse();
+                context!.Result = JWT.UnauthorizedResponse();
             }
         }
     }
@@ -64,13 +67,13 @@ namespace Leaf2Google.Blazor.Server.Helpers
             var secretkey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_configuration["jwt:key"] ?? Guid.NewGuid().ToString())); // NOTE: SAME KEY AS USED IN Program.cs FILE
             var credentials = new SigningCredentials(secretkey, SecurityAlgorithms.HmacSha256);
 
-            var jti = new List<string>() { session.SessionId.ToString(), authEntity?.AuthId.ToString() };
+            var jti = new List<string>() { session.SessionId.ToString(), authEntity?.AuthId.ToString() ?? "" };
             var claims = new[]
             {
                 new Claim(ClaimTypes.Name, session.Username),
                 new Claim(JwtRegisteredClaimNames.Sub, session.Username),
                 new Claim(JwtRegisteredClaimNames.Email, session.Username),
-                new Claim(JwtRegisteredClaimNames.Jti, string.Join(",", jti))
+                new Claim(JwtRegisteredClaimNames.Jti, string.Join(",", jti.Select(val => !string.IsNullOrEmpty(val))))
             };
 
             return new JwtSecurityToken(issuer: IsDebugRelease ? "localhost" : _configuration["fido2:serverDomain"], audience: IsDebugRelease ? "localhost" : _configuration["fido2:serverDomain"], claims: claims, expires: DateTime.UtcNow.AddMinutes(60), signingCredentials: credentials);

@@ -28,7 +28,7 @@ public static class Request
         }
 
         return new Response<T>(httpResponseMessage.IsSuccessStatusCode,
-            jsonResult, httpResponseMessage.Headers,
+            jsonResult!, httpResponseMessage.Headers,
             (int)httpResponseMessage.StatusCode);
     }
 }

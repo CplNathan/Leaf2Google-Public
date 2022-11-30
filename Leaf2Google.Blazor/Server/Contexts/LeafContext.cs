@@ -54,6 +54,12 @@ public class LeafContext : DbContext
 
         modelBuilder
             .Entity<AuthEntity>()
+            /*
+            .OwnsOne(a => a.Data, ownedNavigationBuilder =>
+            {
+                ownedNavigationBuilder.ToJson();
+            })
+            */
             .ToTable("t_auths_auth");
 
         modelBuilder

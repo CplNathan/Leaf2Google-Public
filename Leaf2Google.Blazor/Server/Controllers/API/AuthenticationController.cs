@@ -60,16 +60,16 @@ public class AuthenticationController : BaseAPIController
     }
 
     [HttpPost]
-    public async Task<JsonResult> Register([FromBody(EmptyBodyBehavior = Microsoft.AspNetCore.Mvc.ModelBinding.EmptyBodyBehavior.Allow)] RegisterModel? form)
+    public async Task<JsonResult> Register([FromBody] RegisterModel form)
     {
         switch (form.request)
         {
             case RequestState.Initial:
                 {
-                    if (form.client_id != _configuration["Google:client_id"])
+                    if (form.Data.client_id != _configuration["Google:client_id"])
                         return Json(BadRequest());
 
-                    var redirect_application = form!.redirect_uri?.AbsolutePath.Split('/')
+                    var redirect_application = form.Data.redirect_uri?.AbsolutePath.Split('/')
                         .Where(item => !string.IsNullOrEmpty(item))
                         .Skip(1)
                         .Take(1)
@@ -78,30 +78,33 @@ public class AuthenticationController : BaseAPIController
                     if (redirect_application != _configuration["Google:client_reference"])
                         return Json(BadRequest());
 
-                    var auth = new AuthEntity
+                    var auth = new GoogleAuth
                     {
-                        RedirectUri = form.redirect_uri,
-                        ClientId = form.client_id,
-                        AuthState = form.state
+                        redirect_uri = form.Data.redirect_uri,
+                        client_id = form.Data.client_id,
+                        state = form.Data.state
                     };
 
-                    _googleContext.GoogleAuths.Add(auth);
+                    var authEntity = new AuthEntity
+                    {
+                        Data = auth
+                    };
+
+                    _googleContext.GoogleAuths.Add(authEntity);
                     await _googleContext.SaveChangesAsync().ConfigureAwait(false);
 
                     return Json(new RegisterResponse
                     {
                         message = ResponseState.Success,
                         success = true,
-                        state = form.state,
-                        client_id = form.client_id,
-                        redirect_uri = form.redirect_uri,
+                        Data = auth,
                         request = RequestState.Final
                     });
                 }
             case RequestState.Final:
                 {
-                    var auth = await _googleContext.GoogleAuths.Include(auth => auth.Owner).FirstOrDefaultAsync(auth => auth.AuthState == form.state);
-                    if (auth == null)
+                    var authEntity = await _googleContext.GoogleAuths.Include(auth => auth.Owner).FirstOrDefaultAsync(auth => auth.Data.state == form.Data.state);
+                    if (authEntity == null)
                         return Json(BadRequest());
 
                     CarEntity leaf = new CarEntity(form.NissanUsername, form.NissanPassword);
@@ -113,26 +116,24 @@ public class AuthenticationController : BaseAPIController
 
                     var response = new RegisterResponse
                     {
-                        client_id = form.client_id,
-                        redirect_uri = form.redirect_uri,
-                        state = form.state
+                        Data = authEntity.Data
                     };
 
                     if (await SessionManager.AddAsync(leaf))
                     {
                         var authCode = Guid.NewGuid();
 
-                        auth.AuthCode = authCode;
-                        auth.Owner = leaf;
+                        authEntity.AuthCode = authCode;
+                        authEntity.Owner = leaf;
 
                         if (!await _googleContext.NissanLeafs.AnyAsync(car => car.CarModelId == leaf.CarModelId))
                             await _googleContext.NissanLeafs.AddAsync(leaf);
 
-                        _googleContext.Entry(auth).State = EntityState.Modified;
+                        _googleContext.Entry(authEntity).State = EntityState.Modified;
                         await _googleContext.SaveChangesAsync();
 
                         response.success = true;
-                        response.redirect_uri = form.redirect_uri;
+                        response.Data = form.Data;
                         response.message = ResponseState.Success;
                         response.code = authCode;
                     }

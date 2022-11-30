@@ -148,7 +148,7 @@ public class LockDeviceService : BaseDeviceService, IDevice
                     var locateStatus = await SessionManager.FlashLights(session, vin);
                     return new ExecuteDeviceDataSuccess()
                     {
-                        status = locateStatus.Success ? "SUCCESS" : "ERROR",
+                        status = (locateStatus?.Success ?? false) ? "SUCCESS" : "ERROR",
                         states = new JsonObject()
                         {
                             { "online", locateStatus.Success }

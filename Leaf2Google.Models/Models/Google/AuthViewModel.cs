@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. AuthFormModel.cs
 
+using Leaf2Google.Entities.Google;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -48,9 +49,7 @@ namespace Leaf2Google.Models.Google
     {
         public RequestState request { get; set; }
 
-        public string client_id { get; set; } = string.Empty;
-        public Uri? redirect_uri { get; set; }
-        public string state { get; set; } = string.Empty;
+        public GoogleAuth Data { get; set; }
     }
 
     public class LoginResponse : LoginModel
