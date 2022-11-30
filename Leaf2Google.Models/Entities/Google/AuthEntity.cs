@@ -1,7 +1,9 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
-using Leaf2Google.Models;
+﻿// Copyright (c) Nathan Ford. All rights reserved. AuthEntity.cs
+
 using Leaf2Google.Entities.Car;
+using Leaf2Google.Models;
+using System;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Leaf2Google.Entities.Google

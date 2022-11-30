@@ -1,11 +1,10 @@
-﻿// Copyright (c) Nathan Ford. All rights reserved. BaseStorageManager.cs
+﻿// Copyright (c) Nathan Ford. All rights reserved. BaseStorageService.cs
 
 using Leaf2Google.Entities.Car;
-using Leaf2Google.Models.Google.Devices;
-using Leaf2Google.Models.Car.Sessions;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 using Leaf2Google.Entities.Google;
+using Leaf2Google.Models.Car.Sessions;
+using Leaf2Google.Models.Google.Devices;
+using Microsoft.EntityFrameworkCore;
 
 namespace Leaf2Google.Services
 {
@@ -27,7 +26,7 @@ namespace Leaf2Google.Services
 
         Task<bool> CreateUser(string username, string password);
 
-       // Task<NissanConnectSession>
+        // Task<NissanConnectSession>
     }
 
     public class UserStorage : IUserStorage
@@ -53,11 +52,15 @@ namespace Leaf2Google.Services
         {
             Guid sessionId = await DoCredentialsMatch(username, password);
             if (sessionId == Guid.Empty)
+            {
                 return Guid.Empty;
+            }
 
             bool canUserLogin = await CanUserLogin(sessionId);
             if (!canUserLogin)
+            {
                 return Guid.Empty;
+            }
 
             return sessionId;
         }
@@ -66,12 +69,14 @@ namespace Leaf2Google.Services
         {
             var leaf = await GetUser(sessionId);
             if (leaf == null)
+            {
                 return false;
+            }
 
             leaf.Deleted = DateTime.UtcNow;
 
             LeafContext.Entry(leaf).State = EntityState.Modified;
-            await LeafContext.SaveChangesAsync();
+            _ = await LeafContext.SaveChangesAsync();
 
             return true;
         }
@@ -80,11 +85,13 @@ namespace Leaf2Google.Services
         {
             var leaf = await GetUser(sessionId, true);
             if (leaf == null)
+            {
                 return leaf;
+            }
 
             leaf.Deleted = null;
             LeafContext.Entry(leaf).State = EntityState.Modified;
-            await LeafContext.SaveChangesAsync();
+            _ = await LeafContext.SaveChangesAsync();
 
             return leaf;
         }

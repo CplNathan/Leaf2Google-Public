@@ -1,15 +1,10 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. Class1.cs
 
-using Leaf2Google.Contexts;
-using Leaf2Google.Services;
-using Leaf2Google.Services.Google;
-using Leaf2Google.Services.Google.Devices;
-using Leaf2Google.Json.Google;
-using Leaf2Google.Models.Car;
 using Leaf2Google.Models.Car.Sessions;
 using Leaf2Google.Models.Google.Devices;
-using System.Text.Json;
+using Leaf2Google.Services.Google.Devices;
 using NUnit.Framework;
+using System.Text.Json;
 
 namespace Leaf2Google.UnitTests.Dependency
 {
@@ -24,7 +19,8 @@ namespace Leaf2Google.UnitTests.Dependency
         public void SetUp()
         {
             // Arrange
-            _dummySession = new VehicleSessionBase("dummy", "dummy", Guid.Empty) {
+            _dummySession = new VehicleSessionBase("dummy", "dummy", Guid.Empty)
+            {
                 AuthenticatedAccessToken = "dummy",
                 LastRequestSuccessful = true,
             };

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Nathan Ford. All rights reserved. CaptchaVerification.cs
+﻿// Copyright (c) Nathan Ford. All rights reserved. Captcha.cs
 
 using System.Text.Json.Nodes;
 
@@ -23,7 +23,9 @@ public class Captcha
     public async Task<bool> VerifyCaptcha(string response, string? remoteip)
     {
         if (!UsingCaptcha)
+        {
             return true;
+        }
 
         var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, "recaptcha/api/siteverify")
         {
@@ -36,9 +38,9 @@ public class Captcha
                 new KeyValuePair<string, string>("secret", CaptchaKey ?? ""),
                 new KeyValuePair<string, string>("response", response),
                 new KeyValuePair<string, string>("remoteip", remoteip ?? "")
-            })
+            }),
+            RequestUri = new Uri("https://www.google.com/recaptcha/api/siteverify")
         };
-        httpRequestMessage.RequestUri = new Uri("https://www.google.com/recaptcha/api/siteverify");
 
         var responseData = await Client.MakeRequest<JsonObject>(httpRequestMessage);
 

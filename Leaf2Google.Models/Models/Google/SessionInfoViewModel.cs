@@ -1,7 +1,7 @@
-﻿// Copyright (c) Nathan Ford. All rights reserved. SessionInfoModel.cs
+﻿// Copyright (c) Nathan Ford. All rights reserved. SessionInfoViewModel.cs
 
-using System.Collections.Generic;
 using Leaf2Google.Entities.Google;
+using System.Collections.Generic;
 
 namespace Leaf2Google.Models.Google
 {

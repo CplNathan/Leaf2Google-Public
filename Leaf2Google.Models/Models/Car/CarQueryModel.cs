@@ -1,9 +1,5 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. CarQueryModel.cs
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 public enum QueryType
 {
     PrimaryVin,

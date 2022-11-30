@@ -1,10 +1,6 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. IntentResponse.cs
 
-using Leaf2Google.Json.Google;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
@@ -13,8 +9,9 @@ namespace Leaf2Google.Json.Google
 
     public class GoogleIntentResponse
     {
-        public GoogleIntentResponse(GoogleIntentRequest request) {
-            this.requestId = request.requestId;
+        public GoogleIntentResponse(GoogleIntentRequest request)
+        {
+            requestId = request.requestId;
         }
 
         public string requestId { get; set; }

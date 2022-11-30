@@ -1,8 +1,8 @@
-﻿// Copyright (c) Nathan Ford. All rights reserved. Lock.cs
+﻿// Copyright (c) Nathan Ford. All rights reserved. LockDeviceService.cs
 
-using Leaf2Google.Models.Google.Devices;
-using Leaf2Google.Models.Car.Sessions;
 using Leaf2Google.Json.Google;
+using Leaf2Google.Models.Car.Sessions;
+using Leaf2Google.Models.Google.Devices;
 using System.Text.Json.Nodes;
 
 namespace Leaf2Google.Services.Google.Devices;
@@ -84,20 +84,29 @@ public class LockDeviceService : BaseDeviceService, IDevice
 
         var success = await FetchAsync(session, deviceModel, vin);
 
-        var descriptiveCapacity = "FULL";
-
+        string? descriptiveCapacity;
         if (vehicleLock.CapacityRemaining < 15)
+        {
             descriptiveCapacity = "CRITICALLY_LOW";
+        }
         else if (vehicleLock.CapacityRemaining < 40)
+        {
             descriptiveCapacity = "LOW";
+        }
         else if (vehicleLock.CapacityRemaining < 60)
+        {
             descriptiveCapacity = "MEDIUM";
+        }
         else if (vehicleLock.CapacityRemaining < 95)
+        {
             descriptiveCapacity = "HIGH";
+        }
         else
+        {
             descriptiveCapacity = "FULL";
+        }
 
-        var currentKillowat = vehicleLock.KillowatCapacity * (vehicleLock.CapacityRemaining / 100);
+        _ = vehicleLock.KillowatCapacity * (vehicleLock.CapacityRemaining / 100);
 
         return new LockDeviceData
         {
@@ -114,7 +123,7 @@ public class LockDeviceService : BaseDeviceService, IDevice
             },
             capacityUntilFull = new List<ValueUnit>()
             {
-                new ValueUnit() { rawValue = (vehicleLock.MinutesTillFull * 60), unit = "SECONDS" }
+                new ValueUnit() { rawValue = vehicleLock.MinutesTillFull * 60, unit = "SECONDS" }
                 //new ValueUnit() { rawValue = (vehicleLock.KillowatCapacity - currentKillowat), unit = "KILOWATT_HOURS" }
             },
             isCharging = vehicleLock.IsCharging,
@@ -164,7 +173,10 @@ public class LockDeviceService : BaseDeviceService, IDevice
                     var lockStatus = await SessionManager.SetVehicleLock(session, vin, vehicleLock.Locked);
 
                     var success = false;
-                    if (lockStatus is not null && lockStatus.Success) success = lockStatus.Success;
+                    if (lockStatus is not null && lockStatus.Success)
+                    {
+                        success = lockStatus.Success;
+                    }
 
                     return new ExecuteDeviceDataError
                     {

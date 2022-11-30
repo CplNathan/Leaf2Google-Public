@@ -1,7 +1,7 @@
-﻿// Copyright (c) Nathan Ford. All rights reserved. ConfigModel.cs
+﻿// Copyright (c) Nathan Ford. All rights reserved. ConfigEntity.cs
 
-using System;
 using Leaf2Google.Models;
+using System;
 
 namespace Leaf2Google.Entities.Generic
 {

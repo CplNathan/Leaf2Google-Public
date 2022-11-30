@@ -1,8 +1,8 @@
-﻿// Copyright (c) Nathan Ford. All rights reserved. Lock.cs
+﻿// Copyright (c) Nathan Ford. All rights reserved. ThermostatDeviceService.cs
 
-using Leaf2Google.Models.Google.Devices;
-using Leaf2Google.Models.Car.Sessions;
 using Leaf2Google.Json.Google;
+using Leaf2Google.Models.Car.Sessions;
+using Leaf2Google.Models.Google.Devices;
 using System.Text.Json.Nodes;
 
 namespace Leaf2Google.Services.Google.Devices;
@@ -101,14 +101,17 @@ public class ThermostatDeviceService : BaseDeviceService, IDevice
             ? (decimal)data["thermostatTemperatureSetpoint"]!
             : vehicleThermostat.Target;
         vehicleThermostat.Active = data.ContainsKey("thermostatMode") ? (string)data["thermostatMode"]! == "heatcool" :
-            data.ContainsKey("thermostatTemperatureSetpoint") ? true : vehicleThermostat.Active;
+            data.ContainsKey("thermostatTemperatureSetpoint") || vehicleThermostat.Active;
         var climateStatus =
             await SessionManager.SetVehicleClimate(session, vin, vehicleThermostat.Target, vehicleThermostat.Active);
 
         var success = false;
-        if (climateStatus is not null && climateStatus.Success) success = climateStatus.Success;
+        if (climateStatus is not null && climateStatus.Success)
+        {
+            success = climateStatus.Success;
+        }
 
-        await QueryAsync(session, deviceModel, vin).ConfigureAwait(false);
+        _ = await QueryAsync(session, deviceModel, vin).ConfigureAwait(false);
 
         return new ExecuteDeviceDataSuccess()
         {

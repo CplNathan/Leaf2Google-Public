@@ -2,7 +2,6 @@
 
 using Fido2NetLib;
 using Fido2NetLib.Objects;
-using Leaf2Google.Models.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -42,7 +41,9 @@ public class SecurityKeyController : BaseAPIController
         try
         {
             if (AuthenticatedSession is null || (AuthenticatedSession?.SessionId ?? Guid.Empty) == Guid.Empty)
+            {
                 return Json(new CredentialCreateOptions { Status = "error", ErrorMessage = "Not logged in" });
+            }
 
             var username = AuthenticatedSession.Username;
 
@@ -63,7 +64,9 @@ public class SecurityKeyController : BaseAPIController
             };
 
             if (!string.IsNullOrEmpty(authType))
+            {
                 authenticatorSelection.AuthenticatorAttachment = authType.ToEnum<AuthenticatorAttachment>();
+            }
 
             var exts = new AuthenticationExtensionsClientInputs
             {
@@ -90,7 +93,9 @@ public class SecurityKeyController : BaseAPIController
         CancellationToken cancellationToken)
     {
         if (AuthenticatedSession is null || (AuthenticatedSession?.SessionId ?? Guid.Empty) == Guid.Empty)
+        {
             return Json(new CredentialMakeResult("error", "Not logged in", null));
+        }
 
         try
         {
@@ -102,7 +107,9 @@ public class SecurityKeyController : BaseAPIController
                 if (await _leafContext.SecurityKeys.AnyAsync(
                         key => key.CredentialId == args.CredentialId /*key.UserHandle == args.User.Id*/,
                         cancellationToken))
+                {
                     return false;
+                }
 
                 return true;
             };
@@ -110,7 +117,7 @@ public class SecurityKeyController : BaseAPIController
             var success = await _fido2.MakeNewCredentialAsync(attestationResponse, options, callback,
                 cancellationToken: cancellationToken);
 
-            await _leafContext.SecurityKeys.AddAsync(new Leaf2Google.Entities.Security.StoredCredentialEntity
+            _ = await _leafContext.SecurityKeys.AddAsync(new Leaf2Google.Entities.Security.StoredCredentialEntity
             {
                 Descriptor = new PublicKeyCredentialDescriptor(success.Result?.CredentialId ?? throw new NullReferenceException("CredentialId was null when trying to make a new security credential.")),
                 PublicKey = success.Result.PublicKey,
@@ -126,7 +133,7 @@ public class SecurityKeyController : BaseAPIController
             success.Result.AttestationCertificate = null;
             success.Result.AttestationCertificateChain = null;
 
-            await _leafContext.SaveChangesAsync(cancellationToken: cancellationToken);
+            _ = await _leafContext.SaveChangesAsync(cancellationToken: cancellationToken);
 
             return Json(success);
         }
@@ -208,8 +215,8 @@ public class SecurityKeyController : BaseAPIController
             if (key != null)
             {
                 key.SignatureCounter = res.Counter;
-                _leafContext.SecurityKeys.Update(key);
-                await _leafContext.SaveChangesAsync();
+                _ = _leafContext.SecurityKeys.Update(key);
+                _ = await _leafContext.SaveChangesAsync();
 
                 var car = await _leafContext.NissanLeafs.FirstOrDefaultAsync(car =>
                     car.CarModelId == new Guid(key.UserId), cancellationToken);

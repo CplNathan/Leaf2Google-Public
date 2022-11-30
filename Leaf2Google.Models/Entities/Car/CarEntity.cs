@@ -1,8 +1,9 @@
-﻿using System;
-using System.Text;
+﻿// Copyright (c) Nathan Ford. All rights reserved. CarEntity.cs
+
+using Leaf2Google.Models;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Leaf2Google.Models;
 
 namespace Leaf2Google.Entities.Car
 {

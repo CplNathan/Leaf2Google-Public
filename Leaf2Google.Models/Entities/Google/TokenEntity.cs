@@ -1,7 +1,9 @@
-﻿using System;
+﻿// Copyright (c) Nathan Ford. All rights reserved. TokenEntity.cs
+
+using Leaf2Google.Models;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
-using Leaf2Google.Models;
 
 namespace Leaf2Google.Entities.Google
 {

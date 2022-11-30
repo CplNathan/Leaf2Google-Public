@@ -1,15 +1,13 @@
-﻿// Copyright (c) Nathan Ford. All rights reserved. JWTSecurityToken.cs
+﻿// Copyright (c) Nathan Ford. All rights reserved. JWT.cs
 
 using Leaf2Google.Entities.Google;
 using Leaf2Google.Models.Car.Sessions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text.Json.Nodes;
-using System.Web;
 
 namespace Leaf2Google.Blazor.Server.Helpers
 {
@@ -29,7 +27,9 @@ namespace Leaf2Google.Blazor.Server.Helpers
         public void OnAuthorization(AuthorizationFilterContext context)
         {
             if (context is null)
+            {
                 throw new NullReferenceException();
+            }
 
             bool isAuthenticated = context?.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
             if (!isAuthenticated)

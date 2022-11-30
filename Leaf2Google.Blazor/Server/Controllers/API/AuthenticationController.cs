@@ -1,6 +1,5 @@
-﻿// Copyright (c) Nathan Ford. All rights reserved. APIController.cs
+﻿// Copyright (c) Nathan Ford. All rights reserved. AuthenticationController.cs
 
-using Fido2NetLib.Objects;
 using Leaf2Google.Blazor.Server.Helpers;
 using Leaf2Google.Entities.Car;
 using Leaf2Google.Entities.Google;
@@ -9,11 +8,7 @@ using Leaf2Google.Models.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using System.Web;
 
 namespace Leaf2Google.Controllers.API;
 
@@ -67,7 +62,9 @@ public class AuthenticationController : BaseAPIController
             case RequestState.Initial:
                 {
                     if (form.Data.client_id != _configuration["Google:client_id"])
+                    {
                         return Json(BadRequest());
+                    }
 
                     var redirect_application = form.Data.redirect_uri?.AbsolutePath.Split('/')
                         .Where(item => !string.IsNullOrEmpty(item))
@@ -76,7 +73,9 @@ public class AuthenticationController : BaseAPIController
                         .FirstOrDefault();
 
                     if (redirect_application != _configuration["Google:client_reference"])
+                    {
                         return Json(BadRequest());
+                    }
 
                     var auth = new GoogleAuth
                     {
@@ -90,8 +89,8 @@ public class AuthenticationController : BaseAPIController
                         Data = auth
                     };
 
-                    _googleContext.GoogleAuths.Add(authEntity);
-                    await _googleContext.SaveChangesAsync().ConfigureAwait(false);
+                    _ = _googleContext.GoogleAuths.Add(authEntity);
+                    _ = await _googleContext.SaveChangesAsync().ConfigureAwait(false);
 
                     return Json(new RegisterResponse
                     {
@@ -105,7 +104,9 @@ public class AuthenticationController : BaseAPIController
                 {
                     var authEntity = await _googleContext.GoogleAuths.Include(auth => auth.Owner).FirstOrDefaultAsync(auth => auth.Data.state == form.Data.state);
                     if (authEntity == null)
+                    {
                         return Json(BadRequest());
+                    }
 
                     CarEntity leaf = new CarEntity(form.NissanUsername, form.NissanPassword);
                     var leafId = await StorageManager.UserStorage.DoCredentialsMatch(form.NissanUsername, form.NissanPassword, true);
@@ -127,10 +128,12 @@ public class AuthenticationController : BaseAPIController
                         authEntity.Owner = leaf;
 
                         if (!await _googleContext.NissanLeafs.AnyAsync(car => car.CarModelId == leaf.CarModelId))
-                            await _googleContext.NissanLeafs.AddAsync(leaf);
+                        {
+                            _ = await _googleContext.NissanLeafs.AddAsync(leaf);
+                        }
 
                         _googleContext.Entry(authEntity).State = EntityState.Modified;
-                        await _googleContext.SaveChangesAsync();
+                        _ = await _googleContext.SaveChangesAsync();
 
                         response.success = true;
                         response.Data = form.Data;

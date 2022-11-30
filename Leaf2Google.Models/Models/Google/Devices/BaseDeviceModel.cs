@@ -1,10 +1,9 @@
-﻿// Copyright (c) Nathan Ford. All rights reserved. BaseDevice.cs
+﻿// Copyright (c) Nathan Ford. All rights reserved. BaseDeviceModel.cs
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Nodes;
-using Leaf2Google.Json.Google;
 
 namespace Leaf2Google.Models.Google.Devices
 {

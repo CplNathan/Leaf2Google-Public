@@ -1,6 +1,8 @@
-﻿using Leaf2Google.Services.Google.Devices;
-using Leaf2Google.Models.Google.Devices;
+﻿// Copyright (c) Nathan Ford. All rights reserved. GoogleStateService.cs
+
 using Leaf2Google.Models.Car.Sessions;
+using Leaf2Google.Models.Google.Devices;
+using Leaf2Google.Services.Google.Devices;
 
 namespace Leaf2Google.Services.Google;
 
@@ -17,7 +19,7 @@ public class GoogleStateService : IDisposable
             {
                 foreach (var session in storageManager.VehicleSessions.Where(session => session.Value.Authenticated))
                 {
-                    GetOrCreateDevices(session.Key);
+                    _ = GetOrCreateDevices(session.Key);
                 }
             }
 
@@ -34,7 +36,10 @@ public class GoogleStateService : IDisposable
 
     private void BaseSessionManager_OnAuthenticationAttempt(object sender, string? authToken)
     {
-        if (sender is VehicleSessionBase session) GetOrCreateDevices(session.SessionId);
+        if (sender is VehicleSessionBase session)
+        {
+            _ = GetOrCreateDevices(session.SessionId);
+        }
     }
 
     private static Dictionary<Type, BaseDeviceModel> MakeDevices()
@@ -51,7 +56,9 @@ public class GoogleStateService : IDisposable
     public Dictionary<Type, BaseDeviceModel> GetOrCreateDevices(Guid sessionId)
     {
         if (StorageManager.GoogleSessions.ContainsKey(sessionId))
+        {
             return StorageManager.GoogleSessions[sessionId];
+        }
 
         return StorageManager.GoogleSessions[sessionId] = MakeDevices();
     }

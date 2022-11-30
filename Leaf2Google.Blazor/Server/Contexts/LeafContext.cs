@@ -1,4 +1,6 @@
-﻿using Leaf2Google.Entities.Car;
+﻿// Copyright (c) Nathan Ford. All rights reserved. LeafContext.cs
+
+using Leaf2Google.Entities.Car;
 using Leaf2Google.Entities.Generic;
 using Leaf2Google.Entities.Google;
 using Leaf2Google.Entities.Security;
@@ -27,7 +29,7 @@ public class LeafContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder
+        _ = modelBuilder
             .Entity<CarEntity>()
             .ToTable("t_leafs_leaf")
             .HasQueryFilter(q => q.Deleted == null)
@@ -37,22 +39,22 @@ public class LeafContext : DbContext
                 v => v.Split('|', StringSplitOptions.RemoveEmptyEntries).Length >= 3 ? AesEncryption.DecryptStringFromBytes(Convert.FromBase64String(v.Split('|', StringSplitOptions.RemoveEmptyEntries)[0]), Convert.FromBase64String(v.Split('|', StringSplitOptions.RemoveEmptyEntries)[1]), Convert.FromBase64String(v.Split('|', StringSplitOptions.RemoveEmptyEntries)[2])) : ""
             );
 
-        modelBuilder
+        _ = modelBuilder
             .Entity<StoredCredentialEntity>()
             .ToTable("t_leafs_securitykey")
             .Ignore(s => s.Descriptor);
 
-        modelBuilder
+        _ = modelBuilder
             .Entity<StoredCredential>()
             .ToTable("t_leafs_securitykey")
             .Ignore(s => s.Descriptor)
             .HasKey(s => s.PublicKey);
 
-        modelBuilder
+        _ = modelBuilder
             .Entity<AuditEntity>()
             .ToTable("t_leafs_audit");
 
-        modelBuilder
+        _ = modelBuilder
             .Entity<AuthEntity>()
             /*
             .OwnsOne(a => a.Data, ownedNavigationBuilder =>
@@ -62,11 +64,11 @@ public class LeafContext : DbContext
             */
             .ToTable("t_auths_auth");
 
-        modelBuilder
+        _ = modelBuilder
             .Entity<TokenEntity>()
             .ToTable("t_auths_token");
 
-        modelBuilder
+        _ = modelBuilder
             .Entity<ConfigEntity>()
             .ToTable("t_app_config");
     }

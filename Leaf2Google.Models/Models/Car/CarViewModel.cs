@@ -1,9 +1,9 @@
-﻿// Copyright (c) Nathan Ford. All rights reserved. CarInfoModel.cs
+﻿// Copyright (c) Nathan Ford. All rights reserved. CarViewModel.cs
 
-using System;
-using System.Drawing;
 using Leaf2Google.Entities.Car;
 using Leaf2Google.Models.Google.Devices;
+using System;
+using System.Drawing;
 
 namespace Leaf2Google.Models.Car
 {

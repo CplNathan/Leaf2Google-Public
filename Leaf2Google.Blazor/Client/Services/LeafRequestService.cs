@@ -1,10 +1,10 @@
-using Leaf2Google.Models.Google;
+// Copyright (c) Nathan Ford. All rights reserved. LeafRequestService.cs
+
 using Leaf2Google.Models.Car;
-using System.Net.Http.Json;
+using Leaf2Google.Models.Google;
 using System.Drawing;
+using System.Net.Http.Json;
 using System.Text.Json.Nodes;
-using System.IdentityModel.Tokens.Jwt;
-using System.Net.Http;
 
 public delegate void AuthenticationEventHandler(object? sender, bool authenticated);
 
@@ -28,13 +28,15 @@ public static class LeafHttpExtensions
 {
     private static void UpdateBearer(this HttpClient httpClient, string? jwtBearer)
     {
-        httpClient.DefaultRequestHeaders.Remove("Authorization");
+        _ = httpClient.DefaultRequestHeaders.Remove("Authorization");
         if (!string.IsNullOrEmpty(jwtBearer))
+        {
             httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + jwtBearer);
+        }
 
         // TODO: store in session storage (use microsoft apis)
     }
-} 
+}
 
 public class LeafAuthService : IAuthService
 {
@@ -55,9 +57,11 @@ public class LeafAuthService : IAuthService
         if (loginResult.IsSuccessStatusCode && (result?.success ?? false))
         {
             //_httpClient.UpdateBearer(result?.jwtBearer);
-            _httpClient.DefaultRequestHeaders.Remove("Authorization");
+            _ = _httpClient.DefaultRequestHeaders.Remove("Authorization");
             if (!string.IsNullOrEmpty(result?.jwtBearer))
+            {
                 _httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + result?.jwtBearer);
+            }
 
             hasFirstAuthenticationAttempted = true;
 
@@ -76,7 +80,9 @@ public class LeafAuthService : IAuthService
     public async Task<CurrentUser?> CurrentUserInfo()
     {
         if (!hasFirstAuthenticationAttempted)
+        {
             return new();
+        }
 
         try
         {
@@ -122,7 +128,7 @@ public class LeafAuthService : IAuthService
     {
         throw new NotImplementedException();
     }
-} 
+}
 
 public class LeafRequestService : IRequestService
 {
@@ -174,7 +180,7 @@ public class LeafRequestService : IRequestService
         else if (actionResult.StatusCode == System.Net.HttpStatusCode.Unauthorized)
         {
             await _authService.Logout();
-            return default(T);
+            return default;
         }
         else
         {

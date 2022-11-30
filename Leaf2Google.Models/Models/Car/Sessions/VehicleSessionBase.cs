@@ -1,4 +1,6 @@
-﻿using System;
+﻿// Copyright (c) Nathan Ford. All rights reserved. VehicleSessionBase.cs
+
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -25,7 +27,9 @@ namespace Leaf2Google.Models.Car.Sessions
             set
             {
                 if (!string.IsNullOrEmpty(value) && value != _authenticatedAccessToken)
+                {
                     LastAuthenticated = DateTime.UtcNow;
+                }
 
                 _authenticatedAccessToken = value;
             }
@@ -56,7 +60,9 @@ namespace Leaf2Google.Models.Car.Sessions
             set
             {
                 if (value != _loginAuthenticationAttempting && value == false)
+                {
                     LastLoginAuthenticaionAttempted = DateTime.UtcNow;
+                }
 
                 _loginAuthenticationAttempting = value;
             }

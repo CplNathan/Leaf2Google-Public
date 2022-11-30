@@ -1,8 +1,6 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. CarInfo.cs
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Leaf2Google.Models.Json.Nissan
 {

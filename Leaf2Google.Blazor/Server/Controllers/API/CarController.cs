@@ -1,12 +1,11 @@
-﻿// Copyright (c) Nathan Ford. All rights reserved. APIController.cs
+﻿// Copyright (c) Nathan Ford. All rights reserved. CarController.cs
 
-using System.Drawing;
+using Leaf2Google.Models.Car;
+using Leaf2Google.Models.Google.Devices;
 using Leaf2Google.Services.Google;
 using Leaf2Google.Services.Google.Devices;
-using Leaf2Google.Models.Google.Devices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Leaf2Google.Models.Car;
 
 namespace Leaf2Google.Controllers.API;
 
@@ -37,17 +36,17 @@ public class CarController : BaseAPIController
             {
                 case ActionType.Lights:
                     {
-                        await SessionManager.FlashLights(AuthenticatedSession, SelectedVin, clampedDuration).ConfigureAwait(false);
+                        _ = await SessionManager.FlashLights(AuthenticatedSession, SelectedVin, clampedDuration).ConfigureAwait(false);
                         break;
                     }
                 case ActionType.Horn:
                     {
-                        await SessionManager.BeepHorn(AuthenticatedSession, SelectedVin, clampedDuration).ConfigureAwait(false);
+                        _ = await SessionManager.BeepHorn(AuthenticatedSession, SelectedVin, clampedDuration).ConfigureAwait(false);
                         break;
                     }
                 case ActionType.Climate:
                     {
-                        await SessionManager.SetVehicleClimate(AuthenticatedSession, SelectedVin, actionRequest.Duration > 0 ? actionRequest.Duration : 21, actionRequest.Duration > 0).ConfigureAwait(false);
+                        _ = await SessionManager.SetVehicleClimate(AuthenticatedSession, SelectedVin, actionRequest.Duration > 0 ? actionRequest.Duration : 21, actionRequest.Duration > 0).ConfigureAwait(false);
                         break;
                     }
                 default:
@@ -74,11 +73,13 @@ public class CarController : BaseAPIController
                     }
                 case QueryType.Battery:
                     {
-                        var lockModel = (LockModel)(StorageManager.GoogleSessions)[AuthenticatedSession.SessionId][typeof(LockDeviceService)];
+                        var lockModel = (LockModel)StorageManager.GoogleSessions[AuthenticatedSession.SessionId][typeof(LockDeviceService)];
                         var lockDevice = Devices.FirstOrDefault(x => x.GetType() == typeof(LockDeviceService));
 
                         if (lockDevice != null)
-                            await lockDevice.FetchAsync(AuthenticatedSession, lockModel, activevin);
+                        {
+                            _ = await lockDevice.FetchAsync(AuthenticatedSession, lockModel, activevin);
+                        }
 
                         return Json(new BatteryData()
                         {
@@ -88,11 +89,13 @@ public class CarController : BaseAPIController
                     }
                 case QueryType.Lock:
                     {
-                        var lockModel = (LockModel)(StorageManager.GoogleSessions)[AuthenticatedSession.SessionId][typeof(LockDeviceService)];
+                        var lockModel = (LockModel)StorageManager.GoogleSessions[AuthenticatedSession.SessionId][typeof(LockDeviceService)];
                         var lockDevice = Devices.FirstOrDefault(x => x.GetType() == typeof(LockDeviceService));
 
                         if (lockDevice != null)
-                            await lockDevice.FetchAsync(AuthenticatedSession, lockModel, activevin);
+                        {
+                            _ = await lockDevice.FetchAsync(AuthenticatedSession, lockModel, activevin);
+                        }
 
                         return Json(new LockData()
                         {
@@ -101,11 +104,13 @@ public class CarController : BaseAPIController
                     }
                 case QueryType.Location:
                     {
-                        var lockModel = (LockModel)(StorageManager.GoogleSessions)[AuthenticatedSession.SessionId][typeof(LockDeviceService)];
+                        var lockModel = (LockModel)StorageManager.GoogleSessions[AuthenticatedSession.SessionId][typeof(LockDeviceService)];
                         var lockDevice = Devices.FirstOrDefault(x => x.GetType() == typeof(LockDeviceService));
 
                         if (lockDevice != null)
-                            await lockDevice.FetchAsync(AuthenticatedSession, lockModel, activevin);
+                        {
+                            _ = await lockDevice.FetchAsync(AuthenticatedSession, lockModel, activevin);
+                        }
 
                         return Json(new
                         {
@@ -119,11 +124,13 @@ public class CarController : BaseAPIController
                     }
                 case QueryType.Climate:
                     {
-                        var thermostatModel = (ThermostatModel)(StorageManager.GoogleSessions)[AuthenticatedSession.SessionId][typeof(ThermostatDeviceService)];
+                        var thermostatModel = (ThermostatModel)StorageManager.GoogleSessions[AuthenticatedSession.SessionId][typeof(ThermostatDeviceService)];
                         var thermostatDevice = Devices.FirstOrDefault(x => x.GetType() == typeof(ThermostatDeviceService));
 
                         if (thermostatDevice != null)
-                            await thermostatDevice.FetchAsync(AuthenticatedSession, thermostatModel, activevin);
+                        {
+                            _ = await thermostatDevice.FetchAsync(AuthenticatedSession, thermostatModel, activevin);
+                        }
 
                         return Json(new ClimateData()
                         {

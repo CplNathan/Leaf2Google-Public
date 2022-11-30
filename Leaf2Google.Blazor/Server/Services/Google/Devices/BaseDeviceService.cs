@@ -1,9 +1,8 @@
-﻿// Copyright (c) Nathan Ford. All rights reserved. BaseDevice.cs
+﻿// Copyright (c) Nathan Ford. All rights reserved. BaseDeviceService.cs
 
 using Leaf2Google.Json.Google;
 using Leaf2Google.Models.Car.Sessions;
 using Leaf2Google.Models.Google.Devices;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace Leaf2Google.Services.Google.Devices;

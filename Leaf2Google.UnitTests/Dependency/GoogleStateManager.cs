@@ -1,10 +1,8 @@
 ﻿// Copyright (c) Nathan Ford. All rights reserved. Class1.cs
 
-using Leaf2Google.Contexts;
 using Leaf2Google.Services;
 using Leaf2Google.Services.Google;
 using Leaf2Google.Services.Google.Devices;
-using Leaf2Google.Models.Car;
 using NUnit.Framework;
 
 namespace Leaf2Google.UnitTests.Models

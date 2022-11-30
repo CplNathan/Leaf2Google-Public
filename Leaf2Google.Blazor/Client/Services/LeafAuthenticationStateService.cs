@@ -1,9 +1,7 @@
-﻿// Copyright (c) Nathan Ford. All rights reserved. LeafAuthenticationStateProvider.cs
+﻿// Copyright (c) Nathan Ford. All rights reserved. LeafAuthenticationStateService.cs
 
 using Leaf2Google.Models.Google;
 using Microsoft.AspNetCore.Components.Authorization;
-using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 
 namespace Leaf2Google.Blazor.Client.Services
@@ -41,7 +39,11 @@ namespace Leaf2Google.Blazor.Client.Services
         }
         private async Task<CurrentUser?> GetCurrentUser()
         {
-            if (_currentUser != null && _currentUser.IsAuthenticated) return _currentUser;
+            if (_currentUser != null && _currentUser.IsAuthenticated)
+            {
+                return _currentUser;
+            }
+
             _currentUser = await api.CurrentUserInfo();
             return _currentUser;
         }
@@ -55,15 +57,21 @@ namespace Leaf2Google.Blazor.Client.Services
         {
             var result = await api.Login(loginParameters);
 
-            if (result?.success ?? false && notifyOnlyIfSuccess || !notifyOnlyIfSuccess)
+            if (result?.success ?? ((false && notifyOnlyIfSuccess) || !notifyOnlyIfSuccess))
+            {
                 NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+            }
+
             return result;
         }
         public async Task<RegisterResponse?> Register(RegisterModel registerParameters, bool notifyOnlyIfSuccess = false)
         {
             var result = await api.Register(registerParameters);
-            if (result?.success ?? false && notifyOnlyIfSuccess || !notifyOnlyIfSuccess)
+            if (result?.success ?? ((false && notifyOnlyIfSuccess) || !notifyOnlyIfSuccess))
+            {
                 NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+            }
+
             return result;
         }
     }

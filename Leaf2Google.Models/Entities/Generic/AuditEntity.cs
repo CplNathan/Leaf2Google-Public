@@ -1,5 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Nathan Ford. All rights reserved. AuditEntity.cs
+
 using Leaf2Google.Models;
+using System;
 
 namespace Leaf2Google.Entities.Generic
 {

@@ -1,4 +1,6 @@
-﻿using System.Net.Http.Headers;
+﻿// Copyright (c) Nathan Ford. All rights reserved. Request.cs
+
+using System.Net.Http.Headers;
 using System.Text.Json;
 
 namespace Leaf2Google.Helpers;
@@ -11,11 +13,13 @@ public static class Request
 
         var httpResponseBody = string.Empty;
         if (httpResponseMessage.IsSuccessStatusCode)
+        {
             httpResponseBody = await httpResponseMessage.Content.ReadAsStringAsync();
+        }
 
         Console.WriteLine(httpResponseBody);
 
-        T? jsonResult = default(T);
+        T? jsonResult = default;
 
         try
         {

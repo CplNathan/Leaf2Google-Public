@@ -1,7 +1,6 @@
-﻿// Copyright (c) Nathan Ford. All rights reserved. Thermostat.cs
+﻿// Copyright (c) Nathan Ford. All rights reserved. ThermostatModel.cs
 
 using System.Collections.Generic;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace Leaf2Google.Models.Google.Devices

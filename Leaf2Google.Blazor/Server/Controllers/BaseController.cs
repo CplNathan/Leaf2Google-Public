@@ -1,15 +1,11 @@
-﻿using System.Reflection;
-using Leaf2Google.Controllers.API;
-using Leaf2Google.Models.Generic;
+﻿// Copyright (c) Nathan Ford. All rights reserved. BaseController.cs
+
+using Leaf2Google.Entities.Google;
 using Leaf2Google.Models.Car.Sessions;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
-using System.Text.Json.Nodes;
-using System.Security.Principal;
-using System.Security.Claims;
 using Microsoft.IdentityModel.JsonWebTokens;
-using System.Linq;
-using Leaf2Google.Entities.Google;
+using System.Security.Claims;
+using System.Security.Principal;
 
 namespace Leaf2Google.Controllers;
 
@@ -43,7 +39,9 @@ public class BaseController : Controller
             var jtiClaim = AuthenticatedUser?.FindFirst(JwtRegisteredClaimNames.Jti);
 
             if (jtiClaim is null || jtiClaim.Value.Split(",").Count() < 1)
+            {
                 throw new UnauthorizedAccessException("Attempted to access active session but JWT was not valid or claim was not found. Invalid call.");
+            }
 
             var claimValue = jtiClaim.Value.Split(",")[0];
             return StorageManager.VehicleSessions.First(session => session.Key.ToString() == claimValue).Value;
@@ -57,7 +55,9 @@ public class BaseController : Controller
             var jtiClaim = AuthenticatedUser?.FindFirst(JwtRegisteredClaimNames.Jti);
 
             if (jtiClaim is null || jtiClaim.Value.Split(",").Count() < 2)
+            {
                 throw new UnauthorizedAccessException("Attempted to access active session but JWT was not valid or claim was not found. Invalid call.");
+            }
 
             var claimValue = jtiClaim.Value.Split(",")[1];
             return StorageManager.AuthSessions.First(auth => auth.AuthId.ToString() == claimValue);

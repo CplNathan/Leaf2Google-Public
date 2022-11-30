@@ -1,4 +1,4 @@
-﻿// Copyright (c) Nathan Ford. All rights reserved. Lock.cs
+﻿// Copyright (c) Nathan Ford. All rights reserved. LockModel.cs
 
 using System.Collections.Generic;
 using System.Drawing;

@@ -1,8 +1,10 @@
-﻿using System.Drawing;
-using System.Net;
-using System.Text;
+﻿// Copyright (c) Nathan Ford. All rights reserved. LeafSessionService.cs
+
 using Leaf2Google.Models.Car.Sessions;
 using Leaf2Google.Models.Json.Nissan;
+using System.Drawing;
+using System.Net;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -38,7 +40,9 @@ public class LeafSessionService : BaseSessionService, ICarSessionManager
     public async Task<Response<JsonObject>?> VehicleClimate(VehicleSessionBase session, string? vin, bool forceUpdate = true)
     {
         if (forceUpdate)
-            await PerformAction(session, vin, "refresh-hvac-status", "RefreshHvacStatus", new JsonObject());
+        {
+            _ = await PerformAction(session, vin, "refresh-hvac-status", "RefreshHvacStatus", new JsonObject());
+        }
 
         return await GetStatus(session, vin, "hvac-status");
     }
@@ -56,11 +60,13 @@ public class LeafSessionService : BaseSessionService, ICarSessionManager
     public async Task<Response<JsonObject>?> SetVehicleClimate(VehicleSessionBase session, string? vin, decimal targetTemp, bool active)
     {
         if (!active)
-            await PerformAction(session, vin, "hvac-start", "HvacStart", new JsonObject
+        {
+            _ = await PerformAction(session, vin, "hvac-start", "HvacStart", new JsonObject
             {
                 { "action", "cancel" },
                 { "targetTemperature", targetTemp }
             });
+        }
 
         return await PerformAction(session, vin, "hvac-start", "HvacStart", new JsonObject
         {
@@ -149,9 +155,7 @@ public class LeafSessionService : BaseSessionService, ICarSessionManager
     protected override async Task<bool> LoginImplementation(VehicleSessionBase session)
     {
         var authenticateResult = await Authenticate(session);
-        Response<JsonObject>? authenticationResult = null;
-
-        authenticationResult = await Authenticate(session, session.Username, session.Password, authenticateResult);
+        Response<JsonObject>? authenticationResult = await Authenticate(session, session.Username, session.Password, authenticateResult);
         var authorizeResult = await Authorize(session, authenticationResult);
         var accessTokenResult = await AccessToken(session, authorizeResult);
 
@@ -195,7 +199,9 @@ public class LeafSessionService : BaseSessionService, ICarSessionManager
     private async Task<Response<JsonObject>?> Authenticate(VehicleSessionBase session, string username, string password, Response<JsonObject>? authenticateResult)
     {
         if (authenticateResult?.Success != true)
+        {
             return null;
+        }
 
         // Because this data is so 'hand-crafted' I have left it as a simple JObject instead of creating a bespoke object to control this.
         dynamic httpRequestData = new JsonObject
@@ -270,7 +276,9 @@ public class LeafSessionService : BaseSessionService, ICarSessionManager
     private async Task<Response<JsonObject>?> Authorize(VehicleSessionBase session, Response<JsonObject>? authenticateResult)
     {
         if (authenticateResult?.Success != true)
+        {
             return null;
+        }
 
         var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, $"oauth2{authenticateResult.Data["realm"].GetValue<string>()}/authorize?client_id={Configuration["Nissan:EU:client_id"]}&redirect_uri={Configuration["Nissan:EU:redirect_uri"]}&response_type=code&scope={Configuration["Nissan:EU:scope"]}&nonce=sdfdsfez&state=af0ifjsldkj")
         {
@@ -283,7 +291,9 @@ public class LeafSessionService : BaseSessionService, ICarSessionManager
         var response = await MakeRequest(session, httpRequestMessage);
 
         if (response != null)
+        {
             response.Data = authenticateResult!.Data;
+        }
 
         return response;
     }
@@ -291,7 +301,9 @@ public class LeafSessionService : BaseSessionService, ICarSessionManager
     private async Task<Response<JsonObject>?> AccessToken(VehicleSessionBase session, Response<JsonObject>? authenticateResult)
     {
         if (authenticateResult?.Code != (int)HttpStatusCode.Found)
+        {
             return null;
+        }
 
         var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post,
             $"oauth2{authenticateResult.Data["realm"].GetValue<string>()}/access_token?code={authenticateResult!.Headers.Location?.ToString().Split('=')[1].Split('&')[0]}&client_id={Configuration["Nissan:EU:client_id"]}&client_secret={Configuration["Nissan:EU:client_secret"]}&redirect_uri={Configuration["Nissan:EU:redirect_uri"]}&grant_type=authorization_code")

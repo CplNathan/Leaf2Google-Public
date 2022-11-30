@@ -1,12 +1,11 @@
-﻿// Copyright (c) Nathan Ford. All rights reserved. SessionManagerBase.cs
+﻿// Copyright (c) Nathan Ford. All rights reserved. BaseSessionService.cs
 
-using System.Drawing;
-using System.Net;
 using Leaf2Google.Entities.Car;
 using Leaf2Google.Entities.Generic;
 using Leaf2Google.Models.Car.Sessions;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
+using System.Drawing;
+using System.Net;
 using System.Text.Json.Nodes;
 
 namespace Leaf2Google.Services;
@@ -81,9 +80,13 @@ public abstract class BaseSessionService : IDisposable
             var nissanContext = scope.ServiceProvider.GetRequiredService<LeafContext>();
 
             if (!session.Authenticated)
+            {
                 session.LoginFailedCount += 1;
+            }
             else
+            {
                 session.LoginFailedCount = 0;
+            }
 
             if (!session.Authenticated && session.LoginGivenUp)
             {
@@ -98,7 +101,7 @@ public abstract class BaseSessionService : IDisposable
                 Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Delete, AuditContext.Leaf,
                     "Deleting Stale Leaf"));
 
-                StorageManager.VehicleSessions.Remove(session.SessionId);
+                _ = StorageManager.VehicleSessions.Remove(session.SessionId);
             }
             else if (session.Authenticated)
             {
@@ -109,10 +112,10 @@ public abstract class BaseSessionService : IDisposable
             {
                 Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
                     "Authentication Failed"));
-                await Login(session).ConfigureAwait(false);
+                _ = await Login(session).ConfigureAwait(false);
             }
 
-            await nissanContext.SaveChangesAsync();
+            _ = await nissanContext.SaveChangesAsync();
         }
     }
 
@@ -128,7 +131,9 @@ public abstract class BaseSessionService : IDisposable
             {
                 var loginSuccess = await Login(session);
                 if (loginSuccess)
+                {
                     await AttemptRetryQueue().ConfigureAwait(false);
+                }
             }
         }
     }
@@ -155,8 +160,7 @@ public abstract class BaseSessionService : IDisposable
         string baseUri = "")
     {
         var success = true;
-        Response<T>? result = null;
-
+        Response<T>? result;
         try
         {
             httpRequestMessage.RequestUri =
@@ -166,17 +170,20 @@ public abstract class BaseSessionService : IDisposable
 
             result = await Client.MakeRequest<T>(httpRequestMessage);
 
-            if (result?.Code != (int)HttpStatusCode.OK && result?.Code != (int)HttpStatusCode.Found)
+            if (result?.Code is not ((int)HttpStatusCode.OK) and not ((int)HttpStatusCode.Found))
+            {
                 success = false;
+            }
         }
         catch (Exception)
         {
-            success = false;
             throw;
         }
 
         if (result != null)
+        {
             result.Success = success;
+        }
 
         OnRequest?.Invoke(session, result?.Success ?? false);
 
@@ -186,18 +193,24 @@ public abstract class BaseSessionService : IDisposable
     public async Task<bool> Login(VehicleSessionBase session)
     {
         if (session is null)
+        {
             return false;
+        }
 
         Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
     "Authentication Method Invoked"));
 
         // If this is called concurrently we could add it to a queue/task where we can await the result of the previous authentication attempt although I am unsure of the benifit of this.
         if (session.LoginAuthenticationAttempting)
+        {
             return false;
+        }
 
         // Add cooldown to authentication attempts in-case multiple requests hit at once.
         if (DateTime.UtcNow - session.LastLoginAuthenticaionAttempted <= TimeSpan.FromSeconds(5))
+        {
             return false;
+        }
 
         if (!session.LoginGivenUp && !session.Authenticated)
         {
@@ -205,7 +218,7 @@ public abstract class BaseSessionService : IDisposable
 
             Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
                 "Authentication Attempting"));
-            await LoginImplementation(session);
+            _ = await LoginImplementation(session);
 
             session.LoginAuthenticationAttempting = false;
         }
@@ -226,9 +239,11 @@ public abstract class BaseSessionService : IDisposable
     {
         // Queue saved sessions into memory.
         foreach (var leaf in LeafContext.NissanLeafs)
-            await AddAsync(new CarEntity(leaf.NissanUsername, leaf.NissanPassword) { CarModelId = leaf.CarModelId }).ConfigureAwait(false);
+        {
+            _ = await AddAsync(new CarEntity(leaf.NissanUsername, leaf.NissanPassword) { CarModelId = leaf.CarModelId }).ConfigureAwait(false);
+        }
 
-        await LeafContext.SaveChangesAsync();
+        _ = await LeafContext.SaveChangesAsync();
     }
 
     private async Task<bool> AddAsync(CarEntity NewCar, bool _ = false)
@@ -237,12 +252,14 @@ public abstract class BaseSessionService : IDisposable
 
         // Skip login check if already authenticated.
         if (StorageManager.VehicleSessions.ContainsKey(session.SessionId) && StorageManager.VehicleSessions[session.SessionId].Authenticated)
+        {
             return true;
+        }
 
         var success = false;
         try
         {
-            StorageManager.VehicleSessions.TryAdd(session.SessionId, session);
+            _ = StorageManager.VehicleSessions.TryAdd(session.SessionId, session);
             success = await Login(session);
         }
         catch (Exception ex)
@@ -259,7 +276,9 @@ public abstract class BaseSessionService : IDisposable
         var success = await AddAsync(NewCar, false);
 
         if (success)
-            await LeafContext.SaveChangesAsync();
+        {
+            _ = await LeafContext.SaveChangesAsync();
+        }
 
         return success;
     }

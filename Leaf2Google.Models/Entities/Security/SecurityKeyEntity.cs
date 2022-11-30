@@ -1,7 +1,7 @@
-﻿// Copyright (c) Nathan Ford. All rights reserved. SecurityKeyModel.cs
+﻿// Copyright (c) Nathan Ford. All rights reserved. SecurityKeyEntity.cs
 
-using System;
 using Fido2NetLib.Objects;
+using System;
 
 namespace Leaf2Google.Entities.Security
 {
