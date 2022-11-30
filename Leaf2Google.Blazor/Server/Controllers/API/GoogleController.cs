@@ -218,12 +218,11 @@ public class GoogleController : BaseController
                         return JWT.UnauthorizedResponse();
                     }
 
-                    var formUri = new Uri(form["redirect_uri"].ToString());
                     if (!await LeafContext.GoogleAuths.AnyAsync(auth =>
                             auth.AuthCode.ToString() == form["code"].ToString() &&
                             auth.AuthCode != null &&
                             auth.Data.client_id == form["client_id"].ToString() &&
-                            auth.Data.redirect_uri == formUri))
+                            auth.Data.redirect_uri == form["redirect_uri"].ToString()))
                     {
                         return JWT.UnauthorizedResponse();
                     }

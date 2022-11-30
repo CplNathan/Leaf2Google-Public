@@ -36,7 +36,7 @@
                 Data = new Entities.Google.GoogleAuth
                 {
                     client_id = client_id,
-                    redirect_uri = string.IsNullOrEmpty(redirect_uri) ? null : new Uri(redirect_uri),
+                    redirect_uri = redirect_uri,
                     state = state,
                 },
                 request = RequestState.Initial

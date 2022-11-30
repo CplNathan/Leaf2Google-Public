@@ -66,7 +66,7 @@ public class AuthenticationController : BaseAPIController
                         return Json(BadRequest());
                     }
 
-                    var redirect_application = form.Data.redirect_uri?.AbsolutePath.Split('/')
+                    var redirect_application = form.Data.redirect_uri.Split('/')
                         .Where(item => !string.IsNullOrEmpty(item))
                         .Skip(1)
                         .Take(1)

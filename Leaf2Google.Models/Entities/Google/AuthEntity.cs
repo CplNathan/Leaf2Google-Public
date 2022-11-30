@@ -11,7 +11,7 @@ namespace Leaf2Google.Entities.Google
     public class GoogleAuth
     {
         public string client_id { get; set; } = string.Empty;
-        public Uri? redirect_uri { get; set; }
+        public string redirect_uri { get; set; }
         public string state { get; set; } = string.Empty;
     }
 
