@@ -184,8 +184,8 @@ public class GoogleController : BaseController
             }
 
             // Need to update auth last used.
-            _ = LeafContext.GoogleAuths.Update(AuthenticatedSessionEntity);
-            _ = await LeafContext.SaveChangesAsync();
+            LeafContext.GoogleAuths.Update(AuthenticatedSessionEntity);
+            await LeafContext.SaveChangesAsync();
         }
 
         return Json(response);
@@ -276,7 +276,7 @@ public class GoogleController : BaseController
 
         LeafContext.Entry(token).State = tokenState;
         LeafContext.Entry(token.Owner).State = EntityState.Modified;
-        _ = await LeafContext.SaveChangesAsync();
+        await LeafContext.SaveChangesAsync();
 
         var jwtToken = JWT.CreateJWT(StorageManager.VehicleSessions[token.Owner.Owner.CarModelId], Configuration, token.Owner);
         if (tokenState == EntityState.Added)

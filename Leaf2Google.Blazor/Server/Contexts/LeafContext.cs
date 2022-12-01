@@ -29,7 +29,7 @@ public class LeafContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        _ = modelBuilder
+        modelBuilder
             .Entity<CarEntity>()
             .ToTable("t_leafs_leaf")
             .HasQueryFilter(q => q.Deleted == null)
@@ -39,22 +39,22 @@ public class LeafContext : DbContext
                 v => v.Split('|', StringSplitOptions.RemoveEmptyEntries).Length >= 3 ? AesEncryption.DecryptStringFromBytes(Convert.FromBase64String(v.Split('|', StringSplitOptions.RemoveEmptyEntries)[0]), Convert.FromBase64String(v.Split('|', StringSplitOptions.RemoveEmptyEntries)[1]), Convert.FromBase64String(v.Split('|', StringSplitOptions.RemoveEmptyEntries)[2])) : ""
             );
 
-        _ = modelBuilder
+        modelBuilder
             .Entity<StoredCredentialEntity>()
             .ToTable("t_leafs_securitykey")
             .Ignore(s => s.Descriptor);
 
-        _ = modelBuilder
+        modelBuilder
             .Entity<StoredCredential>()
             .ToTable("t_leafs_securitykey")
             .Ignore(s => s.Descriptor)
             .HasKey(s => s.PublicKey);
 
-        _ = modelBuilder
+        modelBuilder
             .Entity<AuditEntity>()
             .ToTable("t_leafs_audit");
 
-        _ = modelBuilder
+        modelBuilder
             .Entity<AuthEntity>()
             /*
             .OwnsOne(a => a.Data, ownedNavigationBuilder =>
@@ -64,11 +64,11 @@ public class LeafContext : DbContext
             */
             .ToTable("t_auths_auth");
 
-        _ = modelBuilder
+        modelBuilder
             .Entity<TokenEntity>()
             .ToTable("t_auths_token");
 
-        _ = modelBuilder
+        modelBuilder
             .Entity<ConfigEntity>()
             .ToTable("t_app_config");
     }

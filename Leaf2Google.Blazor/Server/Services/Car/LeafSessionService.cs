@@ -41,7 +41,7 @@ public class LeafSessionService : BaseSessionService, ICarSessionManager
     {
         if (forceUpdate)
         {
-            _ = await PerformAction(session, vin, "refresh-hvac-status", "RefreshHvacStatus", new JsonObject());
+            await PerformAction(session, vin, "refresh-hvac-status", "RefreshHvacStatus", new JsonObject());
         }
 
         return await GetStatus(session, vin, "hvac-status");
@@ -61,7 +61,7 @@ public class LeafSessionService : BaseSessionService, ICarSessionManager
     {
         if (!active)
         {
-            _ = await PerformAction(session, vin, "hvac-start", "HvacStart", new JsonObject
+            await PerformAction(session, vin, "hvac-start", "HvacStart", new JsonObject
             {
                 { "action", "cancel" },
                 { "targetTemperature", targetTemp }

@@ -2969,7 +2969,7 @@
 
   function _setPrototypeOf(o, p) {
     _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
-      o.__proto__ = p;
+      o.__proto_p;
       return o;
     };
 

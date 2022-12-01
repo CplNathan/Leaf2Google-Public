@@ -36,17 +36,17 @@ public class CarController : BaseAPIController
             {
                 case ActionType.Lights:
                     {
-                        _ = await SessionManager.FlashLights(AuthenticatedSession, SelectedVin, clampedDuration).ConfigureAwait(false);
+                        await SessionManager.FlashLights(AuthenticatedSession, SelectedVin, clampedDuration).ConfigureAwait(false);
                         break;
                     }
                 case ActionType.Horn:
                     {
-                        _ = await SessionManager.BeepHorn(AuthenticatedSession, SelectedVin, clampedDuration).ConfigureAwait(false);
+                        await SessionManager.BeepHorn(AuthenticatedSession, SelectedVin, clampedDuration).ConfigureAwait(false);
                         break;
                     }
                 case ActionType.Climate:
                     {
-                        _ = await SessionManager.SetVehicleClimate(AuthenticatedSession, SelectedVin, actionRequest.Duration > 0 ? actionRequest.Duration : 21, actionRequest.Duration > 0).ConfigureAwait(false);
+                        await SessionManager.SetVehicleClimate(AuthenticatedSession, SelectedVin, actionRequest.Duration > 0 ? actionRequest.Duration : 21, actionRequest.Duration > 0).ConfigureAwait(false);
                         break;
                     }
                 default:
@@ -78,7 +78,7 @@ public class CarController : BaseAPIController
 
                         if (lockDevice != null)
                         {
-                            _ = await lockDevice.FetchAsync(AuthenticatedSession, lockModel, activevin);
+                            await lockDevice.FetchAsync(AuthenticatedSession, lockModel, activevin);
                         }
 
                         return Json(new BatteryData()
@@ -94,7 +94,7 @@ public class CarController : BaseAPIController
 
                         if (lockDevice != null)
                         {
-                            _ = await lockDevice.FetchAsync(AuthenticatedSession, lockModel, activevin);
+                            await lockDevice.FetchAsync(AuthenticatedSession, lockModel, activevin);
                         }
 
                         return Json(new LockData()
@@ -109,7 +109,7 @@ public class CarController : BaseAPIController
 
                         if (lockDevice != null)
                         {
-                            _ = await lockDevice.FetchAsync(AuthenticatedSession, lockModel, activevin);
+                            await lockDevice.FetchAsync(AuthenticatedSession, lockModel, activevin);
                         }
 
                         return Json(new
@@ -129,7 +129,7 @@ public class CarController : BaseAPIController
 
                         if (thermostatDevice != null)
                         {
-                            _ = await thermostatDevice.FetchAsync(AuthenticatedSession, thermostatModel, activevin);
+                            await thermostatDevice.FetchAsync(AuthenticatedSession, thermostatModel, activevin);
                         }
 
                         return Json(new ClimateData()
