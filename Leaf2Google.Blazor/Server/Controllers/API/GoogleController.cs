@@ -294,7 +294,7 @@ public class GoogleController : BaseController
         LeafContext.Entry(token.Owner).State = EntityState.Modified;
         await LeafContext.SaveChangesAsync().ConfigureAwait(true);
 
-        var jwtToken = JWTHelper.CreateJWT(StorageManager.VehicleSessions[token.Owner.Owner.CarModelId], Configuration, token.Owner);
+        var jwtToken = JWTHelper.CreateJWT(StorageManager.VehicleSessions[token.Owner.Owner.CarModelId], Configuration, token.Owner, DateTime.Now.AddMinutes(1));
         if (tokenState == EntityState.Added)
         {
             return Json(new RefreshTokenDto(token, jwtToken));

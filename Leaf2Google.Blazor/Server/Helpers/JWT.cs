@@ -62,10 +62,13 @@ namespace Leaf2Google.Blazor.Server.Helpers
             };
         }
 
-        public static JwtSecurityToken CreateJWT(VehicleSessionBase session, IConfiguration _configuration, AuthEntity? authEntity = null)
+        // Quick hack
+        public static JwtSecurityToken CreateJWT(VehicleSessionBase session, IConfiguration _configuration, AuthEntity? authEntity = null, DateTime? validTo = null)
         {
             if (session == null)
                 throw new InvalidOperationException("Session is not valid");
+
+            validTo = validTo ?? DateTime.Now.AddMinutes(60);
 
             var secretkey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_configuration["jwt:key"] ?? Guid.NewGuid().ToString())); // NOTE: SAME KEY AS USED IN Program.cs FILE
             var credentials = new SigningCredentials(secretkey, SecurityAlgorithms.HmacSha256);
