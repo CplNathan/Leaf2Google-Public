@@ -61,6 +61,9 @@ public class GoogleController : BaseController
 
         var userDevices = GoogleState.GetOrCreateDevices(session.SessionId);
 
+        if (!session.Authenticated && !session.LoginGivenUp)
+            await SessionManager.Login(session).ConfigureAwait(true);
+
         foreach (Input action in request?.inputs ?? Array.Empty<Input>())
         {
             var intent = (action.intent ?? string.Empty).Split("action.devices.");
