@@ -68,7 +68,7 @@ namespace Leaf2Google.Blazor.Server.Helpers
             if (session == null)
                 throw new InvalidOperationException("Session is not valid");
 
-            validTo = validTo ?? DateTime.UnixEpoch.AddMinutes(60);
+            validTo = validTo ?? DateTime.UtcNow.AddMinutes(60);
 
             var secretkey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_configuration["jwt:key"] ?? Guid.NewGuid().ToString())); // NOTE: SAME KEY AS USED IN Program.cs FILE
             var credentials = new SigningCredentials(secretkey, SecurityAlgorithms.HmacSha256);
