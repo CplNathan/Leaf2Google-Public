@@ -16,7 +16,7 @@ public interface IDevice
     public Type DeviceModel { get; }
 }
 
-public abstract class BaseDeviceService
+public class BaseDeviceService
 {
     public BaseDeviceService(ICarSessionManager sessionManager)
     {

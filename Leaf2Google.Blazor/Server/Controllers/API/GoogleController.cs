@@ -51,14 +51,17 @@ public class GoogleController : BaseController
 
         var response = new GoogleIntentResponse(request);
 
-        if (AuthenticatedSession is null)
+        var session = AuthenticatedSession;
+        var sessionEntity = AuthenticatedSessionEntity;
+
+        if (session is null)
         {
-            return JWTHelper.UnauthorizedResponse();
+            return JWTHelper.UnauthorizedResponse(StatusCodes.Status401Unauthorized);
         }
 
-        var userDevices = GoogleState.GetOrCreateDevices(AuthenticatedSession.SessionId);
+        var userDevices = GoogleState.GetOrCreateDevices(session.SessionId);
 
-        foreach (Input action in request?.inputs ?? new Input[0])
+        foreach (Input action in request?.inputs ?? Array.Empty<Input>())
         {
             var intent = (action.intent ?? string.Empty).Split("action.devices.");
 
@@ -81,7 +84,7 @@ public class GoogleController : BaseController
                         response.payload = new SyncPayload()
                         {
                             devices = devices,
-                            agentUserId = AuthenticatedSession.SessionId.ToString()
+                            agentUserId = session.SessionId.ToString()
                         };
 
                         break;
@@ -90,11 +93,11 @@ public class GoogleController : BaseController
                 case "QUERY":
                     {
                         // Logging
-                        Console.WriteLine(Logging.AddLog(AuthenticatedSession?.SessionId ?? Guid.Empty, AuditAction.Execute,
-                            AuditContext.Google, $"Google executing query for {AuthenticatedSession?.Username ?? string.Empty}"));
-                        AuthenticatedSessionEntity.LastQuery = DateTime.UtcNow;
+                        Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Execute,
+                            AuditContext.Google, $"Google executing query for {session.Username}"));
+                        sessionEntity.LastQuery = DateTime.UtcNow;
 
-                        var requestedDevices = action.payload.devices.Select(device => device.id);
+                        var requestedDevices = (action.payload?.devices ?? Enumerable.Empty<RequestDevice>()).Select(device => device.id);
 
                         var deviceQuery = new JsonObject();
                         Dictionary<string, Task<QueryDeviceData>> deviceQueryTask = new Dictionary<string, Task<QueryDeviceData>>();
@@ -106,19 +109,19 @@ public class GoogleController : BaseController
 
                             if (device != null)
                             {
-                                deviceQueryTask.Add(deviceData.Value.Id, device.QueryAsync(AuthenticatedSession, deviceData.Value, AuthenticatedSession.PrimaryVin));
+                                deviceQueryTask.Add(deviceData.Value.Id, device.QueryAsync(session, deviceData.Value, session.PrimaryVin));
                             }
                         }
 
                         foreach (var deviceTask in deviceQueryTask)
                         {
-                            deviceQuery.Add(deviceTask.Key, JsonValue.Create(await deviceTask.Value));
+                            deviceQuery.Add(deviceTask.Key, JsonValue.Create(await deviceTask.Value.ConfigureAwait(false)));
                         }
 
                         response.payload = new QueryPayload()
                         {
                             devices = deviceQuery,
-                            agentUserId = AuthenticatedSession.SessionId.ToString()
+                            agentUserId = session.SessionId.ToString()
                         };
 
                         break;
@@ -126,13 +129,13 @@ public class GoogleController : BaseController
                 case "EXECUTE":
                     {
                         // Logging
-                        Console.WriteLine(Logging.AddLog(AuthenticatedSession?.SessionId ?? Guid.Empty, AuditAction.Execute,
-                            AuditContext.Google, $"Google executing command for {AuthenticatedSession?.Username ?? string.Empty}"));
-                        AuthenticatedSessionEntity.LastExecute = DateTime.UtcNow;
+                        Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Execute,
+                            AuditContext.Google, $"Google executing command for {session.Username}"));
+                        sessionEntity.LastExecute = DateTime.UtcNow;
 
                         var executedCommands = new List<ExecuteDeviceData>();
 
-                        foreach (var command in action.payload.commands)
+                        foreach (var command in action.payload?.commands ?? Array.Empty<Command>())
                         {
                             var requestedDevices = command.devices.Select(device => device.id);
 
@@ -153,13 +156,13 @@ public class GoogleController : BaseController
 
                                     if (device != null)
                                     {
-                                        updatedStatesTask.Add(deviceData.Value.Id, device.ExecuteAsync(AuthenticatedSession, deviceData.Value, AuthenticatedSession.PrimaryVin, parsedCommand, execution._params));
+                                        updatedStatesTask.Add(deviceData.Value.Id, device.ExecuteAsync(session, deviceData.Value, session.PrimaryVin, parsedCommand, execution._params));
                                     }
                                 }
 
                                 foreach (var stateTask in updatedStatesTask)
                                 {
-                                    var state = await stateTask.Value;
+                                    var state = await stateTask.Value.ConfigureAwait(false);
                                     state.ids = new List<string>() { stateTask.Key };
 
                                     executedCommands.Add(state);
@@ -170,7 +173,7 @@ public class GoogleController : BaseController
                         response.payload = new ExecutePayload()
                         {
                             commands = executedCommands,
-                            agentUserId = AuthenticatedSession.SessionId.ToString()
+                            agentUserId = session.SessionId.ToString()
                         };
 
                         break;
@@ -184,8 +187,8 @@ public class GoogleController : BaseController
             }
 
             // Need to update auth last used.
-            LeafContext.GoogleAuths.Update(AuthenticatedSessionEntity);
-            await LeafContext.SaveChangesAsync();
+            LeafContext.GoogleAuths.Update(sessionEntity);
+            await LeafContext.SaveChangesAsync().ConfigureAwait(true);
         }
 
         return Json(response);
@@ -197,12 +200,12 @@ public class GoogleController : BaseController
     {
         if (form == null || form.Count <= 0)
         {
-            return JWTHelper.UnauthorizedResponse();
+            return JWTHelper.UnauthorizedResponse(StatusCodes.Status400BadRequest);
         }
 
         if (form["client_secret"] != Configuration["Google:client_secret"])
         {
-            return JWTHelper.UnauthorizedResponse();
+            return JWTHelper.UnauthorizedResponse(StatusCodes.Status400BadRequest);
         }
 
         // Token state
@@ -215,29 +218,30 @@ public class GoogleController : BaseController
                 {
                     if (string.IsNullOrEmpty(form["code"]) || string.IsNullOrEmpty(form["redirect_uri"]))
                     {
-                        return JWTHelper.UnauthorizedResponse();
+                        return JWTHelper.UnauthorizedResponse(StatusCodes.Status400BadRequest);
                     }
 
                     if (!await LeafContext.GoogleAuths.AnyAsync(auth =>
                             auth.AuthCode.ToString() == form["code"].ToString() &&
                             auth.AuthCode != null &&
                             auth.Data.client_id == form["client_id"].ToString() &&
-                            auth.Data.redirect_uri == form["redirect_uri"].ToString()))
+                            auth.Data.redirect_uri == form["redirect_uri"].ToString())
+                        .ConfigureAwait(true))
                     {
-                        return JWTHelper.UnauthorizedResponse();
+                        return JWTHelper.UnauthorizedResponse(StatusCodes.Status400BadRequest);
                     }
 
                     token = new TokenEntity
                     {
                         Owner = (await LeafContext.GoogleAuths.Include(auth => auth.Owner).FirstOrDefaultAsync(auth =>
-                            form["code"].ToString() == auth.AuthCode.ToString()))!,
+                            form["code"].ToString() == auth.AuthCode.ToString()).ConfigureAwait(true))!,
                         RefreshToken = Guid.NewGuid()
                     };
 
                     token.Owner.AuthCode = null;
 
-                    Console.WriteLine(Logging.AddLog(token?.Owner?.Owner?.CarModelId ?? Guid.Empty, AuditAction.Update,
-                        AuditContext.Google, $"Regenerating refresh token for {token?.Owner?.Owner?.NissanUsername ?? string.Empty}"));
+                    Console.WriteLine(Logging.AddLog(token.Owner?.Owner?.CarModelId ?? Guid.Empty, AuditAction.Update,
+                        AuditContext.Google, $"Regenerating refresh token for {token.Owner?.Owner?.NissanUsername ?? string.Empty}"));
 
                     tokenState = EntityState.Added;
 
@@ -247,15 +251,24 @@ public class GoogleController : BaseController
                 {
                     if (!await LeafContext.GoogleTokens.Include(token => token.Owner).AnyAsync(token =>
                             form["refresh_token"].ToString() == token.RefreshToken.ToString() &&
-                            form["client_id"].ToString() == token.Owner.Data.client_id))
+                            form["client_id"].ToString() == token.Owner.Data.client_id).ConfigureAwait(true))
                     {
-                        return JWTHelper.UnauthorizedResponse();
+                        return JWTHelper.UnauthorizedResponse(StatusCodes.Status400BadRequest);
                     }
 
-                    token = await LeafContext.GoogleTokens.Include(token => token.Owner).FirstOrDefaultAsync(token =>
-                        form["refresh_token"].ToString() == token.RefreshToken.ToString())!;
-                    token.Owner = await LeafContext.GoogleAuths.Include(auth => auth.Owner).FirstOrDefaultAsync(auth =>
-                        token.Owner.AuthId == auth.AuthId);
+                    var foundToken = await LeafContext.GoogleTokens.Include(token => token.Owner).FirstOrDefaultAsync(token =>
+                        form["refresh_token"].ToString() == token.RefreshToken.ToString()).ConfigureAwait(true);
+
+                    if (foundToken != null)
+                    {
+                        token = foundToken;
+
+                        var tokenOwner = await LeafContext.GoogleAuths.Include(auth => auth.Owner).FirstOrDefaultAsync(auth =>
+                            token.Owner.AuthId == auth.AuthId).ConfigureAwait(true);
+
+                        if (tokenOwner != null)
+                            token.Owner = tokenOwner;
+                    }
 
                     Console.WriteLine(Logging.AddLog(token?.Owner?.Owner?.CarModelId ?? Guid.Empty, AuditAction.Update,
                         AuditContext.Google, $"Regenerating authorization code for {token?.Owner?.Owner?.NissanUsername ?? string.Empty}"));
@@ -266,17 +279,17 @@ public class GoogleController : BaseController
                 }
 
             default:
-                return JWTHelper.UnauthorizedResponse();
+                return JWTHelper.UnauthorizedResponse(StatusCodes.Status400BadRequest);
         }
 
         if (token == null || token.Owner == null || token.Owner.Owner == null || token.Owner.Deleted.HasValue)
         {
-            return JWTHelper.UnauthorizedResponse();
+            return JWTHelper.UnauthorizedResponse(StatusCodes.Status400BadRequest);
         }
 
         LeafContext.Entry(token).State = tokenState;
         LeafContext.Entry(token.Owner).State = EntityState.Modified;
-        await LeafContext.SaveChangesAsync();
+        await LeafContext.SaveChangesAsync().ConfigureAwait(true);
 
         var jwtToken = JWTHelper.CreateJWT(StorageManager.VehicleSessions[token.Owner.Owner.CarModelId], Configuration, token.Owner);
         if (tokenState == EntityState.Added)
@@ -289,7 +302,7 @@ public class GoogleController : BaseController
         }
         else
         {
-            return JWTHelper.UnauthorizedResponse();
+            return JWTHelper.UnauthorizedResponse(StatusCodes.Status400BadRequest);
         }
     }
 }

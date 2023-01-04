@@ -72,8 +72,6 @@ public abstract class BaseSessionService : IDisposable
         }
     }
 
-    protected Dictionary<DateTime, HttpRequestMessage> RetryQueue = new();
-
     protected HttpClient Client { get; }
 
     protected LeafContext LeafContext { get; }
@@ -109,7 +107,7 @@ public abstract class BaseSessionService : IDisposable
             if (!session.Authenticated && session.LoginGivenUp)
             {
                 var leaf = await nissanContext.NissanLeafs.FirstOrDefaultAsync(car =>
-                    car.CarModelId == session.SessionId);
+                    car.CarModelId == session.SessionId).ConfigureAwait(false);
                 if (leaf != null)
                 {
                     leaf.Deleted = DateTime.UtcNow;
@@ -119,7 +117,7 @@ public abstract class BaseSessionService : IDisposable
                 Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Delete, AuditContext.Leaf,
                     "Deleting Stale Leaf"));
 
-                _ = StorageManager.VehicleSessions.Remove(session.SessionId);
+                StorageManager.VehicleSessions.Remove(session.SessionId);
             }
             else if (session.Authenticated)
             {
@@ -130,10 +128,10 @@ public abstract class BaseSessionService : IDisposable
             {
                 Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
                     "Authentication Failed"));
-                _ = await Login(session).ConfigureAwait(false);
+                await Login(session).ConfigureAwait(false);
             }
 
-            _ = await nissanContext.SaveChangesAsync();
+            await nissanContext.SaveChangesAsync().ConfigureAwait(false);
         }
     }
 
@@ -147,7 +145,7 @@ public abstract class BaseSessionService : IDisposable
             if (!session.Authenticated && !session.LoginGivenUp &&
             session.LastAuthenticated > DateTime.MinValue && !requestSuccess && !session.LoginAuthenticationAttempting)
             {
-                var loginSuccess = await Login(session);
+                var loginSuccess = await Login(session).ConfigureAwait(false);
                 if (loginSuccess)
                 {
                     await AttemptRetryQueue().ConfigureAwait(false);
@@ -156,26 +154,20 @@ public abstract class BaseSessionService : IDisposable
         }
     }
 
-    public async Task AttemptRetryQueue()
+    public Task AttemptRetryQueue()
     {
-        var queue = RetryQueue.Select(item => (DateTime.UtcNow - item.Key) <= TimeSpan.FromSeconds(15)).ToList();
-        RetryQueue.Clear();
-
-        foreach (var item in queue)
-        {
-
-        }
+        return Task.CompletedTask;
     }
 
-    [Obsolete]
+    [Obsolete("Use MakeRequest<T> instead.")]
     protected async Task<Response<JsonObject>?> MakeRequest(VehicleSessionBase session, HttpRequestMessage httpRequestMessage,
-        string baseUri = "")
+        string baseAddress = "")
     {
-        return await MakeRequest<JsonObject>(session, httpRequestMessage, baseUri);
+        return await MakeRequest<JsonObject>(session, httpRequestMessage, baseAddress).ConfigureAwait(false);
     }
 
     protected async Task<Response<T>?> MakeRequest<T>(VehicleSessionBase session, HttpRequestMessage httpRequestMessage,
-        string baseUri = "")
+        string baseAddress = "")
     {
         var success = true;
         Response<T>? result;
@@ -183,7 +175,7 @@ public abstract class BaseSessionService : IDisposable
         {
             httpRequestMessage.RequestUri =
                 new Uri(
-                    $"{(string.IsNullOrEmpty(baseUri) ? AppOptions.Nissan.EU.auth_base_url : baseUri)}{httpRequestMessage.RequestUri?.ToString() ?? ""}");
+                    $"{(string.IsNullOrEmpty(baseAddress) ? AppOptions.Nissan.EU.auth_base_url : baseAddress)}{httpRequestMessage.RequestUri?.ToString() ?? ""}");
             httpRequestMessage.Headers.Add("User-Agent", "NissanConnect/2 CFNetwork/978.0.7 Darwin/18.7.0");
 
             result = await Client.MakeRequest<T>(httpRequestMessage).ConfigureAwait(false);
@@ -236,7 +228,7 @@ public abstract class BaseSessionService : IDisposable
 
             Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
                 "Authentication Attempting"));
-            _ = await LoginImplementation(session);
+            await LoginImplementation(session).ConfigureAwait(false);
 
             session.LoginAuthenticationAttempting = false;
         }
@@ -258,18 +250,20 @@ public abstract class BaseSessionService : IDisposable
         // Queue saved sessions into memory.
         foreach (var leaf in LeafContext.NissanLeafs)
         {
-            _ = await AddAsync(new CarEntity(leaf.NissanUsername, leaf.NissanPassword) { CarModelId = leaf.CarModelId }).ConfigureAwait(false);
+            await AddAsync(new CarEntity(leaf.NissanUsername, leaf.NissanPassword) { CarModelId = leaf.CarModelId }).ConfigureAwait(false);
         }
 
-        _ = await LeafContext.SaveChangesAsync();
+        await LeafContext.SaveChangesAsync().ConfigureAwait(false);
     }
 
-    private async Task<bool> AddAsync(CarEntity NewCar, bool _ = false)
+    private async Task<bool> InternalAddAsync(CarEntity NewCar)
     {
         var session = new NissanConnectSession(NewCar.NissanUsername, NewCar.NissanPassword, NewCar.CarModelId);
 
         // Skip login check if already authenticated.
-        if (StorageManager.VehicleSessions.ContainsKey(session.SessionId) && StorageManager.VehicleSessions[session.SessionId].Authenticated)
+        VehicleSessionBase vehicleSession;
+        var vehicleSessionFound = StorageManager.VehicleSessions.TryGetValue(session.SessionId, out vehicleSession!);
+        if (vehicleSessionFound && vehicleSession.Authenticated)
         {
             return true;
         }
@@ -277,13 +271,14 @@ public abstract class BaseSessionService : IDisposable
         var success = false;
         try
         {
-            _ = StorageManager.VehicleSessions.TryAdd(session.SessionId, session);
-            success = await Login(session);
+            StorageManager.VehicleSessions.TryAdd(session.SessionId, session);
+            success = await Login(session).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Exception, AuditContext.Leaf,
                 ex.ToString()));
+            throw;
         }
 
         return success;
@@ -291,11 +286,14 @@ public abstract class BaseSessionService : IDisposable
 
     public async Task<bool> AddAsync(CarEntity NewCar)
     {
-        var success = await AddAsync(NewCar, false);
+        if (NewCar == null)
+            return false;
+
+        var success = await InternalAddAsync(NewCar).ConfigureAwait(false);
 
         if (success)
         {
-            _ = await LeafContext.SaveChangesAsync();
+            await LeafContext.SaveChangesAsync().ConfigureAwait(false);
         }
 
         return success;
@@ -306,6 +304,9 @@ public abstract class BaseSessionService : IDisposable
     protected async Task<Response<JsonObject>?> PerformAction(VehicleSessionBase session, string? vin, string action, string type,
         JsonObject attributes)
     {
+        if (session == null)
+            throw new InvalidOperationException("Session can not be null");
+
         Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Execute, AuditContext.Leaf,
             $"Performing action {action} on {vin}"));
         var response = await PerformActionImplementation(session, vin, action, type, attributes).ConfigureAwait(false);
@@ -318,6 +319,9 @@ public abstract class BaseSessionService : IDisposable
 
     protected async Task<Response<JsonObject>?> GetStatus(VehicleSessionBase session, string? vin, string action)
     {
+        if (session == null)
+            throw new InvalidOperationException("Session can not be null");
+
         Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Execute, AuditContext.Leaf,
             $"Getting status {action} on {vin}"));
         var response = await GetStatusImplementation(session, vin, action).ConfigureAwait(false);

@@ -28,8 +28,8 @@ public class LoggingService : IDisposable
             Data = $"{owner} - {data}"
         };
 
-        _ = nissanContext.NissanAudits.Add(audit);
-        _ = nissanContext.SaveChanges();
+        nissanContext.NissanAudits.Add(audit);
+        nissanContext.SaveChanges();
 
         return $"{audit.Owner} - {audit.Action} - {audit.Context} - {data}";
     }
@@ -38,6 +38,6 @@ public class LoggingService : IDisposable
     {
         using var scope = ServiceScopeFactory.CreateScope();
         var nissanContext = scope.ServiceProvider.GetRequiredService<LeafContext>();
-        _ = await nissanContext.SaveChangesAsync();
+        await nissanContext.SaveChangesAsync();
     }
 }

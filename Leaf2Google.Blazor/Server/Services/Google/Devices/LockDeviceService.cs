@@ -29,24 +29,24 @@ public class LockDeviceService : BaseDeviceService, IDevice
             var batteryStatusTask = SessionManager.VehicleBattery(session, vin);
             var locationFetchTask = SessionManager.VehicleLocation(session, vin);
 
-            var lockStatus = await lockStatusTask;
-            var batteryStatus = await batteryStatusTask;
-            var location = await locationFetchTask;
+            var lockStatus = await lockStatusTask.ConfigureAwait(false);
+            var batteryStatus = await batteryStatusTask.ConfigureAwait(false);
+            var location = await locationFetchTask.ConfigureAwait(false);
 
             if (lockStatus is not null && lockStatus.Success && batteryStatus is not null && batteryStatus.Success)
             {
                 success = lockStatus.Success && batteryStatus.Success;
-                vehicleLock.Locked = lockStatus?.Data?["data"]?["attributes"]?["lockStatus"]?.GetValue<string>() == "locked";
-                vehicleLock.CapacityRemaining = batteryStatus?.Data?["data"]?["attributes"]?["batteryLevel"]?.GetValue<int?>() ??
+                vehicleLock.Locked = lockStatus.Data?["data"]?["attributes"]?["lockStatus"]?.GetValue<string>() == "locked";
+                vehicleLock.CapacityRemaining = batteryStatus.Data?["data"]?["attributes"]?["batteryLevel"]?.GetValue<int?>() ??
                                                 vehicleLock.CapacityRemaining;
-                vehicleLock.KillometersRemaining = batteryStatus?.Data?["data"]?["attributes"]?["rangeHvacOff"]?.GetValue<int?>() ??
+                vehicleLock.KillometersRemaining = batteryStatus.Data?["data"]?["attributes"]?["rangeHvacOff"]?.GetValue<int?>() ??
                                                    vehicleLock.KillometersRemaining;
-                vehicleLock.KillowatCapacity = batteryStatus?.Data?["data"]?["attributes"]?["batteryCapacity"]?.GetValue<int?>() / 1000 ??
+                vehicleLock.KillowatCapacity = batteryStatus.Data?["data"]?["attributes"]?["batteryCapacity"]?.GetValue<int?>() / 1000 ??
                                                vehicleLock.KillowatCapacity;
-                vehicleLock.MinutesTillFull = batteryStatus?.Data?["data"]?["attributes"]?["timeRequiredToFullFast"]?.GetValue<int?>() ??
+                vehicleLock.MinutesTillFull = batteryStatus.Data?["data"]?["attributes"]?["timeRequiredToFullFast"]?.GetValue<int?>() ??
                                               vehicleLock.MinutesTillFull;
-                vehicleLock.IsCharging = Convert.ToBoolean(batteryStatus?.Data?["data"]?["attributes"]?["chargeStatus"]?.GetValue<int?>() ?? 0);
-                vehicleLock.IsPluggedIn = Convert.ToBoolean(batteryStatus?.Data?["data"]?["attributes"]?["plugStatus"]?.GetValue<int?>() ?? 0);
+                vehicleLock.IsCharging = Convert.ToBoolean(batteryStatus.Data?["data"]?["attributes"]?["chargeStatus"]?.GetValue<int?>() ?? 0);
+                vehicleLock.IsPluggedIn = Convert.ToBoolean(batteryStatus.Data?["data"]?["attributes"]?["plugStatus"]?.GetValue<int?>() ?? 0);
                 vehicleLock.LastUpdated = DateTime.UtcNow;
                 vehicleLock.Location = location.IsEmpty ? null : location;
             }
@@ -82,7 +82,7 @@ public class LockDeviceService : BaseDeviceService, IDevice
 
         var vehicleLock = (LockModel)deviceModel;
 
-        var success = await FetchAsync(session, deviceModel, vin);
+        var success = await FetchAsync(session, deviceModel, vin).ConfigureAwait(false);
 
         string? descriptiveCapacity;
         if (vehicleLock.CapacityRemaining < 15)
@@ -106,7 +106,7 @@ public class LockDeviceService : BaseDeviceService, IDevice
             descriptiveCapacity = "FULL";
         }
 
-        _ = vehicleLock.KillowatCapacity * (vehicleLock.CapacityRemaining / 100);
+        // vehicleLock.KillowatCapacity * (vehicleLock.CapacityRemaining / 100);
 
         return new LockDeviceData
         {
@@ -154,7 +154,7 @@ public class LockDeviceService : BaseDeviceService, IDevice
         {
             case "Locate":
                 {
-                    var locateStatus = await SessionManager.FlashLights(session, vin);
+                    var locateStatus = await SessionManager.FlashLights(session, vin).ConfigureAwait(false);
                     return new ExecuteDeviceDataSuccess()
                     {
                         status = (locateStatus?.Success ?? false) ? "SUCCESS" : "ERROR",
@@ -170,7 +170,7 @@ public class LockDeviceService : BaseDeviceService, IDevice
                         ? (bool?)data["lock"] ?? vehicleLock.Locked
                         : vehicleLock.Locked;
 
-                    var lockStatus = await SessionManager.SetVehicleLock(session, vin, vehicleLock.Locked);
+                    var lockStatus = await SessionManager.SetVehicleLock(session, vin, vehicleLock.Locked).ConfigureAwait(false);
 
                     var success = false;
                     if (lockStatus is not null && lockStatus.Success)

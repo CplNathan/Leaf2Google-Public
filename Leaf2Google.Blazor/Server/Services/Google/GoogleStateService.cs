@@ -6,24 +6,27 @@ using Leaf2Google.Services.Google.Devices;
 
 namespace Leaf2Google.Services.Google;
 
-public class GoogleStateService : IDisposable
+public sealed class GoogleStateService : IDisposable
 {
     public GoogleStateService(BaseStorageService storageManager,
         ICarSessionManager sessionManager)
     {
         StorageManager = storageManager;
 
-        if (sessionManager is BaseSessionService baseSessionManager)
+        if (storageManager != null)
         {
-            if (storageManager.GoogleSessions.Count <= 0)
+            if (sessionManager is BaseSessionService baseSessionManager)
             {
-                foreach (var session in storageManager.VehicleSessions.Where(session => session.Value.Authenticated))
+                if (storageManager.GoogleSessions.Count <= 0)
                 {
-                    _ = GetOrCreateDevices(session.Key);
+                    foreach (var session in storageManager.VehicleSessions.Where(session => session.Value.Authenticated))
+                    {
+                        GetOrCreateDevices(session.Key);
+                    }
                 }
-            }
 
-            BaseSessionService.OnAuthenticationAttempt += BaseSessionManager_OnAuthenticationAttempt;
+                BaseSessionService.OnAuthenticationAttempt += BaseSessionManager_OnAuthenticationAttempt;
+            }
         }
     }
 
@@ -32,13 +35,13 @@ public class GoogleStateService : IDisposable
         BaseSessionService.OnAuthenticationAttempt -= BaseSessionManager_OnAuthenticationAttempt;
     }
 
-    protected BaseStorageService StorageManager { get; }
+    private BaseStorageService StorageManager { get; }
 
     private void BaseSessionManager_OnAuthenticationAttempt(object sender, string? authToken)
     {
         if (sender is VehicleSessionBase session)
         {
-            _ = GetOrCreateDevices(session.SessionId);
+            GetOrCreateDevices(session.SessionId);
         }
     }
 
@@ -55,11 +58,16 @@ public class GoogleStateService : IDisposable
 
     public Dictionary<Type, BaseDeviceModel> GetOrCreateDevices(Guid sessionId)
     {
-        if (StorageManager.GoogleSessions.ContainsKey(sessionId))
-        {
-            return StorageManager.GoogleSessions[sessionId];
-        }
+        Dictionary<Type, BaseDeviceModel> googleSession;
+        var googleSessionFound = StorageManager.GoogleSessions.TryGetValue(sessionId, out googleSession!);
 
-        return StorageManager.GoogleSessions[sessionId] = MakeDevices();
+        if (googleSessionFound)
+        {
+            return googleSession;
+        }
+        else
+        {
+            return StorageManager.GoogleSessions[sessionId] = MakeDevices();
+        }
     }
 }

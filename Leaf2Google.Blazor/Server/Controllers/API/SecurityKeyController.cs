@@ -40,18 +40,20 @@ public class SecurityKeyController : BaseAPIController
     {
         try
         {
-            if (AuthenticatedSession is null || (AuthenticatedSession?.SessionId ?? Guid.Empty) == Guid.Empty)
+            var session = AuthenticatedSession;
+
+            if (session is null || session.SessionId == Guid.Empty)
             {
                 return Json(new CredentialCreateOptions { Status = "error", ErrorMessage = "Not logged in" });
             }
 
-            var username = AuthenticatedSession.Username;
+            var username = session.Username;
 
             var user = new Fido2User
             {
-                DisplayName = AuthenticatedSession.Username,
-                Name = AuthenticatedSession.Username,
-                Id = AuthenticatedSession.SessionId.ToByteArray()
+                DisplayName = username,
+                Name = username,
+                Id = session.SessionId.ToByteArray()
             };
 
             var existingKeys = _leafContext.SecurityKeys.Where(key => key.CredentialId.Length > 0)
@@ -92,7 +94,9 @@ public class SecurityKeyController : BaseAPIController
     public async Task<JsonResult> MakeCredential([FromBody] AuthenticatorAttestationRawResponse attestationResponse,
         CancellationToken cancellationToken)
     {
-        if (AuthenticatedSession is null || (AuthenticatedSession?.SessionId ?? Guid.Empty) == Guid.Empty)
+        var session = AuthenticatedSession;
+
+        if (session is null || session.SessionId == Guid.Empty)
         {
             return Json(new CredentialMakeResult("error", "Not logged in", null));
         }
@@ -106,7 +110,7 @@ public class SecurityKeyController : BaseAPIController
             {
                 if (await _leafContext.SecurityKeys.AnyAsync(
                         key => key.CredentialId == args.CredentialId /*key.UserHandle == args.User.Id*/,
-                        cancellationToken))
+                        cancellationToken).ConfigureAwait(false))
                 {
                     return false;
                 }
@@ -115,25 +119,25 @@ public class SecurityKeyController : BaseAPIController
             };
 
             var success = await _fido2.MakeNewCredentialAsync(attestationResponse, options, callback,
-                cancellationToken: cancellationToken);
+                cancellationToken: cancellationToken).ConfigureAwait(false);
 
-            _ = await _leafContext.SecurityKeys.AddAsync(new Leaf2Google.Entities.Security.StoredCredentialEntity
+            await _leafContext.SecurityKeys.AddAsync(new Leaf2Google.Entities.Security.StoredCredentialEntity
             {
-                Descriptor = new PublicKeyCredentialDescriptor(success.Result?.CredentialId ?? throw new NullReferenceException("CredentialId was null when trying to make a new security credential.")),
+                Descriptor = new PublicKeyCredentialDescriptor(success.Result?.CredentialId ?? throw new InvalidOperationException("CredentialId was null when trying to make a new security credential.")),
                 PublicKey = success.Result.PublicKey,
                 UserHandle = success.Result.User.Id,
                 SignatureCounter = success.Result.Counter,
                 CredType = success.Result.CredType,
                 RegDate = DateTime.Now,
                 AaGuid = success.Result.Aaguid,
-                UserId = AuthenticatedSession?.SessionId.ToByteArray() ?? throw new NullReferenceException("SessionId was null when trying to make a new security credential."),
+                UserId = AuthenticatedSession?.SessionId.ToByteArray() ?? throw new InvalidOperationException("SessionId was null when trying to make a new security credential."),
                 CredentialId = success.Result.CredentialId
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
 
             success.Result.AttestationCertificate = null;
             success.Result.AttestationCertificateChain = null;
 
-            _ = await _leafContext.SaveChangesAsync(cancellationToken: cancellationToken);
+            await _leafContext.SaveChangesAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
 
             return Json(success);
         }
@@ -149,7 +153,7 @@ public class SecurityKeyController : BaseAPIController
         try
         {
             //var leafs = _leafContext.NissanLeafs();
-            var credentials = await _leafContext.SecurityKeys.ToListAsync();
+            var credentials = await _leafContext.SecurityKeys.ToListAsync().ConfigureAwait(false);
             var existingCredentials = credentials
                 .Where(key => key.CredentialId.Length > 0)
                 .Where(key => _leafContext.NissanLeafs.Any(car =>
@@ -182,8 +186,7 @@ public class SecurityKeyController : BaseAPIController
     }
 
     [HttpPost]
-    public async Task<JsonResult> MakeAssertion([FromBody] AuthenticatorAssertionRawResponse clientResponse,
-        CancellationToken cancellationToken)
+    public async Task<JsonResult> MakeAssertion([FromBody] AuthenticatorAssertionRawResponse clientResponse, CancellationToken cancellationToken)
     {
         try
         {
@@ -191,10 +194,10 @@ public class SecurityKeyController : BaseAPIController
             var jsonOptions = HttpContext.Session.GetString("fido2.assertionOptions");
             var options = AssertionOptions.FromJson(jsonOptions);
 
-            var securitykeys = await _leafContext.SecurityKeys.ToListAsync(cancellationToken: cancellationToken);
+            var securitykeys = await _leafContext.SecurityKeys.ToListAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
             var creds = securitykeys.Where(key => key.CredentialId.Length > 0).FirstOrDefault(key =>
                             new PublicKeyCredentialDescriptor(key.CredentialId).Id.SequenceEqual(clientResponse.Id)) ??
-                        throw new Exception("Unknown credentials");
+                        throw new InvalidOperationException("Unknown credentials");
 
             // 3. Get credential counter from database
             var storedCounter = creds.SignatureCounter;
@@ -203,23 +206,22 @@ public class SecurityKeyController : BaseAPIController
             IsUserHandleOwnerOfCredentialIdAsync callback = async (args, cancellationToken) =>
             {
                 var storedCreds =
-                    await _leafContext.SecurityKeys.FirstOrDefaultAsync(key => key.UserHandle == args.UserHandle,
-                        cancellationToken);
-                return new PublicKeyCredentialDescriptor(storedCreds?.CredentialId ?? throw new NullReferenceException("Stored credential Id was null when attempting to make an assertion.")).Id.SequenceEqual(args.CredentialId);
+                    await _leafContext.SecurityKeys.FirstOrDefaultAsync(key => key.UserHandle == args.UserHandle, cancellationToken).ConfigureAwait(false);
+                return new PublicKeyCredentialDescriptor(storedCreds?.CredentialId ?? throw new InvalidOperationException("Stored credential Id was null when attempting to make an assertion.")).Id.SequenceEqual(args.CredentialId);
             };
 
             var res = await _fido2.MakeAssertionAsync(clientResponse, options, creds.PublicKey, storedCounter, callback,
-                cancellationToken: cancellationToken);
+                cancellationToken: cancellationToken).ConfigureAwait(false);
 
-            var key = await _leafContext.SecurityKeys.FirstOrDefaultAsync(key => key.CredentialId == res.CredentialId, cancellationToken);
+            var key = await _leafContext.SecurityKeys.FirstOrDefaultAsync(key => key.CredentialId == res.CredentialId, cancellationToken).ConfigureAwait(false);
             if (key != null)
             {
                 key.SignatureCounter = res.Counter;
-                _ = _leafContext.SecurityKeys.Update(key);
-                _ = await _leafContext.SaveChangesAsync();
+                _leafContext.SecurityKeys.Update(key);
+                await _leafContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
                 var car = await _leafContext.NissanLeafs.FirstOrDefaultAsync(car =>
-                    car.CarModelId == new Guid(key.UserId), cancellationToken);
+                    car.CarModelId == new Guid(key.UserId), cancellationToken).ConfigureAwait(false);
 
                 // Need to implement the login on client, return a new JWT as this is a succesful authentication flow - currently not implemented but will need to be.
                 throw new NotImplementedException();

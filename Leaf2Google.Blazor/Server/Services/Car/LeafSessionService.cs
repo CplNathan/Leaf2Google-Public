@@ -197,7 +197,7 @@ public class LeafSessionService : BaseSessionService, ICarSessionManager
             }
         };
 
-        var response = await MakeRequest(session, httpRequestMessage).ConfigureAwait(false);
+        var response = await MakeRequest<JsonObject>(session, httpRequestMessage).ConfigureAwait(false);
 
         httpRequestMessage.Dispose();
 
@@ -298,7 +298,7 @@ public class LeafSessionService : BaseSessionService, ICarSessionManager
             }
         };
 
-        var response = await MakeRequest(session, httpRequestMessage).ConfigureAwait(false);
+        var response = await MakeRequest<JsonObject>(session, httpRequestMessage).ConfigureAwait(false);
 
         httpRequestMessage.Dispose();
 
@@ -330,7 +330,7 @@ public class LeafSessionService : BaseSessionService, ICarSessionManager
             Content = new StringContent(string.Empty, Encoding.UTF8, "application/x-www-form-urlencoded")
         };
 
-        var response = await MakeRequest(session, httpRequestMessage).ConfigureAwait(false);
+        var response = await MakeRequest<JsonObject>(session, httpRequestMessage).ConfigureAwait(false);
 
         httpRequestMessage.Dispose();
 
@@ -347,7 +347,7 @@ public class LeafSessionService : BaseSessionService, ICarSessionManager
             }
         };
 
-        var response = await MakeRequest(session, httpRequestMessage, AppOptions.Nissan.EU.user_adapter_base_url).ConfigureAwait(false);
+        var response = await MakeRequest<JsonObject>(session, httpRequestMessage, AppOptions.Nissan.EU.user_adapter_base_url).ConfigureAwait(false);
 
         httpRequestMessage.Dispose();
 

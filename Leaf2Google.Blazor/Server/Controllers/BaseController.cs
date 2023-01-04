@@ -38,9 +38,9 @@ public class BaseController : Controller
         {
             var jtiClaim = AuthenticatedUser?.FindFirst(JwtRegisteredClaimNames.Jti);
 
-            if (jtiClaim is null || jtiClaim.Value.Split(",").Count() < 1)
+            if (jtiClaim is null || jtiClaim.Value.Split(",").Length < 1)
             {
-                throw new UnauthorizedAccessException("Attempted to access active session but JWT was not valid or claim was not found. Invalid call.");
+                throw new InvalidOperationException("Attempted to access active session but JWT was not valid or claim was not found. Invalid call.");
             }
 
             var claimValue = jtiClaim.Value.Split(",")[0];
@@ -54,9 +54,9 @@ public class BaseController : Controller
         {
             var jtiClaim = AuthenticatedUser?.FindFirst(JwtRegisteredClaimNames.Jti);
 
-            if (jtiClaim is null || jtiClaim.Value.Split(",").Count() < 2)
+            if (jtiClaim is null || jtiClaim.Value.Split(",").Length < 2)
             {
-                throw new UnauthorizedAccessException("Attempted to access active session but JWT was not valid or claim was not found. Invalid call.");
+                throw new InvalidOperationException("Attempted to access active session but JWT was not valid or claim was not found. Invalid call.");
             }
 
             var claimValue = jtiClaim.Value.Split(",")[1];

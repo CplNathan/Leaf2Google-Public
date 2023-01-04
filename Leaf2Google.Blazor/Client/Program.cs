@@ -15,13 +15,13 @@ namespace Leaf2Google.Blazor.Client
             builder.RootComponents.Add<App>("#app");
             builder.RootComponents.Add<HeadOutlet>("head::after");
 
-            _ = builder.Services.AddOptions();
-            _ = builder.Services.AddAuthorizationCore();
-            _ = builder.Services.AddSingleton(sp => new HttpClient() { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
-            _ = builder.Services.AddScoped<LeafAuthenticationStateService>();
-            _ = builder.Services.AddScoped<AuthenticationStateProvider>(s => s.GetRequiredService<LeafAuthenticationStateService>());
-            _ = builder.Services.AddScoped<IAuthService, LeafAuthService>();
-            _ = builder.Services.AddScoped<IRequestService, LeafRequestService>();
+            builder.Services.AddOptions();
+            builder.Services.AddAuthorizationCore();
+            builder.Services.AddSingleton(sp => new HttpClient() { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+            builder.Services.AddScoped<LeafAuthenticationStateService>();
+            builder.Services.AddScoped<AuthenticationStateProvider>(s => s.GetRequiredService<LeafAuthenticationStateService>());
+            builder.Services.AddScoped<IAuthService, LeafAuthService>();
+            builder.Services.AddScoped<IRequestService, LeafRequestService>();
 
             await builder.Build().RunAsync();
         }

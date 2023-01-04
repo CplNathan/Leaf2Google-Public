@@ -11,7 +11,7 @@ using System.Text.Json.Nodes;
 
 namespace Leaf2Google.Blazor.Server.Helpers
 {
-    public class GoogleAuthorizeAttribute : TypeFilterAttribute
+    public sealed class GoogleAuthorizeAttribute : TypeFilterAttribute
     {
         public GoogleAuthorizeAttribute() : base(typeof(GoogleAuthorizeFilter))
         {
@@ -28,13 +28,13 @@ namespace Leaf2Google.Blazor.Server.Helpers
         {
             if (context is null)
             {
-                throw new NullReferenceException();
+                throw new InvalidOperationException();
             }
 
-            bool isAuthenticated = context?.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
+            bool isAuthenticated = context.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
             if (!isAuthenticated)
             {
-                context!.Result = JWTHelper.UnauthorizedResponse();
+                context!.Result = JWTHelper.UnauthorizedResponse(StatusCodes.Status401Unauthorized);
             }
         }
     }
@@ -53,7 +53,7 @@ namespace Leaf2Google.Blazor.Server.Helpers
             }
         }
 
-        public static JsonResult UnauthorizedResponse()
+        public static JsonResult UnauthorizedResponse(int code = StatusCodes.Status401Unauthorized)
         {
             return new JsonResult(new JsonObject { { "error", "invalid_grant" } })
             {
@@ -64,6 +64,9 @@ namespace Leaf2Google.Blazor.Server.Helpers
 
         public static JwtSecurityToken CreateJWT(VehicleSessionBase session, IConfiguration _configuration, AuthEntity? authEntity = null)
         {
+            if (session == null)
+                throw new InvalidOperationException("Session is not valid");
+
             var secretkey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_configuration["jwt:key"] ?? Guid.NewGuid().ToString())); // NOTE: SAME KEY AS USED IN Program.cs FILE
             var credentials = new SigningCredentials(secretkey, SecurityAlgorithms.HmacSha256);
 

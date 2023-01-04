@@ -28,7 +28,7 @@ public static class LeafHttpExtensions
 {
     private static void UpdateBearer(this HttpClient httpClient, string? jwtBearer)
     {
-        _ = httpClient.DefaultRequestHeaders.Remove("Authorization");
+        httpClient.DefaultRequestHeaders.Remove("Authorization");
         if (!string.IsNullOrEmpty(jwtBearer))
         {
             httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + jwtBearer);
@@ -57,7 +57,7 @@ public class LeafAuthService : IAuthService
         if (loginResult.IsSuccessStatusCode && (result?.success ?? false))
         {
             //_httpClient.UpdateBearer(result?.jwtBearer);
-            _ = _httpClient.DefaultRequestHeaders.Remove("Authorization");
+            _httpClient.DefaultRequestHeaders.Remove("Authorization");
             if (!string.IsNullOrEmpty(result?.jwtBearer))
             {
                 _httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + result?.jwtBearer);

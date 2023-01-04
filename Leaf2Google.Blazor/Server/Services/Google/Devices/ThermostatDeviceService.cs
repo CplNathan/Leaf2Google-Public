@@ -25,15 +25,14 @@ public class ThermostatDeviceService : BaseDeviceService, IDevice
         {
             var vehicleThermostat = (ThermostatModel)deviceModel;
 
-            var climateStatus = await SessionManager.VehicleClimate(session, vin,
-                DateTime.UtcNow - vehicleThermostat.LastUpdated > TimeSpan.FromSeconds(10));
+            var climateStatus = await SessionManager.VehicleClimate(session, vin, DateTime.UtcNow - vehicleThermostat.LastUpdated > TimeSpan.FromSeconds(10)).ConfigureAwait(false);
 
             if (climateStatus is not null && climateStatus.Success)
             {
                 success = climateStatus.Success;
-                vehicleThermostat.LastTemperature = climateStatus?.Data?["data"]?["attributes"]?["internalTemperature"]?.GetValue<decimal?>() ??
+                vehicleThermostat.LastTemperature = climateStatus.Data?["data"]?["attributes"]?["internalTemperature"]?.GetValue<decimal?>() ??
                                                     vehicleThermostat.LastTemperature;
-                vehicleThermostat.Active = climateStatus?.Data?["data"]?["attributes"]?["hvacStatus"]?.GetValue<string>() != "off";
+                vehicleThermostat.Active = climateStatus.Data?["data"]?["attributes"]?["hvacStatus"]?.GetValue<string>() != "off";
                 vehicleThermostat.LastUpdated = DateTime.UtcNow; //climateStatus.Data?.data.attributes.lastUpdateTime;
             }
         }
@@ -68,7 +67,7 @@ public class ThermostatDeviceService : BaseDeviceService, IDevice
 
         var vehicleThermostat = (ThermostatModel)deviceModel;
 
-        var success = await FetchAsync(session, vehicleThermostat, vin);
+        var success = await FetchAsync(session, vehicleThermostat, vin).ConfigureAwait(false);
 
         return new ThermostatDeviceData
         {
@@ -103,7 +102,7 @@ public class ThermostatDeviceService : BaseDeviceService, IDevice
         vehicleThermostat.Active = data.ContainsKey("thermostatMode") ? (string)data["thermostatMode"]! == "heatcool" :
             data.ContainsKey("thermostatTemperatureSetpoint") || vehicleThermostat.Active;
         var climateStatus =
-            await SessionManager.SetVehicleClimate(session, vin, vehicleThermostat.Target, vehicleThermostat.Active);
+            await SessionManager.SetVehicleClimate(session, vin, vehicleThermostat.Target, vehicleThermostat.Active).ConfigureAwait(false);
 
         var success = false;
         if (climateStatus is not null && climateStatus.Success)
@@ -111,7 +110,7 @@ public class ThermostatDeviceService : BaseDeviceService, IDevice
             success = climateStatus.Success;
         }
 
-        _ = await QueryAsync(session, deviceModel, vin).ConfigureAwait(false);
+        await QueryAsync(session, deviceModel, vin).ConfigureAwait(false);
 
         return new ExecuteDeviceDataSuccess()
         {

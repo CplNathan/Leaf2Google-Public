@@ -30,7 +30,7 @@ public class AuthenticationController : BaseAPIController
     [HttpPost]
     public async Task<JsonResult> Login([FromBody] LoginModel loginData)
     {
-        Guid loginResult = await StorageManager.UserStorage.LoginUser(loginData.NissanUsername, loginData.NissanPassword);
+        Guid loginResult = await StorageManager.UserStorage.LoginUser(loginData.NissanUsername, loginData.NissanPassword).ConfigureAwait(true);
 
         LoginResponse loginResponse = new();
         if (loginResult == Guid.Empty)
@@ -57,6 +57,9 @@ public class AuthenticationController : BaseAPIController
     [HttpPost]
     public async Task<JsonResult> Register([FromBody] RegisterModel form) // maybe this needs to be optional?
     {
+        if (form == null)
+            return Json(BadRequest());
+
         switch (form.request)
         {
             case RequestState.Initial:
@@ -90,7 +93,7 @@ public class AuthenticationController : BaseAPIController
                     };
 
                     _googleContext.GoogleAuths.Add(authEntity);
-                    await _googleContext.SaveChangesAsync().ConfigureAwait(false);
+                    await _googleContext.SaveChangesAsync().ConfigureAwait(true);
 
                     return Json(new RegisterResponse
                     {
@@ -102,17 +105,17 @@ public class AuthenticationController : BaseAPIController
                 }
             case RequestState.Final:
                 {
-                    var authEntity = await _googleContext.GoogleAuths.Include(auth => auth.Owner).FirstOrDefaultAsync(auth => auth.Data.state == form.Data.state);
+                    var authEntity = await _googleContext.GoogleAuths.Include(auth => auth.Owner).FirstOrDefaultAsync(auth => auth.Data.state == form.Data.state).ConfigureAwait(true);
                     if (authEntity == null)
                     {
                         return Json(BadRequest());
                     }
 
                     CarEntity leaf = new CarEntity(form.NissanUsername, form.NissanPassword);
-                    var leafId = await StorageManager.UserStorage.DoCredentialsMatch(form.NissanUsername, form.NissanPassword, true);
+                    var leafId = await StorageManager.UserStorage.DoCredentialsMatch(form.NissanUsername, form.NissanPassword, true).ConfigureAwait(true);
                     if (leafId != Guid.Empty)
                     {
-                        leaf = await StorageManager.UserStorage.RestoreUser(leafId) ?? leaf;
+                        leaf = await StorageManager.UserStorage.RestoreUser(leafId).ConfigureAwait(true) ?? leaf;
                     }
 
                     var response = new RegisterResponse
@@ -120,20 +123,20 @@ public class AuthenticationController : BaseAPIController
                         Data = authEntity.Data
                     };
 
-                    if (await SessionManager.AddAsync(leaf))
+                    if (await SessionManager.AddAsync(leaf).ConfigureAwait(true))
                     {
                         var authCode = Guid.NewGuid();
 
                         authEntity.AuthCode = authCode;
                         authEntity.Owner = leaf;
 
-                        if (!await _googleContext.NissanLeafs.AnyAsync(car => car.CarModelId == leaf.CarModelId))
+                        if (!await _googleContext.NissanLeafs.AnyAsync(car => car.CarModelId == leaf.CarModelId).ConfigureAwait(true))
                         {
-                            await _googleContext.NissanLeafs.AddAsync(leaf);
+                            _googleContext.NissanLeafs.Add(leaf);
                         }
 
                         _googleContext.Entry(authEntity).State = EntityState.Modified;
-                        await _googleContext.SaveChangesAsync();
+                        await _googleContext.SaveChangesAsync().ConfigureAwait(true);
 
                         response.success = true;
                         response.Data = form.Data;
@@ -157,10 +160,12 @@ public class AuthenticationController : BaseAPIController
     [Authorize]
     public JsonResult UserInfo()
     {
+        var session = AuthenticatedSession;
+
         CurrentUser userResponse = new()
         {
-            NissanUsername = AuthenticatedSession?.Username,
-            SessionId = AuthenticatedSession.SessionId,
+            NissanUsername = session.Username,
+            SessionId = session.SessionId,
             IsAuthenticated = AuthenticatedIdentity.IsAuthenticated,
             Claims = AuthenticatedUser.Claims.ToDictionary(c => c.Type, c => c.Value)
         };

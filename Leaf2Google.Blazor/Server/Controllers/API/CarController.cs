@@ -28,7 +28,12 @@ public class CarController : BaseAPIController
     [Authorize]
     public async Task<JsonResult> Action([FromBody] ActionRequest actionRequest)
     {
-        if (AuthenticatedSession != null)
+        if (actionRequest == null)
+            return Json(BadRequest());
+
+        var session = AuthenticatedSession;
+
+        if (session != null)
         {
             var clampedDuration = actionRequest.Duration > 15 ? 15 : actionRequest.Duration < 5 ? 5 : actionRequest.Duration;
 
@@ -36,17 +41,17 @@ public class CarController : BaseAPIController
             {
                 case ActionType.Lights:
                     {
-                        await SessionManager.FlashLights(AuthenticatedSession, SelectedVin, clampedDuration).ConfigureAwait(false);
+                        await SessionManager.FlashLights(session, SelectedVin, clampedDuration).ConfigureAwait(false);
                         break;
                     }
                 case ActionType.Horn:
                     {
-                        await SessionManager.BeepHorn(AuthenticatedSession, SelectedVin, clampedDuration).ConfigureAwait(false);
+                        await SessionManager.BeepHorn(session, SelectedVin, clampedDuration).ConfigureAwait(false);
                         break;
                     }
                 case ActionType.Climate:
                     {
-                        await SessionManager.SetVehicleClimate(AuthenticatedSession, SelectedVin, actionRequest.Duration > 0 ? actionRequest.Duration : 21, actionRequest.Duration > 0).ConfigureAwait(false);
+                        await SessionManager.SetVehicleClimate(session, SelectedVin, actionRequest.Duration > 0 ? actionRequest.Duration : 21, actionRequest.Duration > 0).ConfigureAwait(false);
                         break;
                     }
                 default:
@@ -61,24 +66,29 @@ public class CarController : BaseAPIController
     [Authorize]
     public async Task<JsonResult> Query([FromBody] QueryRequest queryRequest)
     {
-        if (AuthenticatedSession != null)
+        if (queryRequest == null)
+            return Json(BadRequest());
+
+        var session = AuthenticatedSession;
+
+        if (session != null)
         {
-            var activevin = queryRequest.ActiveVin ?? AuthenticatedSession.PrimaryVin;
+            var activevin = queryRequest.ActiveVin ?? session.PrimaryVin;
 
             switch (queryRequest.QueryType)
             {
                 case QueryType.PrimaryVin:
                     {
-                        return Json(AuthenticatedSession.PrimaryVin);
+                        return Json(session.PrimaryVin);
                     }
                 case QueryType.Battery:
                     {
-                        var lockModel = (LockModel)StorageManager.GoogleSessions[AuthenticatedSession.SessionId][typeof(LockDeviceService)];
+                        var lockModel = (LockModel)StorageManager.GoogleSessions[session.SessionId][typeof(LockDeviceService)];
                         var lockDevice = Devices.FirstOrDefault(x => x.GetType() == typeof(LockDeviceService));
 
                         if (lockDevice != null)
                         {
-                            await lockDevice.FetchAsync(AuthenticatedSession, lockModel, activevin);
+                            await lockDevice.FetchAsync(session, lockModel, activevin).ConfigureAwait(true);
                         }
 
                         return Json(new BatteryData()
@@ -89,12 +99,12 @@ public class CarController : BaseAPIController
                     }
                 case QueryType.Lock:
                     {
-                        var lockModel = (LockModel)StorageManager.GoogleSessions[AuthenticatedSession.SessionId][typeof(LockDeviceService)];
+                        var lockModel = (LockModel)StorageManager.GoogleSessions[session.SessionId][typeof(LockDeviceService)];
                         var lockDevice = Devices.FirstOrDefault(x => x.GetType() == typeof(LockDeviceService));
 
                         if (lockDevice != null)
                         {
-                            await lockDevice.FetchAsync(AuthenticatedSession, lockModel, activevin);
+                            await lockDevice.FetchAsync(session, lockModel, activevin).ConfigureAwait(true);
                         }
 
                         return Json(new LockData()
@@ -104,12 +114,12 @@ public class CarController : BaseAPIController
                     }
                 case QueryType.Location:
                     {
-                        var lockModel = (LockModel)StorageManager.GoogleSessions[AuthenticatedSession.SessionId][typeof(LockDeviceService)];
+                        var lockModel = (LockModel)StorageManager.GoogleSessions[session.SessionId][typeof(LockDeviceService)];
                         var lockDevice = Devices.FirstOrDefault(x => x.GetType() == typeof(LockDeviceService));
 
                         if (lockDevice != null)
                         {
-                            await lockDevice.FetchAsync(AuthenticatedSession, lockModel, activevin);
+                            await lockDevice.FetchAsync(session, lockModel, activevin).ConfigureAwait(true);
                         }
 
                         return Json(new
@@ -120,16 +130,16 @@ public class CarController : BaseAPIController
                     }
                 case QueryType.Photo:
                     {
-                        return Json(AuthenticatedSession.CarPictureUrl);
+                        return Json(session.CarPictureUrl);
                     }
                 case QueryType.Climate:
                     {
-                        var thermostatModel = (ThermostatModel)StorageManager.GoogleSessions[AuthenticatedSession.SessionId][typeof(ThermostatDeviceService)];
+                        var thermostatModel = (ThermostatModel)StorageManager.GoogleSessions[session.SessionId][typeof(ThermostatDeviceService)];
                         var thermostatDevice = Devices.FirstOrDefault(x => x.GetType() == typeof(ThermostatDeviceService));
 
                         if (thermostatDevice != null)
                         {
-                            await thermostatDevice.FetchAsync(AuthenticatedSession, thermostatModel, activevin);
+                            await thermostatDevice.FetchAsync(session, thermostatModel, activevin).ConfigureAwait(true);
                         }
 
                         return Json(new ClimateData()

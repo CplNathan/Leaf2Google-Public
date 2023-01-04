@@ -9,12 +9,12 @@ public static class Request
 {
     public static async Task<Response<T>?> MakeRequest<T>(this HttpClient client, HttpRequestMessage httpRequestMessage)
     {
-        var httpResponseMessage = await client.SendAsync(httpRequestMessage);
+        var httpResponseMessage = await client.SendAsync(httpRequestMessage).ConfigureAwait(false);
 
         var httpResponseBody = string.Empty;
         if (httpResponseMessage.IsSuccessStatusCode)
         {
-            httpResponseBody = await httpResponseMessage.Content.ReadAsStringAsync();
+            httpResponseBody = await httpResponseMessage.Content.ReadAsStringAsync().ConfigureAwait(false);
         }
 
         Console.WriteLine(httpResponseBody);
@@ -56,7 +56,7 @@ public class Response<T>
     public int Code { get; init; }
 }
 
-[Obsolete]
+[Obsolete("Use Response<Type> instead")]
 public class Response
 {
     public Response(bool Success, dynamic Data, HttpResponseHeaders Headers, int Code)
