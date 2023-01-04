@@ -53,7 +53,7 @@ public class GoogleController : BaseController
 
         if (AuthenticatedSession is null)
         {
-            return JWT.UnauthorizedResponse();
+            return JWTHelper.UnauthorizedResponse();
         }
 
         var userDevices = GoogleState.GetOrCreateDevices(AuthenticatedSession.SessionId);
@@ -197,12 +197,12 @@ public class GoogleController : BaseController
     {
         if (form == null || form.Count <= 0)
         {
-            return JWT.UnauthorizedResponse();
+            return JWTHelper.UnauthorizedResponse();
         }
 
         if (form["client_secret"] != Configuration["Google:client_secret"])
         {
-            return JWT.UnauthorizedResponse();
+            return JWTHelper.UnauthorizedResponse();
         }
 
         // Token state
@@ -215,7 +215,7 @@ public class GoogleController : BaseController
                 {
                     if (string.IsNullOrEmpty(form["code"]) || string.IsNullOrEmpty(form["redirect_uri"]))
                     {
-                        return JWT.UnauthorizedResponse();
+                        return JWTHelper.UnauthorizedResponse();
                     }
 
                     if (!await LeafContext.GoogleAuths.AnyAsync(auth =>
@@ -224,7 +224,7 @@ public class GoogleController : BaseController
                             auth.Data.client_id == form["client_id"].ToString() &&
                             auth.Data.redirect_uri == form["redirect_uri"].ToString()))
                     {
-                        return JWT.UnauthorizedResponse();
+                        return JWTHelper.UnauthorizedResponse();
                     }
 
                     token = new TokenEntity
@@ -249,7 +249,7 @@ public class GoogleController : BaseController
                             form["refresh_token"].ToString() == token.RefreshToken.ToString() &&
                             form["client_id"].ToString() == token.Owner.Data.client_id))
                     {
-                        return JWT.UnauthorizedResponse();
+                        return JWTHelper.UnauthorizedResponse();
                     }
 
                     token = await LeafContext.GoogleTokens.Include(token => token.Owner).FirstOrDefaultAsync(token =>
@@ -266,19 +266,19 @@ public class GoogleController : BaseController
                 }
 
             default:
-                return JWT.UnauthorizedResponse();
+                return JWTHelper.UnauthorizedResponse();
         }
 
         if (token == null || token.Owner == null || token.Owner.Owner == null || token.Owner.Deleted.HasValue)
         {
-            return JWT.UnauthorizedResponse();
+            return JWTHelper.UnauthorizedResponse();
         }
 
         LeafContext.Entry(token).State = tokenState;
         LeafContext.Entry(token.Owner).State = EntityState.Modified;
         await LeafContext.SaveChangesAsync();
 
-        var jwtToken = JWT.CreateJWT(StorageManager.VehicleSessions[token.Owner.Owner.CarModelId], Configuration, token.Owner);
+        var jwtToken = JWTHelper.CreateJWT(StorageManager.VehicleSessions[token.Owner.Owner.CarModelId], Configuration, token.Owner);
         if (tokenState == EntityState.Added)
         {
             return Json(new RefreshTokenDto(token, jwtToken));
@@ -289,7 +289,7 @@ public class GoogleController : BaseController
         }
         else
         {
-            return JWT.UnauthorizedResponse();
+            return JWTHelper.UnauthorizedResponse();
         }
     }
 }

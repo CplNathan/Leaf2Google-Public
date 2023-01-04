@@ -42,7 +42,7 @@ public class AuthenticationController : BaseAPIController
         {
             VehicleSessionBase vehicleSession = StorageManager.VehicleSessions.First(session => session.Key == loginResult).Value;
 
-            var jwtString = new JwtSecurityTokenHandler().WriteToken(JWT.CreateJWT(vehicleSession, _configuration));
+            var jwtString = new JwtSecurityTokenHandler().WriteToken(JWTHelper.CreateJWT(vehicleSession, _configuration));
 
             loginResponse.success = true;
             loginResponse.NissanUsername = vehicleSession.Username;

@@ -34,12 +34,12 @@ namespace Leaf2Google.Blazor.Server.Helpers
             bool isAuthenticated = context?.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
             if (!isAuthenticated)
             {
-                context!.Result = JWT.UnauthorizedResponse();
+                context!.Result = JWTHelper.UnauthorizedResponse();
             }
         }
     }
 
-    public static class JWT
+    public static class JWTHelper
     {
         public static bool IsDebugRelease
         {
