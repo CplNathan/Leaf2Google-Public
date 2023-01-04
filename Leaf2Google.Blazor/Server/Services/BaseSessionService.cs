@@ -30,9 +30,9 @@ public interface ICarSessionManager
     Task<bool> Login(VehicleSessionBase session);
 }
 
-public delegate void AuthDelegate(object sender, string? authToken);
+public delegate void AuthResult(object sender, string? authToken);
 
-public delegate void RequestDelegate(object sender, bool requestSuccess);
+public delegate void RequestResult(object sender, bool requestSuccess);
 
 public abstract class BaseSessionService : IDisposable
 {
@@ -84,9 +84,9 @@ public abstract class BaseSessionService : IDisposable
 
     protected ConfigModel AppOptions { get; }
 
-    public static event RequestDelegate OnRequest;
+    public static event RequestResult OnRequest;
 
-    public static event AuthDelegate OnAuthenticationAttempt;
+    public static event AuthResult OnAuthenticationAttempt;
 
     private async void BaseSessionManager_OnAuthenticationAttempt(object sender, string? authToken)
     {

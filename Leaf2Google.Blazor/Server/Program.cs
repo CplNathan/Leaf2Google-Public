@@ -28,7 +28,7 @@ namespace Leaf2Google.Blazor
             builder.Configuration.AddEnvironmentVariables();
 
             // Use listen address specified in environment variable
-            builder.WebHost.UseUrls(builder.Configuration["APPLICATION_URL"] ?? null);
+            builder.WebHost.UseUrls(builder.Configuration["APPLICATION_URL"] ?? string.Empty);
 
             builder.Services.AddDbContext<LeafContext>(options => options
                 //.UseLazyLoadingProxies()

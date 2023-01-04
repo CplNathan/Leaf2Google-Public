@@ -32,9 +32,9 @@ public class LeafSessionService : BaseSessionService, ICarSessionManager
             if (location != null)
             {
                 session.LastLocation = Tuple.Create(DateTime.UtcNow,
-                    (PointF?)new PointF(location?.Data["data"]?["attributes"]?["gpsLatitude"]?.GetValue<float?>() ?? 0,
-                        location?.Data["data"]?["attributes"]?["gpsLongitude"]?.GetValue<float?>() ?? 0));
-                return session.LastLocation?.Item2 ?? new PointF(0f, 0f);
+                    (PointF?)new PointF(location.Data["data"]?["attributes"]?["gpsLatitude"]?.GetValue<float?>() ?? 0,
+                        location.Data["data"]?["attributes"]?["gpsLongitude"]?.GetValue<float?>() ?? 0));
+                return session.LastLocation.Item2 ?? new PointF(0f, 0f);
             }
         }
 
@@ -160,12 +160,15 @@ public class LeafSessionService : BaseSessionService, ICarSessionManager
 
     protected override async Task<bool> LoginImplementation(VehicleSessionBase session)
     {
+        if (session == null)
+            return await Task.FromResult(false).ConfigureAwait(false);
+
         var authenticateResult = await Authenticate(session).ConfigureAwait(false);
         Response<JsonObject>? authenticationResult = await Authenticate(session, session.Username, session.Password, authenticateResult).ConfigureAwait(false);
         var authorizeResult = await Authorize(session, authenticationResult).ConfigureAwait(false);
         var accessTokenResult = await AccessToken(session, authorizeResult).ConfigureAwait(false);
 
-        if (accessTokenResult?.Success == true)
+        if (accessTokenResult != null && accessTokenResult.Success == true)
         {
             session.AuthenticatedAccessToken = accessTokenResult.Data["access_token"].GetValue<string>();
 

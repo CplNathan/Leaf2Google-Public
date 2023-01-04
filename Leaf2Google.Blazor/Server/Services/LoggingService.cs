@@ -4,9 +4,9 @@ using Leaf2Google.Entities.Generic;
 
 namespace Leaf2Google.Services;
 
-public class LoggingService : IDisposable
+public class LoggingService
 {
-    protected readonly IServiceScopeFactory _serviceScopeFactory;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
 
     public LoggingService(IServiceScopeFactory serviceScopeFactory)
     {
@@ -32,12 +32,5 @@ public class LoggingService : IDisposable
         nissanContext.SaveChanges();
 
         return $"{audit.Owner} - {audit.Action} - {audit.Context} - {data}";
-    }
-
-    public async void Dispose()
-    {
-        using var scope = ServiceScopeFactory.CreateScope();
-        var nissanContext = scope.ServiceProvider.GetRequiredService<LeafContext>();
-        await nissanContext.SaveChangesAsync();
     }
 }
