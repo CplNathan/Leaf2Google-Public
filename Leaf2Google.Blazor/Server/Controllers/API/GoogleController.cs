@@ -184,7 +184,7 @@ public class GoogleController : BaseController
 
                 case "DISCONNECT":
                     {
-                        // Todo: handle, do we get a header sent with this to id?
+                        await StorageManager.DeleteAndUnload(session.SessionId).ConfigureAwait(false);
                         break;
                     }
             }

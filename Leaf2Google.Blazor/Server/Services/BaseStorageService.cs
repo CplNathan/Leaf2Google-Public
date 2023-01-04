@@ -156,5 +156,16 @@ namespace Leaf2Google.Services
 
             StorageContainer = sessionStorageContainer;
         }
+
+        public async Task DeleteAndUnload(Guid sessionId)
+        {
+            await UserStorage.DeleteUser(sessionId).ConfigureAwait(false);
+            VehicleSessions.Remove(sessionId);
+        }
+
+        public async void AddAndLoadLeaf(VehicleSessionBase leaf)
+        {
+
+        }
     }
 }

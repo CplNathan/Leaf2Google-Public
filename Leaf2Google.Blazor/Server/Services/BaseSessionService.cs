@@ -106,18 +106,10 @@ public abstract class BaseSessionService : IDisposable
 
             if (!session.Authenticated && session.LoginGivenUp)
             {
-                var leaf = await nissanContext.NissanLeafs.FirstOrDefaultAsync(car =>
-                    car.CarModelId == session.SessionId).ConfigureAwait(false);
-                if (leaf != null)
-                {
-                    leaf.Deleted = DateTime.UtcNow;
-                    nissanContext.Entry(leaf).State = EntityState.Modified;
-                }
+                await StorageManager.DeleteAndUnload(session.SessionId).ConfigureAwait(false);
 
                 Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Delete, AuditContext.Leaf,
                     "Deleting Stale Leaf"));
-
-                StorageManager.VehicleSessions.Remove(session.SessionId);
             }
             else if (session.Authenticated)
             {
