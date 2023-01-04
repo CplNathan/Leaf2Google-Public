@@ -2,6 +2,7 @@
 
 using Leaf2Google.Controllers;
 using Leaf2Google.Entities.Security;
+using Leaf2Google.Models.Generic;
 using Leaf2Google.Services.Car;
 using Leaf2Google.Services.Google;
 using Leaf2Google.Services.Google.Devices;
@@ -13,7 +14,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Leaf2Google.Blazor
 {
-    public class Program
+    public static class Program
     {
         public static async Task Main(string[] args)
         {
@@ -27,7 +28,7 @@ namespace Leaf2Google.Blazor
             builder.Configuration.AddEnvironmentVariables();
 
             // Use listen address specified in environment variable
-            builder.WebHost.UseUrls(builder.Configuration["APPLICATION_URL"]);
+            builder.WebHost.UseUrls(builder.Configuration["APPLICATION_URL"] ?? null);
 
             builder.Services.AddDbContext<LeafContext>(options => options
                 //.UseLazyLoadingProxies()
@@ -62,6 +63,10 @@ namespace Leaf2Google.Blazor
                     IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(jwtKey)) // Static value will allow sessions to persist accross restart
                 };
             });
+
+            builder.Services.AddOptions();
+
+            builder.Services.Configure<ConfigModel>(builder.Configuration);
 
             builder.Services.AddSingleton<SessionStorageContainer>();
 
@@ -111,7 +116,7 @@ namespace Leaf2Google.Blazor
                 await scope.ServiceProvider.GetRequiredService<ICarSessionManager>().StartAsync().ConfigureAwait(false);
             }
 
-            await app.RunAsync();
+            await app.RunAsync().ConfigureAwait(false);
         }
     }
 }

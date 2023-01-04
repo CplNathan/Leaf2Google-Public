@@ -3,7 +3,9 @@
 using Leaf2Google.Entities.Car;
 using Leaf2Google.Entities.Generic;
 using Leaf2Google.Models.Car.Sessions;
+using Leaf2Google.Models.Generic;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.Drawing;
 using System.Net;
 using System.Text.Json.Nodes;
@@ -35,23 +37,39 @@ public delegate void RequestDelegate(object sender, bool requestSuccess);
 public abstract class BaseSessionService : IDisposable
 {
     public BaseSessionService(HttpClient client, LeafContext leafContext, BaseStorageService storageManager, LoggingService logging, IServiceScopeFactory serviceScopeFactory,
-        IConfiguration configuration)
+        IOptions<ConfigModel> options)
     {
         Client = client;
         LeafContext = leafContext;
         StorageManager = storageManager;
         Logging = logging;
         ServiceScopeFactory = serviceScopeFactory;
-        Configuration = configuration;
+        AppOptions = options.Value;
 
         OnRequest += BaseSessionManager_OnRequest;
         OnAuthenticationAttempt += BaseSessionManager_OnAuthenticationAttempt;
     }
 
+    protected bool Disposed { get; private set; }
+
     public void Dispose()
     {
-        OnRequest -= BaseSessionManager_OnRequest;
-        OnAuthenticationAttempt -= BaseSessionManager_OnAuthenticationAttempt;
+        this.Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!this.Disposed)
+        {
+            if (disposing)
+            {
+                OnRequest -= BaseSessionManager_OnRequest;
+                OnAuthenticationAttempt -= BaseSessionManager_OnAuthenticationAttempt;
+            }
+
+            this.Disposed = true;
+        }
     }
 
     protected Dictionary<DateTime, HttpRequestMessage> RetryQueue = new();
@@ -66,7 +84,7 @@ public abstract class BaseSessionService : IDisposable
 
     private IServiceScopeFactory ServiceScopeFactory { get; }
 
-    protected IConfiguration Configuration { get; }
+    protected ConfigModel AppOptions { get; }
 
     public static event RequestDelegate OnRequest;
 
@@ -165,10 +183,10 @@ public abstract class BaseSessionService : IDisposable
         {
             httpRequestMessage.RequestUri =
                 new Uri(
-                    $"{(string.IsNullOrEmpty(baseUri) ? Configuration["Nissan:EU:auth_base_url"] : baseUri)}{httpRequestMessage.RequestUri?.ToString() ?? ""}");
+                    $"{(string.IsNullOrEmpty(baseUri) ? AppOptions.Nissan.EU.auth_base_url : baseUri)}{httpRequestMessage.RequestUri?.ToString() ?? ""}");
             httpRequestMessage.Headers.Add("User-Agent", "NissanConnect/2 CFNetwork/978.0.7 Darwin/18.7.0");
 
-            result = await Client.MakeRequest<T>(httpRequestMessage);
+            result = await Client.MakeRequest<T>(httpRequestMessage).ConfigureAwait(false);
 
             if (result?.Code is not ((int)HttpStatusCode.OK) and not ((int)HttpStatusCode.Found))
             {
@@ -290,7 +308,7 @@ public abstract class BaseSessionService : IDisposable
     {
         Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Execute, AuditContext.Leaf,
             $"Performing action {action} on {vin}"));
-        var response = await PerformActionImplementation(session, vin, action, type, attributes);
+        var response = await PerformActionImplementation(session, vin, action, type, attributes).ConfigureAwait(false);
 
         return response;
     }
@@ -302,7 +320,7 @@ public abstract class BaseSessionService : IDisposable
     {
         Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Execute, AuditContext.Leaf,
             $"Getting status {action} on {vin}"));
-        var response = await GetStatusImplementation(session, vin, action);
+        var response = await GetStatusImplementation(session, vin, action).ConfigureAwait(false);
 
         return response;
     }
