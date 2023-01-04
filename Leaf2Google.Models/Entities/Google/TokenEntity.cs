@@ -27,7 +27,7 @@ namespace Leaf2Google.Entities.Google
         public AccessTokenDto(TokenEntity InToken, JwtSecurityToken jwtToken)
         {
             access_token = new JwtSecurityTokenHandler().WriteToken(jwtToken);
-            expires_in = (int)(jwtToken.ValidTo - DateTime.Now).TotalSeconds;
+            expires_in = (int)(jwtToken.ValidTo - DateTime.UnixEpoch).TotalSeconds;
         }
 
         public string access_token { get; set; }

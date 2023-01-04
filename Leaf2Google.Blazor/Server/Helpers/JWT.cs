@@ -68,7 +68,7 @@ namespace Leaf2Google.Blazor.Server.Helpers
             if (session == null)
                 throw new InvalidOperationException("Session is not valid");
 
-            validTo = validTo ?? DateTime.Now.AddMinutes(60);
+            validTo = validTo ?? DateTime.UnixEpoch.AddMinutes(60);
 
             var secretkey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_configuration["jwt:key"] ?? Guid.NewGuid().ToString())); // NOTE: SAME KEY AS USED IN Program.cs FILE
             var credentials = new SigningCredentials(secretkey, SecurityAlgorithms.HmacSha256);
@@ -82,7 +82,7 @@ namespace Leaf2Google.Blazor.Server.Helpers
                 new Claim(JwtRegisteredClaimNames.Jti, string.Join(",", jti.Where(val => !string.IsNullOrEmpty(val))))
             };
 
-            return new JwtSecurityToken(issuer: IsDebugRelease ? "localhost" : _configuration["fido2:serverDomain"], audience: IsDebugRelease ? "localhost" : _configuration["fido2:serverDomain"], claims: claims, expires: DateTime.Now.AddMinutes(60), signingCredentials: credentials);
+            return new JwtSecurityToken(issuer: IsDebugRelease ? "localhost" : _configuration["fido2:serverDomain"], audience: IsDebugRelease ? "localhost" : _configuration["fido2:serverDomain"], claims: claims, expires: validTo, signingCredentials: credentials);
         }
     }
 }

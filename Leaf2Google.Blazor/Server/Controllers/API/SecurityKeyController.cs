@@ -128,7 +128,7 @@ public class SecurityKeyController : BaseAPIController
                 UserHandle = success.Result.User.Id,
                 SignatureCounter = success.Result.Counter,
                 CredType = success.Result.CredType,
-                RegDate = DateTime.Now,
+                RegDate = DateTime.UtcNow,
                 AaGuid = success.Result.Aaguid,
                 UserId = AuthenticatedSession?.SessionId.ToByteArray() ?? throw new InvalidOperationException("SessionId was null when trying to make a new security credential."),
                 CredentialId = success.Result.CredentialId
