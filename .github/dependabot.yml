@@ -7,10 +7,12 @@ version: 2
 updates:
   - package-ecosystem: "nuget" # See documentation for possible values
     directory: "/Leaf2Google.Blazor/Server/" # Location of package manifests
+    open-pull-requests-limit: 0
     schedule:
       interval: "weekly"
       
   - package-ecosystem: "nuget" # See documentation for possible values
     directory: "/Leaf2Google.Blazor/Client/" # Location of package manifests
+    open-pull-requests-limit: 0
     schedule:
       interval: "weekly"
