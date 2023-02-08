@@ -29,7 +29,8 @@ public class LeafSessionService : BaseSessionService, ICarSessionManager
         {
             var location = await GetStatus(session, vin, "location").ConfigureAwait(false);
 
-            if (location != null)
+            // Bit of a hack, all others are processed through device handlers.
+            if (location != null && session != null && location.Success)
             {
                 session.LastLocation = Tuple.Create(DateTime.UtcNow,
                     (PointF?)new PointF(location.Data["data"]?["attributes"]?["gpsLatitude"]?.GetValue<float?>() ?? 0,
@@ -38,7 +39,7 @@ public class LeafSessionService : BaseSessionService, ICarSessionManager
             }
         }
 
-        return session.LastLocation?.Item2 ?? new PointF(0f, 0f);
+        return session?.LastLocation?.Item2 ?? new PointF(0f, 0f);
     }
 
     public async Task<Response<JsonObject>?> VehicleClimate(VehicleSessionBase session, string? vin, bool forceUpdate = true)
