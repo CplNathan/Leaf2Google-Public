@@ -10,7 +10,7 @@ updates:
     schedule:
       interval: "weekly"
     # Disable version updates for npm dependencies
-    open-pull-requests-limit: 0
+    open-pull-requests-limit: 100
 
       
   - package-ecosystem: "nuget" # See documentation for possible values
@@ -18,5 +18,5 @@ updates:
     schedule:
       interval: "weekly"
     # Disable version updates for npm dependencies
-    open-pull-requests-limit: 0
+    open-pull-requests-limit: 100
 
