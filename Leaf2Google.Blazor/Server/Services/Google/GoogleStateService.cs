@@ -49,7 +49,7 @@ public sealed class GoogleStateService : IDisposable
     {
         var devices = new Dictionary<Type, BaseDeviceModel>
         {
-            { typeof(ThermostatDeviceService), new ThermostatModel("1-leaf-ac", "Air Conditioner") },
+            { typeof(ThermostatDeviceService), new ThermostatModel("1-leaf-ac", "Leaf") },
             { typeof(LockDeviceService), new LockModel("1-leaf-lock", "Leaf") }
         };
 

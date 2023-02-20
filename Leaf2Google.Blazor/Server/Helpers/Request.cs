@@ -28,7 +28,6 @@ public static class Request
         catch (JsonException ex)
         {
             // Parsing exceptions are okay to ignore.
-            Console.WriteLine(ex.Message);
         }
 
         return new Response<T>(httpResponseMessage.IsSuccessStatusCode,
