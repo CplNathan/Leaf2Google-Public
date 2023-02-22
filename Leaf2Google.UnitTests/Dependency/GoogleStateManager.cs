@@ -23,7 +23,7 @@ namespace Leaf2Google.UnitTests.Models
         {
             // Arrange
             _storageService = new BaseStorageService(null, null, new SessionStorageContainer());
-            _googleStateService = new GoogleStateService(_storageService, null);
+            _googleStateService = new GoogleStateService(_storageService);
             _testGuid = Guid.NewGuid();
 
             // Get all devices, to later ensure they are assigned.

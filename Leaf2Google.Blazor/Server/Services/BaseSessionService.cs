@@ -4,10 +4,12 @@ using Leaf2Google.Entities.Car;
 using Leaf2Google.Entities.Generic;
 using Leaf2Google.Models.Car.Sessions;
 using Leaf2Google.Models.Generic;
+using Leaf2Google.Services.Google;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Drawing;
 using System.Net;
+using System.Reflection;
 using System.Text.Json.Nodes;
 
 namespace Leaf2Google.Services;
@@ -34,42 +36,18 @@ public delegate void AuthResult(object sender, string? authToken);
 
 public delegate void RequestResult(object sender, bool requestSuccess);
 
-public abstract class BaseSessionService : IDisposable
+public abstract class BaseSessionService
 {
-    public BaseSessionService(HttpClient client, LeafContext leafContext, BaseStorageService storageManager, LoggingService logging, IServiceScopeFactory serviceScopeFactory,
-        IOptions<ConfigModel> options)
+    protected BaseSessionService(HttpClient client, LeafContext leafContext, BaseStorageService storageManager, LoggingService logging, IServiceScopeFactory serviceScopeFactory,
+        IOptions<ConfigModel> options, GoogleStateService googleStateService)
     {
-        Client = client;
-        LeafContext = leafContext;
-        StorageManager = storageManager;
-        Logging = logging;
-        ServiceScopeFactory = serviceScopeFactory;
-        AppOptions = options.Value;
-
-        OnRequest += BaseSessionManager_OnRequest;
-        OnAuthenticationAttempt += BaseSessionManager_OnAuthenticationAttempt;
-    }
-
-    protected bool Disposed { get; private set; }
-
-    public void Dispose()
-    {
-        this.Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    protected virtual void Dispose(bool disposing)
-    {
-        if (!this.Disposed)
-        {
-            if (disposing)
-            {
-                OnRequest -= BaseSessionManager_OnRequest;
-                OnAuthenticationAttempt -= BaseSessionManager_OnAuthenticationAttempt;
-            }
-
-            this.Disposed = true;
-        }
+        this.Client = client;
+        this.LeafContext = leafContext;
+        this.StorageManager = storageManager;
+        this.Logging = logging;
+        this.ServiceScopeFactory = serviceScopeFactory;
+        this.AppOptions = options.Value;
+        this.GoogleStateService = googleStateService;
     }
 
     protected HttpClient Client { get; }
@@ -80,76 +58,11 @@ public abstract class BaseSessionService : IDisposable
 
     protected LoggingService Logging { get; }
 
-    private IServiceScopeFactory ServiceScopeFactory { get; }
+    protected IServiceScopeFactory ServiceScopeFactory { get; }
+
+    protected GoogleStateService GoogleStateService { get; }
 
     protected ConfigModel AppOptions { get; }
-
-    public static event RequestResult OnRequest;
-
-    public static event AuthResult OnAuthenticationAttempt;
-
-    private async void BaseSessionManager_OnAuthenticationAttempt(object sender, string? authToken)
-    {
-        if (sender is VehicleSessionBase session)
-        {
-            var scope = ServiceScopeFactory.CreateScope();
-            var nissanContext = scope.ServiceProvider.GetRequiredService<LeafContext>();
-
-            if (!session.Authenticated)
-            {
-                session.LoginFailedCount += 1;
-            }
-            else
-            {
-                session.LoginFailedCount = 0;
-            }
-
-            if (!session.Authenticated && session.LoginGivenUp)
-            {
-                await StorageManager.DeleteAndUnload(session.SessionId).ConfigureAwait(false);
-
-                Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Delete, AuditContext.Leaf,
-                    "Deleting Stale Leaf"));
-            }
-            else if (session.Authenticated)
-            {
-                Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
-                    "Authentication Success"));
-            }
-            else
-            {
-                Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
-                    "Authentication Failed"));
-                await Login(session).ConfigureAwait(false);
-            }
-
-            await nissanContext.SaveChangesAsync().ConfigureAwait(false);
-        }
-    }
-
-    private async void BaseSessionManager_OnRequest(object sender, bool requestSuccess)
-    {
-        // This should not be used as various contexts may be disposed of when calling.
-        if (sender is VehicleSessionBase session)
-        {
-            session.LastRequestSuccessful = requestSuccess;
-
-            if (!session.Authenticated && !session.LoginGivenUp &&
-            session.LastAuthenticated > DateTime.MinValue && !requestSuccess && !session.LoginAuthenticationAttempting)
-            {
-                var loginSuccess = await Login(session).ConfigureAwait(false);
-                if (loginSuccess)
-                {
-                    await AttemptRetryQueue().ConfigureAwait(false);
-                }
-            }
-        }
-    }
-
-    public Task AttemptRetryQueue()
-    {
-        return Task.CompletedTask;
-    }
 
     [Obsolete("Use MakeRequest<T> instead.")]
     protected async Task<Response<JsonObject>?> MakeRequest(VehicleSessionBase session, HttpRequestMessage httpRequestMessage,
@@ -187,7 +100,11 @@ public abstract class BaseSessionService : IDisposable
             result.Success = success;
         }
 
-        OnRequest?.Invoke(session, result?.Success ?? false);
+        if (!session.Authenticated && !session.LoginGivenUp &&
+            session.LastAuthenticated > DateTime.MinValue && !success && !session.LoginAuthenticationAttempting)
+        {
+            await Login(session).ConfigureAwait(false);
+        }
 
         return result;
     }
@@ -200,7 +117,7 @@ public abstract class BaseSessionService : IDisposable
         }
 
         Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
-    "Authentication Method Invoked"));
+            "Authentication Method Invoked"));
 
         // If this is called concurrently we could add it to a queue/task where we can await the result of the previous authentication attempt although I am unsure of the benifit of this.
         if (session.LoginAuthenticationAttempting)
@@ -232,7 +149,35 @@ public abstract class BaseSessionService : IDisposable
             return false;
         }
 
-        OnAuthenticationAttempt?.Invoke(session, session.AuthenticatedAccessToken);
+        if (!session.Authenticated)
+        {
+            session.LoginFailedCount += 1;
+        }
+        else
+        {
+            session.LoginFailedCount = 0;
+        }
+
+        if (!session.Authenticated && session.LoginGivenUp)
+        {
+            await StorageManager.DeleteAndUnload(session.SessionId).ConfigureAwait(false);
+
+            Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Delete, AuditContext.Leaf,
+                "Deleting Stale Leaf"));
+        }
+        else if (session.Authenticated)
+        {
+            Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
+                "Authentication Success"));
+        }
+        else
+        {
+            Console.WriteLine(Logging.AddLog(session.SessionId, AuditAction.Access, AuditContext.Leaf,
+                "Authentication Failed"));
+            await Login(session).ConfigureAwait(false);
+        }
+
+        GoogleStateService.GetOrCreateDevices(session.SessionId);
 
         return session.Authenticated;
     }

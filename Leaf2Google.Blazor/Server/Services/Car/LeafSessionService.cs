@@ -3,6 +3,7 @@
 using Leaf2Google.Models.Car.Sessions;
 using Leaf2Google.Models.Generic;
 using Leaf2Google.Models.Json.Nissan;
+using Leaf2Google.Services.Google;
 using Microsoft.Extensions.Options;
 using System.Drawing;
 using System.Net;
@@ -17,8 +18,8 @@ public class LeafSessionService : BaseSessionService, ICarSessionManager
 {
     public LeafSessionService(HttpClient client, LeafContext leafContext, LoggingService logging,
         BaseStorageService storageManager, IServiceScopeFactory serviceScopeFactory,
-        IOptions<ConfigModel> options)
-        : base(client, leafContext, storageManager, logging, serviceScopeFactory, options)
+        IOptions<ConfigModel> options, GoogleStateService googleStateService)
+        : base(client, leafContext, storageManager, logging, serviceScopeFactory, options, googleStateService)
     {
 
     }
