@@ -65,7 +65,9 @@ namespace Leaf2Google.Models.Google.Devices
             {
                 "name", new JsonObject
                 {
-                    { "name", Name }
+                    { "name", Name },
+                    { "nicknames", new JsonArray { "Leaf", "Nissan", "Car" } },
+                    { "defaultNames", new JsonArray { "Leaf", "Nissan", "Car" } }
                 }
             },
             { "willReportState", WillReportState },
