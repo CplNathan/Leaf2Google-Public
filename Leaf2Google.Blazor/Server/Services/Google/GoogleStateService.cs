@@ -11,6 +11,11 @@ public sealed class GoogleStateService
     public GoogleStateService(BaseStorageService storageManager)
     {
         StorageManager = storageManager;
+        
+        foreach (var session in storageManager.VehicleSessions.Where(session => session.Value.Authenticated))
+        {
+            GetOrCreateDevices(session.Key);
+        }
     }
 
     private BaseStorageService StorageManager { get; }
