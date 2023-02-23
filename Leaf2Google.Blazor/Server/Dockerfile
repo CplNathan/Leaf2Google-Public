@@ -10,9 +10,6 @@ WORKDIR /src
 COPY ["Leaf2Google.Blazor/Server/Leaf2Google.Blazor.Server.csproj", "Leaf2Google.Blazor/Server/"]
 COPY ["Leaf2Google.Models/Leaf2Google.Models.csproj", "Leaf2Google.Models/"]
 COPY ["Leaf2Google.Blazor/Client/Leaf2Google.Blazor.Client.csproj", "Leaf2Google.Blazor/Client/"]
-RUN apt-get update -y
-RUN apt-get install -y python3
-RUN dotnet workload install wasm-tools
 RUN dotnet restore "Leaf2Google.Blazor/Server/Leaf2Google.Blazor.Server.csproj"
 COPY . .
 WORKDIR "/src/Leaf2Google.Blazor/Server"
