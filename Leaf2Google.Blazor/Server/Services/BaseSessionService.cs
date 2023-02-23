@@ -100,8 +100,7 @@ public abstract class BaseSessionService
             result.Success = success;
         }
 
-        if (!session.Authenticated && !session.LoginGivenUp &&
-            session.LastAuthenticated > DateTime.MinValue && !success && !session.LoginAuthenticationAttempting)
+        if (!session.LoginGivenUp && session.LastAuthenticated > DateTime.MinValue && !success && !session.LoginAuthenticationAttempting)
         {
             await Login(session).ConfigureAwait(false);
         }
