@@ -1,8 +1,9 @@
-﻿// Copyright (c) Nathan Ford. All rights reserved. IntentResponse.cs
+// Copyright (c) Nathan Ford. All rights reserved. IntentResponse.cs
 
 using System.Collections.Generic;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using Leaf2Google.Models.Google.Devices;
 
 namespace Leaf2Google.Json.Google
 {
@@ -30,7 +31,7 @@ namespace Leaf2Google.Json.Google
 
     public class SyncPayload : ResponsePayload
     {
-        public List<JsonObject> devices { get; set; }
+        public List<SyncResponse> devices { get; set; }
     }
 
     public class QueryPayload : ResponsePayload
