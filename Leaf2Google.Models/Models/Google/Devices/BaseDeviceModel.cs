@@ -1,12 +1,43 @@
-﻿// Copyright (c) Nathan Ford. All rights reserved. BaseDeviceModel.cs
+// Copyright (c) Nathan Ford. All rights reserved. BaseDeviceModel.cs
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 
 namespace Leaf2Google.Models.Google.Devices
 {
+    public class SyncResponse
+    {
+        // TODO: Convert these into nice names, decide on a naming convention and enforce it... then assign JsonProperty names for funky ones.
+        public string? id { get; set; }
+        public string? type { get; set; }
+        public string[]? traits { get; set; }
+        public Name? name { get; set; }
+        public bool willReportState { get; set; }
+        public bool notificationSupportedByAgent { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public JsonObject? attributes { get; set; }
+        public Deviceinfo? deviceInfo { get; set; }
+    }
+
+    public class Name
+    {
+        public string? name { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public List<string>? nicknames { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public List<string>? defaultNames { get; set; }
+    }
+
+    public class Deviceinfo
+    {
+        public string? manufacturer { get; set; }
+        public string? model { get; set; }
+        public string? hwVersion { get; set; }
+        public string? swVersion { get; set; }
+    }
 
     public abstract class BaseDeviceModel
     {
@@ -57,30 +88,36 @@ namespace Leaf2Google.Models.Google.Devices
 
         public bool WillFetch => DateTime.UtcNow - LastUpdated > TimeSpan.FromSeconds(10);
 
-        public JsonObject Sync() => new JsonObject()
+        public SyncResponse Sync()
         {
-            { "id", Id },
-            { "type", Type },
-            { "traits", JsonValue.Create(Traits) },
+            return new()
             {
-                "name", new JsonObject
+                id = Id,
+                type = Type,
+                traits = this.Traits.ToArray(),
+                name = new Name()
                 {
-                    { "name", Name },
-                    { "nicknames", new JsonArray { "Leaf", "Nissan", "Car" } },
-                    { "defaultNames", new JsonArray { "Leaf", "Nissan", "Car" } }
-                }
-            },
-            { "willReportState", WillReportState },
-            { "attributes", Attributes },
-            {
-                "deviceInfo", new JsonObject
+                    name = Name,
+                    defaultNames = new List<string>()
+                    {
+                        "Leaf", "Nissan", "Car"
+                    },
+                    nicknames = new List<string>()
+                    {
+                        "Leaf", "Nissan", "Car"
+                    }
+                },
+                willReportState = WillReportState,
+                notificationSupportedByAgent = false,
+                attributes = Attributes,
+                deviceInfo = new Deviceinfo()
                 {
-                    { "manufacturer", "Nathan Leaf2Google" },
-                    { "model", "Nissan Leaf" },
-                    { "hwVersion", "1.0" },
-                    { "swVersion", "1.0" }
+                    manufacturer = "Nathan Leaf2Google",
+                    model = "SurePet",
+                    hwVersion = "1.0",
+                    swVersion = "1.0"
                 }
-            }
-        };
+            };
+        }
     }
 }
