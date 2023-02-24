@@ -1,10 +1,11 @@
-﻿// Copyright (c) Nathan Ford. All rights reserved. GoogleController.cs
+// Copyright (c) Nathan Ford. All rights reserved. GoogleController.cs
 
 using Leaf2Google.Blazor.Server.Helpers;
 using Leaf2Google.Controllers;
 using Leaf2Google.Entities.Generic;
 using Leaf2Google.Entities.Google;
 using Leaf2Google.Json.Google;
+using Leaf2Google.Models.Google.Devices;
 using Leaf2Google.Services.Google;
 using Leaf2Google.Services.Google.Devices;
 using Microsoft.AspNetCore.Mvc;
@@ -77,7 +78,7 @@ public class GoogleController : BaseController
             {
                 case "SYNC":
                     {
-                        var devices = new List<JsonObject>();
+                        var devices = new List<SyncResponse>();
 
                         foreach (var device in userDevices)
                         {
